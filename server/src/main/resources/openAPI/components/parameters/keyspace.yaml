@@ -1,0 +1,6 @@
+in: path
+required: true
+name: keyspace
+schema:
+  type: string
+description: Keyspace name

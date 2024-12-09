@@ -1,0 +1,9 @@
+type: object
+properties:
+  keyspace:
+    type: string
+    example: someKeyspace
+  schema:
+    type: string
+    description: CQL schema
+    example: <Raw CQL Schema>

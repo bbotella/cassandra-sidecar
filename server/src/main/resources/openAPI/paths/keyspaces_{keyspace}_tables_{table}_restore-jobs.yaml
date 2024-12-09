@@ -1,0 +1,24 @@
+post:
+  tags:
+    - jobs
+  operationId: createRestoreJob
+  description: Endpoint used to create a restore job
+  summary: Endpoint used to create a restore job
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+  requestBody:
+    description: Restore Job Payload
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/createRestoreJobRequest.yaml
+  responses:
+    '200':
+      description: Job Restored
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/createRestoreJobResponse.yaml

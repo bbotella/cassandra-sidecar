@@ -1,0 +1,23 @@
+type: object
+description: The information of a cdc segment
+properties:
+  name:
+    type: string
+    description: Cdc segment name
+    example: someName
+  size:
+    type: number
+    description: Cdc segment size
+    example: 1000
+  idx:
+    type: number
+    description: Cdc segment index
+    example: 1
+  completed:
+    type: boolean
+    description: Flag indicating if the segment has been completed
+    example: true
+  lastModifiedTimestamp:
+    type: number
+    description: When was the cdc segment last modified
+    example: 1234

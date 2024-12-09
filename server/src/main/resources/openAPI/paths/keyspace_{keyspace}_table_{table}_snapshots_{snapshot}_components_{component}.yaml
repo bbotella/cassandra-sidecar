@@ -1,0 +1,22 @@
+get:
+  tags:
+    - components
+  operationId: deprecatedGetComponent
+  description: Deprecated endpoint to get the component from a snapshot.
+  summary: Deprecated endpoint to get the component from a snapshot.
+  security:
+    - mTLS: []
+  deprecated: true
+  parameters:
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+    - $ref: ../components/parameters/snapshot.yaml
+    - $ref: ../components/parameters/component.yaml
+  responses:
+    '200':
+      description: Stream of the component
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary

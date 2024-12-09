@@ -1,0 +1,13 @@
+delete:
+  tags:
+    - sstables
+  operationId: ssTableCleanup
+  description: Clean up an SSTable
+  summary: Clean up an SSTable
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/uploadId.yaml
+  responses:
+    '200':
+      description: Uploaded file successfully

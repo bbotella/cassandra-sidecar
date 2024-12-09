@@ -1,0 +1,20 @@
+get:
+  tags:
+    - snapshots
+  operationId: deprecatedGetSnapshots
+  description: Deprecated endpoint to get the info of a snapshot.
+  summary: Deprecated endpoint to get the info of a snapshot.
+  security:
+    - mTLS: []
+  deprecated: true
+  parameters:
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+    - $ref: ../components/parameters/snapshot.yaml
+  responses:
+    '200':
+      description: Stream of the component
+      content:
+        application/octet-stream:
+          schema:
+            $ref: ../components/schemas/snapshotFileInfoList.yaml

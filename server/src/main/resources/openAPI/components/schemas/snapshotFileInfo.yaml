@@ -1,0 +1,38 @@
+type: object
+properties:
+  size:
+    type: number
+    description: The size of the snapshot file
+    example: 123
+  host:
+    type: string
+    description: The host hosting the snapshot file
+    example: 127.0.0.1
+  port:
+    type: integer
+    description: The port of the host hosting the snapshot file
+    example: 8080
+  dataDirIndex:
+    type: integer
+    description: The index of the data directory containing the snapshot file
+    example: 1
+  snapshotName:
+    type: string
+    description: The name of the snapshot
+    example: snapshot-123
+  keySpaceName:
+    type: string
+    description: The keyspace the snapshot file pertains to
+    example: someKeyspace
+  tableName:
+    type: string
+    description: The name of the table the snapshot file pertains to
+    example: someTable
+  fileName:
+    type: string
+    description: The name of the snapshot file
+    example: snapshotFile
+  componentDownloadUrl:
+    type: string
+    description: The url to download the snapshot file from
+    example: http://127.0.0.1/api/v1/keyspaces/ks/tables/t/snapshots/s/components/c

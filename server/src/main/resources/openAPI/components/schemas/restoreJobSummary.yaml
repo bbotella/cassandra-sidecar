@@ -1,0 +1,29 @@
+type: object
+properties:
+  createdAt:
+    type: string
+    description: Time when the restore job was created
+    example: 1234
+  jobId:
+    type: string
+    format: uuid
+    description: Id of the job to be restored
+    example: 7bdaf3e4-27e6-4268-982e-79b3e450a1cb
+  jobAgent:
+    type: string
+    description: The agent executing the job
+    example: someAgent
+  keyspace:
+    type: string
+    description: The job's keyspace
+    example: someKeyspace
+  table:
+    type: string
+    description: The job's table
+    example: someTable
+  secrets:
+    $ref: ./restoreJobSecrets.yaml
+  status:
+    type: string
+    description: Status of the job
+    example: OK

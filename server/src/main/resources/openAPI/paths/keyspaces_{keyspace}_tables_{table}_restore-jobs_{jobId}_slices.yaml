@@ -1,0 +1,21 @@
+post:
+  tags:
+    - jobs
+  operationId: getRestoreJobSlices
+  description: Endpoint used to create a restore job slice
+  summary: Endpoint used to create a restore job slice
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/jobId.yaml
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+  requestBody:
+    description: Restore Job Payload
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/createSliceRequest.yaml
+  responses:
+    '200':
+      description: Success

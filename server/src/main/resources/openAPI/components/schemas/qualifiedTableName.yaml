@@ -1,0 +1,8 @@
+type: object
+properties:
+  keyspace:
+    type: string
+    example: someKeyspace
+  table:
+    type: string
+    example: someTable

@@ -1,0 +1,27 @@
+put:
+  tags:
+    - sstables
+  operationId: uploadSSTable
+  description: Upload an SSTable
+  summary: Upload an SSTable
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/uploadId.yaml
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+    - $ref: ../components/parameters/component.yaml
+  requestBody:
+    description: SSLTable to upload
+    content:
+      application/octet-stream:
+        schema:
+          type: string
+          format: binary
+  responses:
+    '200':
+      description: Uploaded file successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ssTableUploadResponse.yaml

@@ -1,0 +1,21 @@
+type: object
+properties:
+  start:
+    type: string
+    description: Token Range start
+    example: 1
+  end:
+    type: string
+    description: Token Range end
+    example: 1000
+  replicas:
+    type: object
+    additionalProperties: true
+    description: Map with all the replicas information
+    example:
+      replica1:
+        - foo
+        - bar
+      replica2:
+        - bam
+        - baz

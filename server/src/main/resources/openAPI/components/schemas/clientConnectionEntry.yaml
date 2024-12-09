@@ -1,0 +1,65 @@
+type: object
+description: Details of a client connection
+properties:
+  address:
+    type: string
+    description: The client address
+    example: 127.0.0.1
+  port:
+    type: integer
+    description: The client port
+    example: 8080
+  sslEnabled:
+    type: boolean
+    description: Flag of enabled ssl
+    example: true
+  sslCipherSuite:
+    type: string
+    description: The name of the ssl cipher suite used
+    example: ECDHE-ECDSA-AES256-GCM-SHA384
+  sslProtocol:
+    type: string
+    description: SSL protocol being used by the client
+    example: SSL
+  protocolVersion:
+    type: string
+    description: SSL protocol version being used by the client
+    example: 1.2
+  username:
+    type: string
+    description: User used by the client
+    example: someUser
+  requestCount:
+    type: number
+    description: Number of requests performed by the client
+    example: 1000
+  driverName:
+    type: string
+    description: The name of the client driver
+    example: someDriver
+  driverVersion:
+    type: string
+    description: The version of the client driver
+    example: 2
+  clientOptions:
+    type: object
+    description: Extra options used by the client
+    additionalProperties: true
+    example:
+      foo: bar
+      baz: bam
+  keyspaceName:
+    type: string
+    description: The client keyspace
+    example: someKeyspace
+  authenticationMode:
+    type: string
+    description: The client used authentication mode
+    example: basic
+  authenticationMetadata:
+    type: object
+    description: Extra authentication metadata used by the client
+    additionalProperties: true
+    example:
+      foo: bar
+      baz: bam

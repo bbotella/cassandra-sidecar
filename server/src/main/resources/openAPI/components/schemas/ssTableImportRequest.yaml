@@ -1,0 +1,30 @@
+type: object
+properties:
+  resetLevel:
+    type: boolean
+    description: Flag stating the reset level
+    example: true
+  clearRepaired:
+    type: boolean
+    description: Flag to clear the repaired files
+    example: true
+  verifySSTables:
+    type: boolean
+    description: Flag to verify the SSTables
+    example: true
+  verifyTokens:
+    type: boolean
+    description: Flag to verify the tokens
+    example: true
+  invalidateCaches:
+    type: boolean
+    description: Flag to invalidate the caches
+    example: true
+  extendedVerify:
+    type: boolean
+    description: Flag to extend the verify
+    example: true
+  copyData:
+    type: boolean
+    description: Flag to copy the data
+    example: true

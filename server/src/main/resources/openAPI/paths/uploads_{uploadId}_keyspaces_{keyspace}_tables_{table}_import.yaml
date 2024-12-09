@@ -1,0 +1,25 @@
+put:
+  tags:
+    - sstables
+  operationId: importSSTable
+  description: Import an SSTable
+  summary: Import an SSTable
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/uploadId.yaml
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+  requestBody:
+    description: SSLTable to upload
+    content:
+      application/octet-stream:
+        schema:
+          $ref: ../components/schemas/ssTableImportRequest.yaml
+  responses:
+    '200':
+      description: Uploaded file successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ssTableImportResponse.yaml

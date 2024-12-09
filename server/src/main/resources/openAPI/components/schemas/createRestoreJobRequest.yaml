@@ -1,0 +1,21 @@
+type: object
+properties:
+  jobId:
+    type: string
+    format: uuid
+    description: Id of the job to be restored
+    example: 7bdaf3e4-27e6-4268-982e-79b3e450a1cb
+  jobAgent:
+    type: string
+    description: The agent of the job
+    example: someJobAgent
+  secrets:
+    $ref: ./restoreJobSecrets.yaml
+  importOptions:
+    $ref: ./ssTableImportRequest.yaml
+  expireAtInMillis:
+    type: number
+    description: When should the job expire
+    example: 1000
+  consistencyConfig:
+    $ref: ./consistencyConfig.yaml

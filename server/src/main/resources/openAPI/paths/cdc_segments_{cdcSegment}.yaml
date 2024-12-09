@@ -1,0 +1,18 @@
+get:
+  tags:
+    - cdc
+  operationId: streamCdcSegment
+  description: Endpoint get a cdc segment
+  summary: Endpoint get a cdc segment
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/cdcSegment.yaml
+  responses:
+    '200':
+      description: Success
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary

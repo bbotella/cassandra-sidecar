@@ -1,0 +1,15 @@
+get:
+  tags:
+    - keyspaces
+  operationId: listAllKeyspaces
+  description: Gets all the keyspaces from the database.
+  summary: Gets all the keyspaces from the database.
+  security:
+    - mTLS: []
+  responses:
+    '200':
+      description: List of keyspaces
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/schemaResponse.yaml

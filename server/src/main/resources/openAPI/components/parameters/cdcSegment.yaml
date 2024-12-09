@@ -1,0 +1,6 @@
+in: path
+name: cdcSegment
+required: true
+schema:
+  type: string
+description: The id of a Cdc segment

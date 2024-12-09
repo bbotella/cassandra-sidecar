@@ -1,0 +1,14 @@
+type: object
+properties:
+  uploadId:
+    type: string
+    description: Id of the upload
+    example: someId
+  uploadSizeBytes:
+    type: number
+    description: Number of bytes of the uploaded file
+    example: 1000
+  serviceTimeMillis:
+    type: number
+    description: Time that took to upload the file in millis
+    example: 1000

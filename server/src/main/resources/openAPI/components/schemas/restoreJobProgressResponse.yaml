@@ -1,0 +1,41 @@
+type: object
+properties:
+  message:
+    type: string
+    description: Message about the progress of the restore job
+    example: Some message
+  status:
+    type: string
+    description: Job status
+    enum:
+      - SATISFIED
+      - PENDING
+      - FAILED
+  failedRanges:
+    type: array
+    description: Failed ranges
+    items:
+      $ref: ./restoredRange.yaml
+  abortedRanges:
+    type: array
+    description: Aborted ranges
+    items:
+      $ref: ./restoredRange.yaml
+  pendingRanges:
+    type: array
+    description: Pending ranges
+    items:
+      $ref: ./restoredRange.yaml
+  succeededRanges:
+    type: array
+    description: Succeeded ranges
+    items:
+      $ref: ./restoredRange.yaml
+  expireAtInMillis:
+    type: number
+    description: When should the job expire
+    example: 1000
+  sliceCount:
+    type: number
+    description: Number of slices
+    example: 100

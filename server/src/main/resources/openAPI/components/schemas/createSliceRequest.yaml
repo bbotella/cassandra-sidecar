@@ -1,0 +1,38 @@
+type: object
+properties:
+  sliceId:
+    type: string
+    description: The id of the slice
+    example: someSliceId
+  bucketId:
+    type: integer
+    description: The bucket id for the slice
+    example: 1
+  bucket:
+    type: string
+    description: Bucket name
+    example: someBuclet
+  key:
+    type: string
+    description: Key name
+    example: someKey
+  checksum:
+    type: string
+    description: Checksum of the slice
+    example: someChecksum
+  startToken:
+    type: number
+    description: Starting token
+    example: 1
+  endToken:
+    type: number
+    description: End token
+    example: 100
+  uncompressedSize:
+    type: number
+    description: Uncompressed size of the slice
+    example: 100
+  compressedSize:
+    type: number
+    description: Compressed size of the slice
+    example: 50

@@ -1,0 +1,18 @@
+type: object
+properties:
+  success:
+    type: boolean
+    description: Flag with the success of the import
+    example: true
+  uploadId:
+    type: string
+    description: Id of the upload
+    example: someId
+  keyspace:
+    type: string
+    description: Name of the SSTable keyspace
+    example: someKeyspace
+  tableName:
+    type: string
+    description: Name of the SSTable table
+    example: someTable

@@ -1,0 +1,26 @@
+type: object
+properties:
+  jobAgent:
+    type: string
+    description: The agent of the job
+    example: someJobAgent
+  secrets:
+    $ref: ./restoreJobSecrets.yaml
+  status:
+    type: string
+    enum:
+      - CREATED
+      - STAGE_READY
+      - STAGED
+      - IMPORT_READY
+      - FAILED
+      - ABORTED
+      - SUCCEEDED
+  expireAtInMillis:
+    type: number
+    description: When should the job expire
+    example: 1000
+  sliceCount:
+    type: number
+    description: Number of slices
+    example: 100

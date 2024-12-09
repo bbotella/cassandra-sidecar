@@ -1,0 +1,18 @@
+type: object
+properties:
+  clientConnections:
+    type: array
+    description: List of all the connected clients
+    items:
+      $ref: ./clientConnectionEntry.yaml
+  totalConnectedClients:
+    type: number
+    description: Number of connected clients
+    example: 1000
+  connectionsByUser:
+    type: object
+    description: Map of number of connections by user
+    additionalProperties: true
+    example:
+      foo: 1000
+      baz: 2000

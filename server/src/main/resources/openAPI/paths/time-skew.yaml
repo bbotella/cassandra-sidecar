@@ -1,0 +1,15 @@
+get:
+  tags:
+    - gossip
+  operationId: timeSkew
+  description: Get Gossip info
+  summary: Get Gossip info
+  security:
+    - mTLS: []
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/timeSkewResponse.yaml

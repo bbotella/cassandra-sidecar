@@ -1,0 +1,26 @@
+type: object
+properties:
+  sliceId:
+    type: string
+    description: The id of the slice
+    example: someSliceId
+  bucketId:
+    type: integer
+    description: The id of the bucket
+    example: 1
+  bucket:
+    type: string
+    description: The bucket name
+    example: somebucket
+  key:
+    type: string
+    description: The key of the range
+    example: someKey
+  startToken:
+    type: number
+    description: The first token of the range
+    example: 1
+  endToken:
+    type: number
+    description: The last token of the range
+    example: 100

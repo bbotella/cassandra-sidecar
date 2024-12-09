@@ -1,0 +1,6 @@
+in: path
+name: uploadId
+required: true
+schema:
+  type: string
+description: The id of a SSTable upload

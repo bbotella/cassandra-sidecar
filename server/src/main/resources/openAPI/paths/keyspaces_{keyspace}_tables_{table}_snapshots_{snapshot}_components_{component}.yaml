@@ -1,0 +1,21 @@
+get:
+  tags:
+    - components
+  operationId: getComponent
+  description: Endpoint to get the component from a snapshot.
+  summary: Endpoint to get the component from a snapshot.
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+    - $ref: ../components/parameters/snapshot.yaml
+    - $ref: ../components/parameters/component.yaml
+  responses:
+    '200':
+      description: Stream of the component
+      content:
+        application/octet-stream:
+          schema:
+            type: string
+            format: binary

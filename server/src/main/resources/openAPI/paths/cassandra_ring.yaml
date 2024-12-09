@@ -1,0 +1,15 @@
+get:
+  tags:
+    - ring
+  operationId: getRing
+  description: Gets the ring status
+  summary: Gets the ring status
+  security:
+    - mTLS: []
+  responses:
+    '200':
+      description: Ring status
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ringEntryList.yaml

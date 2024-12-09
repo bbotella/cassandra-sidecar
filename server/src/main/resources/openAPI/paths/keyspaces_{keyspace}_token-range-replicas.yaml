@@ -1,0 +1,17 @@
+get:
+  tags:
+    - tokenrange
+  operationId: getTokenRangeReplica
+  description: Gets the token range replicas for a given keyspace
+  summary: Gets the token range replicas for a given keyspace
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/keyspace.yaml
+  responses:
+    '200':
+      description: Ring status
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/replicaInfoResponse.yaml

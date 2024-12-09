@@ -1,0 +1,15 @@
+get:
+  tags:
+    - cdc
+  operationId: listCdcSegment
+  description: Endpoint used to list the pending cdc segments
+  summary: Endpoint used to list the pending cdc segments
+  security:
+    - mTLS: []
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/cdcSegmentsResponse.yaml

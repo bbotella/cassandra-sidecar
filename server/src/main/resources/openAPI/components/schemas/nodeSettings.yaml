@@ -1,0 +1,37 @@
+type: object
+properties:
+  releaseVersion:
+    type: string
+    description: Version of the release present in the node
+    example: 5
+  partitioner:
+    type: string
+    description: Partitioner used in the node
+    example: partitioner
+  datacenter:
+    type: string
+    description: Node datacenter
+    example: DC1
+  rpcAddress:
+    type: string
+    description: Node rpcAddress
+    example: 127.0.0.1
+  rpcPort:
+    type: integer
+    description: Node port
+    example: 8080
+  tokens:
+    type: array
+    description: Tokens present in the node
+    items:
+      type: string
+    example:
+      - a001
+      - a002
+  sidecar:
+    type: object
+    description: Node port
+    additionalProperties: true
+    example:
+      foo: bar
+      bam: baz

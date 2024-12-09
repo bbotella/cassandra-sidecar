@@ -1,0 +1,31 @@
+type: object
+properties:
+  readReplicas:
+    type: array
+    description: List of read replicas information
+    items:
+      $ref: ./replicaInfo.yaml
+  writeReplicas:
+    type: array
+    description: List of write replicas information
+    items:
+      $ref: ./replicaInfo.yaml
+  replicas:
+    type: object
+    additionalProperties: true
+    description: Map with all the replicas metadata
+    example:
+      replica1:
+        state: OK
+        status: UP
+        fqdn: somefqdn
+        address: 127.0.0.1
+        port: 80
+        datacenter: DC1
+      replica2:
+        state: OK
+        status: UP
+        fqdn: somefqdn
+        address: 127.0.0.1
+        port: 80
+        datacenter: DC1

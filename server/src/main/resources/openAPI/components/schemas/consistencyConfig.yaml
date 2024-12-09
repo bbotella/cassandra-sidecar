@@ -1,0 +1,17 @@
+type: object
+properties:
+  consistencyLevel:
+    type: string
+    description: Cassandra consistency level
+    enum:
+      - ONE
+      - TWO
+      - LOCAL_ONE
+      - LOCAL_QUORUM
+      - EACH_QUORUM
+      - QUORUM
+      - ALL
+  localDatacenter:
+    type: string
+    description: The local datacenter
+    example: DC1

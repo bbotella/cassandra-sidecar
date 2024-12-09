@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: Cassandra Sidecar API
+  description: Cassandra Sidecar API API description.
+  version: 1.0.0
+servers:
+  - url: https://localhost:8080/api/v1
+    description: Localhost server
+tags:
+  - name: healthchecks
+    description: Different healthchecks endpoints
+  - name: jobs
+    description: Restore jobs operations
+  - name: components
+    description: Component endpoints
+  - name: snapshots
+    description: Snapshot endpoints
+  - name: keyspaces
+    description: Keyspaces endpoints
+  - name: ring
+    description: Ring endpoints
+  - name: stats
+    description: Stats endpoints
+  - name: sstables
+    description: SSTables endpoints
+  - name: tokenrange
+    description: Token Range endpoints
+  - name: gossip
+    description: Gossip endpoints
+  - name: settings
+    description: Settings endpoints
+  - name: cdc
+    description: CDC endpoints
+paths:
+  /__health:
+    $ref: paths/__health.yaml
+  /cassandra/__health:
+    $ref: paths/cassandra___health.yaml
+  /cassandra/native/__health:
+    $ref: paths/cassandra_native___health.yaml
+  /cassandra/jmx/__health:
+    $ref: paths/cassandra_jmx___health.yaml
+  /keyspace/{keyspace}/table/{table}/snapshots/{snapshot}/components/{component}:
+    $ref: >-
+      paths/keyspace_{keyspace}_table_{table}_snapshots_{snapshot}_components_{component}.yaml
+  /keyspaces/{keyspace}/tables/{table}/snapshots/{snapshot}/components/{component}:
+    $ref: >-
+      paths/keyspaces_{keyspace}_tables_{table}_snapshots_{snapshot}_components_{component}.yaml
+  /keyspaces/{keyspace}/tables/{table}/snapshots/{snapshot}/components/{index}/{component}:
+    $ref: >-
+      paths/keyspaces_{keyspace}_tables_{table}_snapshots_{snapshot}_components_{index}_{component}.yaml
+  /keyspace/{keyspace}/table/{table}/snapshots/{snapshot}:
+    $ref: paths/keyspace_{keyspace}_table_{table}_snapshots_{snapshot}.yaml
+  /keyspaces/{keyspace}/tables/{table}/snapshots/{snapshot}:
+    $ref: paths/keyspaces_{keyspace}_tables_{table}_snapshots_{snapshot}.yaml
+  /schema/keyspaces:
+    $ref: paths/schema_keyspaces.yaml
+  /cassandra/schema:
+    $ref: paths/cassandra_schema.yaml
+  /schema/keyspaces/{keyspace}:
+    $ref: paths/schema_keyspaces_{keyspace}.yaml
+  /keyspaces/{keyspace}/schema:
+    $ref: paths/keyspaces_{keyspace}_schema.yaml
+  /cassandra/ring:
+    $ref: paths/cassandra_ring.yaml
+  /cassandra/ring/keyspaces/{keyspace}:
+    $ref: paths/cassandra_ring_keyspaces_{keyspace}.yaml
+  /cassandra/stats/stats/connected-clients:
+    $ref: paths/cassandra_stats_stats_connected-clients.yaml
+  /keyspaces/{keyspace}/token-range-replicas:
+    $ref: paths/keyspaces_{keyspace}_token-range-replicas.yaml
+  /uploads/{uploadId}/keyspaces/{keyspace}/tables/{table}/components/{component}:
+    $ref: >-
+      paths/uploads_{uploadId}_keyspaces_{keyspace}_tables_{table}_components_{component}.yaml
+  /uploads/{uploadId}/keyspaces/{keyspace}/tables/{table}/import:
+    $ref: paths/uploads_{uploadId}_keyspaces_{keyspace}_tables_{table}_import.yaml
+  /uploads/{uploadId}:
+    $ref: paths/uploads_{uploadId}.yaml
+  /cassandra/gossip:
+    $ref: paths/cassandra_gossip.yaml
+  /time-skew:
+    $ref: paths/time-skew.yaml
+  /cassandra/settings:
+    $ref: paths/cassandra_settings.yaml
+  /keyspaces/{keyspace}/tables/{table}/restore-jobs:
+    $ref: paths/keyspaces_{keyspace}_tables_{table}_restore-jobs.yaml
+  /keyspaces/{keyspace}/tables/{table}/restore-jobs/{jobId}/slices:
+    $ref: paths/keyspaces_{keyspace}_tables_{table}_restore-jobs_{jobId}_slices.yaml
+  /keyspaces/{keyspace}/tables/{table}/restore-jobs/{jobId}:
+    $ref: paths/keyspaces_{keyspace}_tables_{table}_restore-jobs_{jobId}.yaml
+  /keyspaces/{keyspace}/tables/{table}/restore-jobs/{jobId}/abort:
+    $ref: paths/keyspaces_{keyspace}_tables_{table}_restore-jobs_{jobId}_abort.yaml
+  /keyspaces/{keyspace}/tables/{table}/restore-jobs/{jobId}/progress:
+    $ref: >-
+      paths/keyspaces_{keyspace}_tables_{table}_restore-jobs_{jobId}_progress.yaml
+  /cdc/segments:
+    $ref: paths/cdc_segments.yaml
+  /cdc/segments/{cdcSegment}:
+    $ref: paths/cdc_segments_{cdcSegment}.yaml
+components:
+  securitySchemes:
+    mTLS:
+      description: mTLS authentication
+      type: mutualTLS

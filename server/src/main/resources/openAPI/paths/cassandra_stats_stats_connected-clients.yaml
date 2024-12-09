@@ -1,0 +1,15 @@
+get:
+  tags:
+    - stats
+  operationId: getClientStats
+  description: Gets stats of connected clients
+  summary: Gets stats of connected clients
+  security:
+    - mTLS: []
+  responses:
+    '200':
+      description: Ring status
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/connectedClientStatsResponse.yaml

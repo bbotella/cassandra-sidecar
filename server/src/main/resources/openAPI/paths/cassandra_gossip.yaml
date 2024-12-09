@@ -1,0 +1,22 @@
+get:
+  tags:
+    - gossip
+  operationId: gossipInfo
+  description: Get Gossip info
+  summary: Get Gossip info
+  security:
+    - mTLS: []
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: true
+            description: Map with all the instances gossip information
+            example:
+              instance1:
+                heartbeat: bar
+              instance2:
+                heartbeat: baz

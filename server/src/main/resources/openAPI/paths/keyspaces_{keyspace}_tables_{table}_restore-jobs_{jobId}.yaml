@@ -1,0 +1,40 @@
+get:
+  tags:
+    - jobs
+  operationId: getRestoreJob
+  description: Endpoint used to create a restore job info
+  summary: Endpoint used to create a restore job info
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/jobId.yaml
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+  responses:
+    '200':
+      description: Job Restored
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/restoreJobSummary.yaml
+patch:
+  tags:
+    - jobs
+  operationId: patchRestoreJob
+  description: Endpoint used to patch a restore job info
+  summary: Endpoint used to patch a restore job info
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/jobId.yaml
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+  requestBody:
+    description: Patch restore Job Payload
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/updateRestoreJobRequest.yaml
+  responses:
+    '200':
+      description: Success

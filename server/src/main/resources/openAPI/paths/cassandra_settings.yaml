@@ -1,0 +1,15 @@
+get:
+  tags:
+    - settings
+  operationId: nodeSettings
+  description: Get the settings of a node
+  summary: Get the settings of a node
+  security:
+    - mTLS: []
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/nodeSettings.yaml

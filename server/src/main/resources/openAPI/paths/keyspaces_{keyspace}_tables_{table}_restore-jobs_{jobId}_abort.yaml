@@ -1,0 +1,26 @@
+post:
+  tags:
+    - jobs
+  operationId: abortRestoreJob
+  description: Endpoint used to abort a restore job
+  summary: Endpoint used to abort a restore job
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/jobId.yaml
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+  requestBody:
+    description: Restore Job Payload
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            reason:
+              type: string
+              description: The reason for aborting the restore job
+              example: Some Reason
+  responses:
+    '200':
+      description: Success

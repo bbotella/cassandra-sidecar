@@ -1,0 +1,16 @@
+get:
+  tags:
+    - keyspaces
+  operationId: deprecatedListAllKeyspaces
+  description: Gets all the keyspaces from the database.
+  summary: Gets all the keyspaces from the database.
+  security:
+    - mTLS: []
+  deprecated: true
+  responses:
+    '200':
+      description: List of keyspaces
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/schemaResponse.yaml

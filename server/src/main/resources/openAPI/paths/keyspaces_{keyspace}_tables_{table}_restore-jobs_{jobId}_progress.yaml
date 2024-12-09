@@ -1,0 +1,19 @@
+get:
+  tags:
+    - jobs
+  operationId: getRestoreJobProgress
+  description: Endpoint used to get a restore job progress info
+  summary: Endpoint used to get a restore job progress info
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/jobId.yaml
+    - $ref: ../components/parameters/keyspace.yaml
+    - $ref: ../components/parameters/table.yaml
+  responses:
+    '200':
+      description: Job restore progress info
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/restoreJobProgressResponse.yaml

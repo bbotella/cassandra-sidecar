@@ -1,0 +1,10 @@
+type: object
+properties:
+  currentTime:
+    type: number
+    description: Current time on the instance
+    example: 1000
+  allowableSkewInMinutes:
+    type: integer
+    description: Allowable skew time in minutes
+    example: 10

@@ -1,0 +1,16 @@
+type: object
+properties:
+  snapshotName:
+    type: string
+    description: Name for the snapshot
+    example: someSnapshot
+  includeSecondaryIndexFiles:
+    type: boolean
+    description: Whether or not to include the secondary index files in the snapshot
+    example: someSnapshot
+  qualifiedTableName:
+    $ref: ./qualifiedTableName.yaml
+  ttl:
+    type: string
+    description: Time to live for the snapshot
+    example: 123

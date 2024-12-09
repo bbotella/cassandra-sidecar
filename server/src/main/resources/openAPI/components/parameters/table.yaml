@@ -1,0 +1,6 @@
+in: path
+name: table
+required: true
+schema:
+  type: string
+description: Table name

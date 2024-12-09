@@ -1,0 +1,6 @@
+in: path
+name: index
+required: true
+schema:
+  type: string
+description: An index to retrieve components from

@@ -1,0 +1,17 @@
+get:
+  tags:
+    - keyspaces
+  operationId: getAKeyspaces
+  description: Gets a keyspace schema.
+  summary: Gets a keyspace schema.
+  security:
+    - mTLS: []
+  parameters:
+    - $ref: ../components/parameters/keyspace.yaml
+  responses:
+    '200':
+      description: List of keyspaces
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/schemaResponse.yaml

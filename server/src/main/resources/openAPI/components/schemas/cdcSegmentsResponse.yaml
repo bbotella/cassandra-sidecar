@@ -1,0 +1,15 @@
+type: object
+description: The response for list cdc segments call
+properties:
+  host:
+    type: string
+    description: The host containing the segment
+    example: someName
+  port:
+    type: integer
+    description: The port of the host containing the segment
+    example: 80
+  segmentInfos:
+    type: array
+    items:
+      $ref: ./cdcSegmentInfo.yaml
