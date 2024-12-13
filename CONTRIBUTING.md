@@ -37,6 +37,7 @@ We warmly welcome and appreciate contributions from the community.
   * [Future Composition](#future-composition)
   * [Failure Handling](#failure-handling)
   * [Cassandra Adapters](#cassandra-adapters)
+  * [REST APIs](#rest-apis)
 * [Source Code Style](#source-code-style)
 
 ## <a name="how-to-contribute"></a>How to Contribute
@@ -335,6 +336,10 @@ The `CassandraAdapterFactory` has a version tag which represents the minimum ver
 When adding shims, implement the minimum necessary changes in the new package and name all classes with a version number after the word `Cassandra`.
 For example, if `base`'s minimum version is moved to 5.0, a Cassandra40 adapter package/subproject should be added, with a minimum version of 4.0.0.
 Within that project, the classes should all be named `Cassandra40*`, so `Cassandra40Adapter`, `Cassandra40Factory`, etc.
+
+### <a name="rest-apis"></a>REST APIs
+The project maintains an Open API documentation of all the provided REST APIs, located in `server/src/main/resources/openAPI`.
+When an API is modified or updated, this documentation needs to be maintained accordingly.
 
 ## <a name="source-code-style"></a>Source Code Style
 

@@ -262,11 +262,9 @@ openApiValidate {
     inputSpec.set("$rootDir/server/src/main/resources/openAPI/sidecarApi.yaml")
     recommend.set(true)
 }
-
 openApiGenerate {
     generatorName.set("html2")
     inputSpec.set("$rootDir/server/src/main/resources/openAPI/sidecarApi.yaml")
     outputDir.set("$buildDir/apiDocs")
 }
-
 compileJava.dependsOn tasks.openApiGenerate
