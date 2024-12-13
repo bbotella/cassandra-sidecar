@@ -41,41 +41,41 @@ paths:
   /cassandra/jmx/__health:
     $ref: paths/cassandra_jmx___health.yaml
   /keyspace/{keyspace}/table/{table}/snapshots/{snapshot}/components/{component}:
-    $ref: >-
-      paths/keyspace_{keyspace}_table_{table}_snapshots_{snapshot}_components_{component}.yaml
+    $ref: "paths/keyspace_keyspace_table_table_snapshots_snapshot_compon\
+          ents_component.yaml"
   /keyspaces/{keyspace}/tables/{table}/snapshots/{snapshot}/components/{component}:
-    $ref: >-
-      paths/keyspaces_{keyspace}_tables_{table}_snapshots_{snapshot}_components_{component}.yaml
+    $ref: "paths/keyspaces_keyspace_tables_table_snapshots_snapshot_comp\
+          onents_component.yaml"
   /keyspaces/{keyspace}/tables/{table}/snapshots/{snapshot}/components/{index}/{component}:
-    $ref: >-
-      paths/keyspaces_{keyspace}_tables_{table}_snapshots_{snapshot}_components_{index}_{component}.yaml
+    $ref: "paths/keyspaces_keyspace_tables_table_snapshots_snapshot_comp\
+          onents_index_component.yaml"
   /keyspace/{keyspace}/table/{table}/snapshots/{snapshot}:
-    $ref: paths/keyspace_{keyspace}_table_{table}_snapshots_{snapshot}.yaml
+    $ref: paths/keyspace_keyspace_table_table_snapshots_snapshot.yaml
   /keyspaces/{keyspace}/tables/{table}/snapshots/{snapshot}:
-    $ref: paths/keyspaces_{keyspace}_tables_{table}_snapshots_{snapshot}.yaml
+    $ref: paths/keyspaces_keyspace_tables_table_snapshots_snapshot.yaml
   /schema/keyspaces:
     $ref: paths/schema_keyspaces.yaml
   /cassandra/schema:
     $ref: paths/cassandra_schema.yaml
   /schema/keyspaces/{keyspace}:
-    $ref: paths/schema_keyspaces_{keyspace}.yaml
+    $ref: paths/schema_keyspaces_keyspace.yaml
   /keyspaces/{keyspace}/schema:
-    $ref: paths/keyspaces_{keyspace}_schema.yaml
+    $ref: paths/keyspaces_keyspace_schema.yaml
   /cassandra/ring:
     $ref: paths/cassandra_ring.yaml
   /cassandra/ring/keyspaces/{keyspace}:
-    $ref: paths/cassandra_ring_keyspaces_{keyspace}.yaml
+    $ref: paths/cassandra_ring_keyspaces_keyspace.yaml
   /cassandra/stats/stats/connected-clients:
     $ref: paths/cassandra_stats_stats_connected-clients.yaml
   /keyspaces/{keyspace}/token-range-replicas:
-    $ref: paths/keyspaces_{keyspace}_token-range-replicas.yaml
+    $ref: paths/keyspaces_keyspace_token-range-replicas.yaml
   /uploads/{uploadId}/keyspaces/{keyspace}/tables/{table}/components/{component}:
-    $ref: >-
-      paths/uploads_{uploadId}_keyspaces_{keyspace}_tables_{table}_components_{component}.yaml
+    $ref: "paths/uploads_uploadId_keyspaces_keyspace_tables_table_compon\
+          ents_component.yaml"
   /uploads/{uploadId}/keyspaces/{keyspace}/tables/{table}/import:
-    $ref: paths/uploads_{uploadId}_keyspaces_{keyspace}_tables_{table}_import.yaml
+    $ref: paths/uploads_uploadId_keyspaces_keyspace_tables_table_import.yaml
   /uploads/{uploadId}:
-    $ref: paths/uploads_{uploadId}.yaml
+    $ref: paths/uploads_uploadId.yaml
   /cassandra/gossip:
     $ref: paths/cassandra_gossip.yaml
   /time-skew:
@@ -83,20 +83,20 @@ paths:
   /cassandra/settings:
     $ref: paths/cassandra_settings.yaml
   /keyspaces/{keyspace}/tables/{table}/restore-jobs:
-    $ref: paths/keyspaces_{keyspace}_tables_{table}_restore-jobs.yaml
+    $ref: paths/keyspaces_keyspace_tables_table_restore-jobs.yaml
   /keyspaces/{keyspace}/tables/{table}/restore-jobs/{jobId}/slices:
-    $ref: paths/keyspaces_{keyspace}_tables_{table}_restore-jobs_{jobId}_slices.yaml
+    $ref: paths/keyspaces_keyspace_tables_table_restore-jobs_jobId_slices.yaml
   /keyspaces/{keyspace}/tables/{table}/restore-jobs/{jobId}:
-    $ref: paths/keyspaces_{keyspace}_tables_{table}_restore-jobs_{jobId}.yaml
+    $ref: paths/keyspaces_keyspace_tables_table_restore-jobs_jobId.yaml
   /keyspaces/{keyspace}/tables/{table}/restore-jobs/{jobId}/abort:
-    $ref: paths/keyspaces_{keyspace}_tables_{table}_restore-jobs_{jobId}_abort.yaml
+    $ref: paths/keyspaces_keyspace_tables_table_restore-jobs_jobId_abort.yaml
   /keyspaces/{keyspace}/tables/{table}/restore-jobs/{jobId}/progress:
-    $ref: >-
-      paths/keyspaces_{keyspace}_tables_{table}_restore-jobs_{jobId}_progress.yaml
+    $ref: "paths/keyspaces_keyspace_tables_table_restore-jobs_jobId_prog\
+          ress.yaml"
   /cdc/segments:
     $ref: paths/cdc_segments.yaml
   /cdc/segments/{cdcSegment}:
-    $ref: paths/cdc_segments_{cdcSegment}.yaml
+    $ref: paths/cdc_segments_cdcSegment.yaml
 components:
   securitySchemes:
     mTLS:

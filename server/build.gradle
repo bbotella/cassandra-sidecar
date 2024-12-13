@@ -30,6 +30,8 @@ plugins {
     id('maven-publish')
     // and produces a docker image
     id('com.google.cloud.tools.jib') version '3.4.4'
+    // openAPI
+    id "org.openapi.generator" version "6.6.0"
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
@@ -254,3 +256,17 @@ checkstyleContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 spotbugsContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 
 check.dependsOn containerTest, integrationTest, jacocoTestReport
+
+// openAPI
+openApiValidate {
+    inputSpec.set("$rootDir/server/src/main/resources/openAPI/sidecarApi.yaml")
+    recommend.set(true)
+}
+
+openApiGenerate {
+    generatorName.set("html2")
+    inputSpec.set("$rootDir/server/src/main/resources/openAPI/sidecarApi.yaml")
+    outputDir.set("$buildDir/apiDocs")
+}
+
+compileJava.dependsOn tasks.openApiGenerate
