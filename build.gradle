@@ -91,7 +91,7 @@ allprojects {
 
 deltaCoverageReport {
     diffSource {
-        git.compareWith("refs/remotes/upstream/trunk")
+        git.compareWith("refs/remotes/origin/trunk")
         git.useNativeGit.set(true)
     }
 
