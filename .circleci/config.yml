@@ -493,7 +493,7 @@ workflows:
             - unit_java11
             - build-dtest-jdk11
       - validate_delta_coverage:
-          required:
+          requires:
             - unit_java11
             - integration_cassandra_40_java11
             - integration_heavy_cassandra_40_java11
