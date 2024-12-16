@@ -393,6 +393,14 @@ jobs:
       - store_test_results:
           path: build/test-results/
 
+  # Delta coverage plugin requires java 11 so we only validate in java 11 builds
+  validate_delta_coverage:
+    docker:
+      - image: cimg/openjdk:11.0
+    steps:
+      - ./gradlew deltaCoverage
+
+
   # ensures we can build and install deb packages
   deb_build_install:
     docker:
@@ -484,6 +492,15 @@ workflows:
           requires:
             - unit_java11
             - build-dtest-jdk11
+      - validate_delta_coverage:
+          required:
+            - unit_java11
+            - integration_cassandra_40_java11
+            - integration_heavy_cassandra_40_java11
+            - integration_cassandra_50_java11
+            - integration_heavy_cassandra_50_java11
+            - integration_cassandra_trunk_java11
+            - integration_heavy_cassandra_trunk_java11
       - docs_build:
           requires:
             - unit_java8
