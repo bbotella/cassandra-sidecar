@@ -3,7 +3,7 @@ get:
     - healthchecks
   operationId: healthcheck
   description: Check health
-  summary: Check health
+  summary: Endpoint used to perform health checks against a Sidecar instance
   security: []
   responses:
     '200':

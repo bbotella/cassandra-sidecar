@@ -2,7 +2,7 @@ post:
   tags:
     - jobs
   operationId: abortRestoreJob
-  description: Endpoint used to abort a restore job
+  description: Abort restore job
   summary: Endpoint used to abort a restore job
   security:
     - mTLS: []

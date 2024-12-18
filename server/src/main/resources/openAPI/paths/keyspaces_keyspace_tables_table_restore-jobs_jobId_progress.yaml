@@ -2,8 +2,8 @@ get:
   tags:
     - jobs
   operationId: getRestoreJobProgress
-  description: Endpoint used to get a restore job progress info
-  summary: Endpoint used to get a restore job progress info
+  description: Get Restore Job Progress
+  summary: Endpoint used to get a restore job progress information
   security:
     - mTLS: []
   parameters:

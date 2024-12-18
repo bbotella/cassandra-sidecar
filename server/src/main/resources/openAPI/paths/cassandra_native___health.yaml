@@ -3,7 +3,7 @@ get:
     - healthchecks
   operationId: cassandraNativeHealthcheck
   description: Check health
-  summary: Check health
+  summary: Endpoint used to perform health checks to for native connection
   security: []
   responses:
     '200':

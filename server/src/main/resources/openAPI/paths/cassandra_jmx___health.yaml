@@ -3,7 +3,7 @@ get:
     - healthchecks
   operationId: jmxHealthcheck
   description: Check health
-  summary: Check health
+  summary: Endpoint used to perform health checks to for JMX connection
   security: []
   responses:
     '200':

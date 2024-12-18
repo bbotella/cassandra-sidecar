@@ -2,8 +2,8 @@ get:
   tags:
     - snapshots
   operationId: deprecatedGetSnapshots
-  description: Deprecated endpoint to get the info of a snapshot.
-  summary: Deprecated endpoint to get the info of a snapshot.
+  description: Get snapshot information
+  summary: Deprecated endpoint to get the information of a given snapshot
   security:
     - mTLS: []
   deprecated: true

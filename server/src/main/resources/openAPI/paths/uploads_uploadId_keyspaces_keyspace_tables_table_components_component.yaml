@@ -2,8 +2,8 @@ put:
   tags:
     - sstables
   operationId: uploadSSTable
-  description: Upload an SSTable
-  summary: Upload an SSTable
+  description: Upload SSTable
+  summary: Endpoint to upload an SSTable
   security:
     - mTLS: []
   parameters:

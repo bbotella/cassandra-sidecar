@@ -2,8 +2,8 @@ get:
   tags:
     - components
   operationId: deprecatedGetComponent
-  description: Deprecated endpoint to get the component from a snapshot.
-  summary: Deprecated endpoint to get the component from a snapshot.
+  description: Get the component from a snapshot
+  summary: Deprecated endpoint to get the component from a given snapshot
   security:
     - mTLS: []
   deprecated: true

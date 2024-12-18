@@ -3,7 +3,7 @@ get:
     - settings
   operationId: nodeSettings
   description: Get the settings of a node
-  summary: Get the settings of a node
+  summary: Endpoint used to retrieve the current settings of a Cassandra node
   security:
     - mTLS: []
   responses:

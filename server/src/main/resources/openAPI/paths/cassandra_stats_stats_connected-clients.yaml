@@ -3,7 +3,7 @@ get:
     - stats
   operationId: getClientStats
   description: Gets stats of connected clients
-  summary: Gets stats of connected clients
+  summary: Endpoint to retrieve the information related to connected clients to the database
   security:
     - mTLS: []
   responses:

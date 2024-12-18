@@ -2,8 +2,8 @@ get:
   tags:
     - components
   operationId: getComponentFromIndex
-  description: Endpoint to get the component from a snapshot using a specific index.
-  summary: Endpoint to get the component from a snapshot using a specific index.
+  description: Get Component From Index
+  summary: Endpoint to get the component from a snapshot using a specific index
   security:
     - mTLS: []
   parameters:

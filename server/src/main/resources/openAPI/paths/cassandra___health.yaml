@@ -3,7 +3,7 @@ get:
     - healthchecks
   operationId: cassandraHealthcheck
   description: Check health
-  summary: Check health
+  summary: Endpoint used to perform health checks to a Cassandra instance
   security: []
   responses:
     '200':

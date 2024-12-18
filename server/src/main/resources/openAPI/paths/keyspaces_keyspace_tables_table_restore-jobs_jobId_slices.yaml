@@ -1,8 +1,8 @@
 post:
   tags:
     - jobs
-  operationId: getRestoreJobSlices
-  description: Endpoint used to create a restore job slice
+  operationId: createRestoreJobSlice
+  description: Create Job Slice
   summary: Endpoint used to create a restore job slice
   security:
     - mTLS: []

@@ -3,7 +3,7 @@ get:
     - gossip
   operationId: gossipInfo
   description: Get Gossip info
-  summary: Get Gossip info
+  summary: Gets all the gossip protocol related info
   security:
     - mTLS: []
   responses:

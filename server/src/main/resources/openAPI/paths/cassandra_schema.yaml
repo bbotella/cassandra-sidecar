@@ -2,8 +2,8 @@ get:
   tags:
     - keyspaces
   operationId: listAllKeyspaces
-  description: Gets all the keyspaces from the database.
-  summary: Gets all the keyspaces from the database.
+  description: Gets all the keyspaces from the database
+  summary: Endpoint to retrieve the schemas of a database, in all of the user keyspaces
   security:
     - mTLS: []
   responses:

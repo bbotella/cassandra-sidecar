@@ -2,8 +2,8 @@ get:
   tags:
     - cdc
   operationId: streamCdcSegment
-  description: Endpoint get a cdc segment
-  summary: Endpoint get a cdc segment
+  description: Get CDC Segment
+  summary: Endpoint get a specific cdc segment information
   security:
     - mTLS: []
   parameters:

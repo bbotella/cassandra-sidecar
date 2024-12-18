@@ -2,8 +2,8 @@ get:
   tags:
     - keyspaces
   operationId: getAKeyspaces
-  description: Gets a keyspace schema.
-  summary: Gets a keyspace schema.
+  description: Gets Schema
+  summary: Gets the schemas from a keyspace
   security:
     - mTLS: []
   parameters:

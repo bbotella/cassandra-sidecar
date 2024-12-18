@@ -2,8 +2,8 @@ delete:
   tags:
     - sstables
   operationId: ssTableCleanup
-  description: Clean up an SSTable
-  summary: Clean up an SSTable
+  description: Cleanup SSTable
+  summary: Endpoint to start the clean up of an SSTable
   security:
     - mTLS: []
   parameters:

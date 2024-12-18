@@ -2,7 +2,7 @@ get:
   tags:
     - tokenrange
   operationId: getTokenRangeReplica
-  description: Gets the token range replicas for a given keyspace
+  description: Get Token Range Replica
   summary: Gets the token range replicas for a given keyspace
   security:
     - mTLS: []

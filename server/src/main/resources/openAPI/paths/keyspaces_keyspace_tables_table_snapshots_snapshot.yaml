@@ -1,9 +1,9 @@
 get:
   tags:
     - snapshots
-  operationId: getSnapshots
-  description: Endpoint to get the info of a snapshot.
-  summary: Endpoint to get the info of a snapshot.
+  operationId: getSnapshot
+  description: Get Snapshot Info
+  summary: Endpoint to get the information of a snapshot
   security:
     - mTLS: []
   parameters:
@@ -21,8 +21,8 @@ delete:
   tags:
     - snapshots
   operationId: deleteSnapshot
-  description: Endpoint to delete a snapshot.
-  summary: Endpoint to delete a snapshot.
+  description: Delete a snapshot
+  summary: Endpoint to delete a snapshot
   security:
     - mTLS: []
   parameters:
@@ -37,7 +37,7 @@ put:
     - snapshots
   operationId: createSnapshot
   description: Creates a snapshot
-  summary: Creates a snapshot
+  summary: Endpoint to creates a snapshot
   security:
     - mTLS: []
   parameters:

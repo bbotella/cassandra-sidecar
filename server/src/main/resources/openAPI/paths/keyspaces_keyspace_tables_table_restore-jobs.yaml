@@ -2,7 +2,7 @@ post:
   tags:
     - jobs
   operationId: createRestoreJob
-  description: Endpoint used to create a restore job
+  description: Create Restore Job
   summary: Endpoint used to create a restore job
   security:
     - mTLS: []

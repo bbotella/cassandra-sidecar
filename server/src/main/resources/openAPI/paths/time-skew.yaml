@@ -2,8 +2,8 @@ get:
   tags:
     - gossip
   operationId: timeSkew
-  description: Get Gossip info
-  summary: Get Gossip info
+  description: Get Time Skew
+  summary: Endpoint to get the time skey
   security:
     - mTLS: []
   responses:

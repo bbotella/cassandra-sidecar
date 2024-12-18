@@ -2,8 +2,8 @@ put:
   tags:
     - sstables
   operationId: importSSTable
-  description: Import an SSTable
-  summary: Import an SSTable
+  description: Import SSTable
+  summary: Endpoint to import an SSTable
   security:
     - mTLS: []
   parameters:

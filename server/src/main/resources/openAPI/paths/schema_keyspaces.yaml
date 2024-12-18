@@ -2,8 +2,8 @@ get:
   tags:
     - keyspaces
   operationId: deprecatedListAllKeyspaces
-  description: Gets all the keyspaces from the database.
-  summary: Gets all the keyspaces from the database.
+  description: Get All Keyspaces
+  summary: Endpoint to gets all the keyspaces from the database
   security:
     - mTLS: []
   deprecated: true

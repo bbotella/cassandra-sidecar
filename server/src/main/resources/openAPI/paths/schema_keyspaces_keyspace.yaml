@@ -2,8 +2,8 @@ get:
   tags:
     - keyspaces
   operationId: deprecatedGetAKeyspaces
-  description: Gets a keyspace schema.
-  summary: Gets a keyspace schema.
+  description: Get Keyspace
+  summary: Endpoint to get a keyspace schema
   security:
     - mTLS: []
   parameters:

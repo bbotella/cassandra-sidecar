@@ -3,7 +3,7 @@ get:
     - ring
   operationId: getRing
   description: Gets the ring status
-  summary: Gets the ring status
+  summary: This endpoint retrieves the information related to ring
   security:
     - mTLS: []
   responses:

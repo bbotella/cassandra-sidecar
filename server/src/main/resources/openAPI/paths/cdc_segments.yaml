@@ -2,7 +2,7 @@ get:
   tags:
     - cdc
   operationId: listCdcSegment
-  description: Endpoint used to list the pending cdc segments
+  description: List all the cdc segments
   summary: Endpoint used to list the pending cdc segments
   security:
     - mTLS: []

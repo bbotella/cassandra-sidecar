@@ -2,8 +2,8 @@ get:
   tags:
     - jobs
   operationId: getRestoreJob
-  description: Endpoint used to create a restore job info
-  summary: Endpoint used to create a restore job info
+  description: Get restore job info
+  summary: Endpoint used to get a restore job information
   security:
     - mTLS: []
   parameters:

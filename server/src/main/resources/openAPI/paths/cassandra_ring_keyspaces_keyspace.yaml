@@ -3,7 +3,7 @@ get:
     - ring
   operationId: getRingPerKeyspace
   description: Gets the ring status for a keyspace
-  summary: Gets the ring status for a keyspace
+  summary: This endpoint retrieves the information related to ring for a given keyspace
   security:
     - mTLS: []
   parameters:
