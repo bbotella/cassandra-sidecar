@@ -21,8 +21,8 @@ patch:
   tags:
     - jobs
   operationId: patchRestoreJob
-  description: Endpoint used to patch a restore job info
-  summary: Endpoint used to patch a restore job info
+  description: Modify Restore Job
+  summary: Endpoint used to modify a restore job info
   security:
     - mTLS: []
   parameters:
