@@ -264,7 +264,7 @@ jobs:
       - store_test_results:
           path: build/test-results/
       - persist_to_workspace:
-          root: jacoco-results
+          root: ./jacoco-results
           paths:
             - "**/*.exec"
 
@@ -296,7 +296,7 @@ jobs:
           path: build/test-results/
 
       - persist_to_workspace:
-          root: jacoco-results
+          root: ./jacoco-results
           paths:
             - "**/*.exec"
 
@@ -328,7 +328,7 @@ jobs:
           path: build/test-results/
 
       - persist_to_workspace:
-          root: jacoco-results
+          root: ./jacoco-results
           paths:
             - "**/*.exec"
 
@@ -360,7 +360,7 @@ jobs:
           path: build/test-results/
 
       - persist_to_workspace:
-          root: jacoco-results
+          root: ./jacoco-results
           paths:
             - "**/*.exec"
 
@@ -392,7 +392,7 @@ jobs:
           path: build/test-results/
 
       - persist_to_workspace:
-          root: jacoco-results
+          root: ./jacoco-results
           paths:
             - "**/*.exec"
 
@@ -424,9 +424,9 @@ jobs:
           path: build/test-results/
 
       - persist_to_workspace:
-          root: .
+          root: ./jacoco-results
           paths:
-            - "jacoco-results/jacoco-results/**/*.exec"
+            - "**/*.exec"
 
   # Delta coverage plugin requires java 11 so we only validate in java 11 builds
   validate_delta_coverage:

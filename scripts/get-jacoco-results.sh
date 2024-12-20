@@ -27,5 +27,6 @@ find "$search_dir" -type d -path "*/build/jacoco" -print0 | while IFS= read -r -
   destination_path="$target_folder/${dir:2}"
   mkdir -p "$destination_path"
   cp -r $dir "$destination_path"
+  echo "Copied folder $dir to $destination_path"
 done
 
