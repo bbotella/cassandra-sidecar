@@ -262,6 +262,10 @@ jobs:
 
       - store_test_results:
           path: build/test-results/
+      - persist_to_workspace:
+          root: jacoco-results/<<pipeline.id>>/
+          paths:
+            - "**/*.exec"
 
   integration_heavy_cassandra_40_java11:
     docker:
@@ -289,6 +293,11 @@ jobs:
       - store_test_results:
           path: build/test-results/
 
+      - persist_to_workspace:
+          root: jacoco-results/<<pipeline.id>>/
+          paths:
+            - "**/*.exec"
+
   integration_cassandra_50_java11:
     docker:
       - image: cimg/openjdk:11.0
@@ -314,6 +323,11 @@ jobs:
 
       - store_test_results:
           path: build/test-results/
+
+      - persist_to_workspace:
+          root: jacoco-results/<<pipeline.id>>/
+          paths:
+            - "**/*.exec"
 
   integration_heavy_cassandra_50_java11:
     docker:
@@ -341,6 +355,11 @@ jobs:
       - store_test_results:
           path: build/test-results/
 
+      - persist_to_workspace:
+          root: jacoco-results/<<pipeline.id>>/
+          paths:
+            - "**/*.exec"
+
   integration_cassandra_trunk_java11:
     docker:
       - image: cimg/openjdk:11.0
@@ -366,6 +385,11 @@ jobs:
 
       - store_test_results:
           path: build/test-results/
+
+      - persist_to_workspace:
+          root: jacoco-results/<<pipeline.id>>/
+          paths:
+            - "**/*.exec"
 
   integration_heavy_cassandra_trunk_java11:
     docker:
@@ -393,6 +417,11 @@ jobs:
       - store_test_results:
           path: build/test-results/
 
+      - persist_to_workspace:
+          root: jacoco-results/<<pipeline.id>>/
+          paths:
+            - "**/*.exec"
+
   # Delta coverage plugin requires java 11 so we only validate in java 11 builds
   validate_delta_coverage:
     docker:
@@ -403,6 +432,8 @@ jobs:
       - setup_remote_docker
       - install_common
       - checkout
+      - attach_workspace:
+          at: jacoco-results
       - run: ./gradlew --info deltaCoverage
 
   # ensures we can build and install deb packages
