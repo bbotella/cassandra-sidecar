@@ -266,7 +266,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "**/*.exec"
+            - "jacoco-results/*/*/build/jacoco/*.exec"
 
   integration_heavy_cassandra_40_java11:
     docker:
@@ -298,7 +298,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "**/*.exec"
+            - "jacoco-results/*/*/build/jacoco/*.exec"
 
   integration_cassandra_50_java11:
     docker:
@@ -330,7 +330,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "**/*.exec"
+            - "jacoco-results/*/*/build/jacoco/*.exec"
 
   integration_heavy_cassandra_50_java11:
     docker:
@@ -362,7 +362,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "**/*.exec"
+            - "jacoco-results/*/*/build/jacoco/*.exec"
 
   integration_cassandra_trunk_java11:
     docker:
@@ -394,7 +394,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "**/*.exec"
+            - "jacoco-results/*/*/build/jacoco/*.exec"
 
   integration_heavy_cassandra_trunk_java11:
     docker:
@@ -426,7 +426,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "**/*.exec"
+            - "jacoco-results/*/*/build/jacoco/*.exec"
 
   # Delta coverage plugin requires java 11 so we only validate in java 11 builds
   validate_delta_coverage:
