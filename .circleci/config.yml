@@ -251,7 +251,12 @@ jobs:
           at: dtest-jars
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=4.1.8 -Dcassandra.sidecar.versions_to_test="4.0" checkstyleIntegrationTest spotbugsIntegrationTest integrationTestLightWeight --stacktrace
-      - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Move Jacoco results to unique folder
+          command: |
+            UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
+            echo "Unique ID: $UNIQUE_ID"
+            ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
       - run:
           name: Debug jacoco-results folder
           command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
@@ -285,7 +290,12 @@ jobs:
           at: dtest-jars
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=4.1.8 -Dcassandra.sidecar.versions_to_test="4.0" integrationTestHeavyWeight --stacktrace
-      - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Move Jacoco results to unique folder
+          command: |
+            UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
+            echo "Unique ID: $UNIQUE_ID"
+            ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
       - run:
           name: Debug jacoco-results folder
           command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
@@ -320,7 +330,12 @@ jobs:
           at: dtest-jars
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=5.0.3 -Dcassandra.sidecar.versions_to_test="5.0" checkstyleIntegrationTest spotbugsIntegrationTest integrationTestLightWeight --stacktrace
-      - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Move Jacoco results to unique folder
+          command: |
+            UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
+            echo "Unique ID: $UNIQUE_ID"
+            ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
       - run:
           name: Debug jacoco-results folder
           command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
@@ -355,7 +370,12 @@ jobs:
           at: dtest-jars
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=5.0.3 -Dcassandra.sidecar.versions_to_test="5.0" integrationTestHeavyWeight --stacktrace
-      - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Move Jacoco results to unique folder
+          command: |
+            UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
+            echo "Unique ID: $UNIQUE_ID"
+            ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
       - run:
           name: Debug jacoco-results folder
           command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
@@ -390,7 +410,12 @@ jobs:
           at: dtest-jars
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=5.1 -Dcassandra.sidecar.versions_to_test="5.1" checkstyleIntegrationTest spotbugsIntegrationTest integrationTestLightWeight --stacktrace
-      - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Move Jacoco results to unique folder
+          command: |
+            UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
+            echo "Unique ID: $UNIQUE_ID"
+            ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
       - run:
           name: Debug jacoco-results folder
           command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
@@ -425,7 +450,12 @@ jobs:
           at: dtest-jars
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=5.1 -Dcassandra.sidecar.versions_to_test="5.1" integrationTestHeavyWeight --stacktrace
-      - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Move Jacoco results to unique folder
+          command: |
+            UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
+            echo "Unique ID: $UNIQUE_ID"
+            ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
       - run:
           name: Debug jacoco-results folder
           command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
