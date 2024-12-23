@@ -257,10 +257,6 @@ jobs:
             UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
             echo "Unique ID: $UNIQUE_ID"
             ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
-      - run:
-          name: Debug jacoco-results folder
-          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
-
       - store_artifacts:
           path: build/reports
           destination: test-reports
@@ -296,10 +292,6 @@ jobs:
             UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
             echo "Unique ID: $UNIQUE_ID"
             ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
-      - run:
-          name: Debug jacoco-results folder
-          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
-
       - store_artifacts:
           path: build/reports
           destination: test-reports
@@ -336,10 +328,6 @@ jobs:
             UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
             echo "Unique ID: $UNIQUE_ID"
             ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
-      - run:
-          name: Debug jacoco-results folder
-          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
-
       - store_artifacts:
           path: build/reports
           destination: test-reports
@@ -376,10 +364,6 @@ jobs:
             UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
             echo "Unique ID: $UNIQUE_ID"
             ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
-      - run:
-          name: Debug jacoco-results folder
-          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
-
       - store_artifacts:
           path: build/reports
           destination: test-reports
@@ -416,10 +400,6 @@ jobs:
             UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
             echo "Unique ID: $UNIQUE_ID"
             ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
-      - run:
-          name: Debug jacoco-results folder
-          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
-
       - store_artifacts:
           path: build/reports
           destination: test-reports
@@ -456,10 +436,6 @@ jobs:
             UNIQUE_ID="${CIRCLE_WORKFLOW_ID}-${CIRCLE_JOB}-${CIRCLE_NODE_INDEX}"
             echo "Unique ID: $UNIQUE_ID"
             ./scripts/get-jacoco-results.sh "jacoco-results/${UNIQUE_ID}"
-      - run:
-          name: Debug jacoco-results folder
-          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
-
       - store_artifacts:
           path: build/reports
           destination: test-reports
