@@ -254,7 +254,7 @@ jobs:
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
       - run:
           name: Debug jacoco-results folder
-          command: ls -R ./jacoco-results && cd ./jacoco-results && pwd
+          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -288,7 +288,7 @@ jobs:
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
       - run:
           name: Debug jacoco-results folder
-          command: ls -R ./jacoco-results && cd ./jacoco-results && pwd
+          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -323,7 +323,7 @@ jobs:
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
       - run:
           name: Debug jacoco-results folder
-          command: ls -R ./jacoco-results && cd ./jacoco-results && pwd
+          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -358,7 +358,7 @@ jobs:
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
       - run:
           name: Debug jacoco-results folder
-          command: ls -R ./jacoco-results && cd ./jacoco-results && pwd
+          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -393,7 +393,7 @@ jobs:
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
       - run:
           name: Debug jacoco-results folder
-          command: ls -R ./jacoco-results && cd ./jacoco-results && pwd
+          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -428,7 +428,7 @@ jobs:
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
       - run:
           name: Debug jacoco-results folder
-          command: ls -R ./jacoco-results && cd ./jacoco-results && pwd
+          command: pwd && ls -R ./jacoco-results && cd ./jacoco-results
 
       - store_artifacts:
           path: build/reports
