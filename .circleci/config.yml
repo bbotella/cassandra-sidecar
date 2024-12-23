@@ -252,6 +252,9 @@ jobs:
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=4.1.8 -Dcassandra.sidecar.versions_to_test="4.0" checkstyleIntegrationTest spotbugsIntegrationTest integrationTestLightWeight --stacktrace
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Debug jacoco-results folder
+          command: ls -R ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -266,7 +269,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "./jacoco-results/*"
+            - "**/*.exec"
 
   integration_heavy_cassandra_40_java11:
     docker:
@@ -283,6 +286,9 @@ jobs:
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=4.1.8 -Dcassandra.sidecar.versions_to_test="4.0" integrationTestHeavyWeight --stacktrace
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Debug jacoco-results folder
+          command: ls -R ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -298,7 +304,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "./jacoco-results/*"
+            - "**/*.exec"
 
   integration_cassandra_50_java11:
     docker:
@@ -315,6 +321,9 @@ jobs:
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=5.0.3 -Dcassandra.sidecar.versions_to_test="5.0" checkstyleIntegrationTest spotbugsIntegrationTest integrationTestLightWeight --stacktrace
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Debug jacoco-results folder
+          command: ls -R ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -330,7 +339,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "./jacoco-results/*"
+            - "**/*.exec"
 
   integration_heavy_cassandra_50_java11:
     docker:
@@ -347,6 +356,9 @@ jobs:
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=5.0.3 -Dcassandra.sidecar.versions_to_test="5.0" integrationTestHeavyWeight --stacktrace
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Debug jacoco-results folder
+          command: ls -R ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -362,7 +374,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "./jacoco-results/*"
+            - "**/*.exec"
 
   integration_cassandra_trunk_java11:
     docker:
@@ -379,6 +391,9 @@ jobs:
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=5.1 -Dcassandra.sidecar.versions_to_test="5.1" checkstyleIntegrationTest spotbugsIntegrationTest integrationTestLightWeight --stacktrace
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Debug jacoco-results folder
+          command: ls -R ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -394,7 +409,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "./jacoco-results/*"
+            - "**/*.exec"
 
   integration_heavy_cassandra_trunk_java11:
     docker:
@@ -411,6 +426,9 @@ jobs:
       - run: ./scripts/install-shaded-dtest-jar-local.sh
       - run: ./gradlew --no-daemon -PdtestVersion=5.1 -Dcassandra.sidecar.versions_to_test="5.1" integrationTestHeavyWeight --stacktrace
       - run: ./scripts/get-jacoco-results.sh jacoco-results/<<pipeline.id>>
+      - run:
+          name: Debug jacoco-results folder
+          command: ls -R ./jacoco-results
 
       - store_artifacts:
           path: build/reports
@@ -426,7 +444,7 @@ jobs:
       - persist_to_workspace:
           root: ./jacoco-results
           paths:
-            - "./jacoco-results/*"
+            - "**/*.exec"
 
   # Delta coverage plugin requires java 11 so we only validate in java 11 builds
   validate_delta_coverage:
