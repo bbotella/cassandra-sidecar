@@ -37,7 +37,7 @@ sourceCompatibility = JavaVersion.VERSION_11
 test {
     useJUnitPlatform()
     if (Os.isFamily(Os.FAMILY_MAC)) {
-        jvmArgs "-XX:-MaxFDLimit"
+        jvmArgs "-XX:+MaxFDLimit"
     }
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     reports {
