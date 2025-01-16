@@ -90,6 +90,8 @@ allprojects {
         shouldRunAfter(tasks.withType(SpotBugsTask))
     }
 
+    ext.dependencyLocation = (System.getenv("CASSANDRA_DEP_DIR") ?: "${rootDir}/dtest-jars") + "/"
+
 }
 
 group 'org.apache.cassandra'
