@@ -476,16 +476,6 @@ public abstract class IntegrationTestBase
         return ca.toTempKeyStorePath(tempDir.toPath(), truststorePassword.toCharArray(), truststorePassword.toCharArray());
     }
 
-    protected Path serverKeystorePath() throws Exception
-    {
-        CertificateBundle keystore = new CertificateBuilder()
-                                     .subject("CN=Apache Cassandra, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
-                                     .addSanDnsName("localhost")
-                                     .addSanIpAddress("127.0.0.1")
-                                     .buildIssuedBy(ca);
-        return keystore.toTempKeyStorePath(tempDir.toPath(), serverKeystorePassword.toCharArray(), serverKeystorePassword.toCharArray());
-    }
-
     protected Path clientKeystorePath(String identity) throws Exception
     {
         return clientKeystorePath(identity, false);
