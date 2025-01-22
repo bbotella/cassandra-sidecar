@@ -38,10 +38,10 @@ import org.apache.cassandra.sidecar.common.response.OperationalJobResponse;
 import org.apache.cassandra.sidecar.testing.IntegrationTestBase;
 import org.apache.cassandra.testing.CassandraIntegrationTest;
 
-import static org.apache.cassandra.sidecar.AssertionUtils.loopAssert;
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.FAILED;
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.RUNNING;
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.SUCCEEDED;
+import static org.apache.cassandra.testing.AssertionUtils.loopAssert;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 /**
@@ -80,7 +80,6 @@ public class NodeDecommissionIntegrationTest extends IntegrationTestBase
                                            assertThat(jobId).isNotNull();
                                            context.completeNow();
                                        })));
-
     }
 
     private void pollStatusForState(String uuid,
@@ -97,10 +96,10 @@ public class NodeDecommissionIntegrationTest extends IntegrationTestBase
             try
             {
                 resp = client.get(server.actualPort(), "127.0.0.1", status)
-                                                  .send()
-                                                  .toCompletionStage()
-                                                  .toCompletableFuture()
-                                                  .get();
+                             .send()
+                             .toCompletionStage()
+                             .toCompletableFuture()
+                             .get();
                 logger.info("Success Status Response code: {}", resp.statusCode());
                 logger.info("Status Response: {}", resp.bodyAsString());
                 if (resp.statusCode() == HttpResponseStatus.OK.code())

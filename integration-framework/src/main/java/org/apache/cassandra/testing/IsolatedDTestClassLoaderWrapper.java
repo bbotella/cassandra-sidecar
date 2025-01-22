@@ -24,6 +24,8 @@ import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,8 +48,9 @@ public class IsolatedDTestClassLoaderWrapper
 
     /**
      * Initialize dtest jar class loader
+     *
      * @param testVersion version to dtest jar
-     * @param clazz has to be a class in the cassandra-analytics-integration-framework package
+     * @param clazz       has to be a class in the cassandra-analytics-integration-framework package
      */
     public void initializeDTestJarClassLoader(TestVersion testVersion, Class<?> clazz)
     {
@@ -56,7 +59,9 @@ public class IsolatedDTestClassLoaderWrapper
         List<URL> urlList = new ArrayList<>(Arrays.asList(Versions.find().getLatest(version).classpath));
         URL classUrl = urlOfClass(clazz);
         urlList.add(classUrl);
-        dtestJarClassLoader = new DTestJarClassLoader(urlList.toArray(new URL[0]), parent);
+        dtestJarClassLoader =
+        AccessController.doPrivileged((PrivilegedAction<DTestJarClassLoader>) () ->
+                                                                              new DTestJarClassLoader(urlList.toArray(new URL[0]), parent));
     }
 
     public void closeDTestJarClassLoader()

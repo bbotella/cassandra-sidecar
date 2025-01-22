@@ -72,7 +72,10 @@
 
     <Match>
         <Bug pattern="EI_EXPOSE_REP2" />
-        <Class name="org.apache.cassandra.sidecar.client.HttpResponseImpl" />
+        <Or>
+            <Class name="org.apache.cassandra.sidecar.client.HttpResponseImpl" />
+            <Class name="org.apache.cassandra.testing.utils.tls.CertificateBundle" />
+        </Or>
     </Match>
 
     <Match>

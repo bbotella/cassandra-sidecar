@@ -34,9 +34,9 @@ import com.codahale.metrics.SharedMetricRegistries;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
-import org.apache.cassandra.sidecar.AssertionUtils;
 import org.assertj.core.data.Offset;
 
+import static org.apache.cassandra.testing.AssertionUtils.loopAssert;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -158,7 +158,7 @@ class CacheStatsCounterTest
         LongAdder evictions = new LongAdder();
         // we only have capacity for 5, so 95 should be evicted
         // It might take some time for the cache maintainence tasks to finish. Use loop assert to check that it eventally evicts 95
-        AssertionUtils.loopAssert(1, () -> {
+        loopAssert(1, () -> {
             evictions.add(instance.evictions.metric.getValue());
             assertThat(evictions.sum()).isEqualTo(95);
         });

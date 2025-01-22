@@ -20,16 +20,31 @@ package org.apache.cassandra.sidecar.testing;
 
 import java.net.UnknownHostException;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.cassandra.sidecar.common.server.dns.DnsResolver;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class LocalhostResolverTest
 {
+    DnsResolver mockResolver;
+
+    @BeforeEach
+    void before() throws UnknownHostException
+    {
+        mockResolver = mock(DnsResolver.class);
+        when(mockResolver.resolve("127.0.0.2")).thenReturn("127.0.0.2");
+        when(mockResolver.reverseResolve("localhost20")).thenReturn("localhost20");
+    }
+
     @Test
     void testResolve() throws UnknownHostException
     {
-        LocalhostResolver resolver = new LocalhostResolver();
+        LocalhostResolver resolver = new LocalhostResolver(mockResolver);
         assertThat(resolver.resolve("localhost")).isEqualTo("127.0.0.1");
         assertThat(resolver.resolve("localhost2")).isEqualTo("127.0.0.2");
         assertThat(resolver.resolve("localhost20")).isEqualTo("127.0.0.20");
@@ -39,7 +54,7 @@ class LocalhostResolverTest
     @Test
     void testReverseResolve() throws UnknownHostException
     {
-        LocalhostResolver resolver = new LocalhostResolver();
+        LocalhostResolver resolver = new LocalhostResolver(mockResolver);
         assertThat(resolver.reverseResolve("127.0.0.1")).isEqualTo("localhost");
         assertThat(resolver.reverseResolve("127.0.0.2")).isEqualTo("localhost2");
         assertThat(resolver.reverseResolve("127.0.0.20")).isEqualTo("localhost20");

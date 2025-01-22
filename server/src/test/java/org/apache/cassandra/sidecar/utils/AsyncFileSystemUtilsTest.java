@@ -25,11 +25,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.vertx.core.Vertx;
-import org.apache.cassandra.sidecar.AssertionUtils;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.yaml.ServiceConfigurationImpl;
 import org.apache.cassandra.sidecar.exceptions.InsufficientStorageException;
 import org.apache.cassandra.sidecar.utils.AsyncFileSystemUtils.FileStoreProps;
+import org.apache.cassandra.testing.AssertionUtils;
 
 import static org.apache.cassandra.sidecar.utils.AsyncFileSystemUtils.ensureSufficientStorage;
 import static org.apache.cassandra.sidecar.utils.AsyncFileSystemUtils.fileStoreProps;

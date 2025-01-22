@@ -47,9 +47,7 @@ import org.apache.cassandra.testing.ClusterBuilderConfiguration;
 import org.apache.cassandra.testing.IClusterExtension;
 import org.apache.cassandra.testing.Partitioner;
 import org.apache.cassandra.testing.TestTokenSupplier;
-
-
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.distributed.shared.NetworkTopology.dcAndRack;
 import static org.apache.cassandra.distributed.shared.NetworkTopology.networkTopology;
@@ -72,8 +70,7 @@ public class CassandraCluster<I extends IInstance> implements IClusterExtension<
         return className.equals("org.apache.cassandra.utils.concurrent.Ref$OnLeak")
                || className.startsWith("org.apache.cassandra.metrics.RestorableMeter")
                || className.equals("org.apache.logging.slf4j.EventDataConverter")
-//               || (className.startsWith("org.apache.cassandra.analytics.") && className.contains("BBHelper"))
-                ;
+               || (className.startsWith("org.apache.cassandra.analytics.") && className.contains("BBHelper"));
     };
 
     public CassandraCluster(String versionString, ClusterBuilderConfiguration configuration) throws IOException
@@ -273,7 +270,7 @@ public class CassandraCluster<I extends IInstance> implements IClusterExtension<
         return delegate.stream(s, s1);
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Iterator<I> iterator()
     {

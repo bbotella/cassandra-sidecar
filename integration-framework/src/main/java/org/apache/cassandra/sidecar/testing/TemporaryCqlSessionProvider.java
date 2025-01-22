@@ -35,8 +35,10 @@ import com.datastax.driver.core.exceptions.DriverInternalError;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
 import com.datastax.driver.core.policies.ReconnectionPolicy;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
+import org.apache.cassandra.sidecar.exceptions.CassandraUnavailableException;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
+import static org.apache.cassandra.sidecar.exceptions.CassandraUnavailableException.Service.CQL;
 
 /**
  * A CQL Session provider that always connects to and queries all hosts provided to it.
@@ -58,42 +60,46 @@ public class TemporaryCqlSessionProvider implements CQLSessionProvider
         this.contactPoints = contactPoints;
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public synchronized Session get()
     {
+        if (localSession != null)
+        {
+            return localSession;
+        }
+
         Cluster cluster = null;
         try
         {
-            if (localSession == null)
-            {
-                logger.info("Connecting to {}", contactPoints);
-                cluster = Cluster.builder()
-                                 .addContactPointsWithPorts(contactPoints)
-                                 .withReconnectionPolicy(reconnectionPolicy)
-                                 .withoutMetrics()
-                                 // tests can create a lot of these Cluster objects, to avoid creating HWTs and
-                                 // event thread pools for each we have the override
-                                 .withNettyOptions(nettyOptions)
-                                 .build();
-                localSession = cluster.connect();
-                logger.info("Successfully connected to Cassandra instance!");
-            }
+            logger.info("Connecting to {}", contactPoints);
+            cluster = Cluster.builder()
+                             .addContactPointsWithPorts(contactPoints)
+                             .withReconnectionPolicy(reconnectionPolicy)
+                             .withoutMetrics()
+                             // tests can create a lot of these Cluster objects, to avoid creating HWTs and
+                             // event thread pools for each we have the override
+                             .withNettyOptions(nettyOptions)
+                             .build();
+            localSession = cluster.connect();
+            logger.info("Successfully connected to Cassandra instance!");
         }
-        catch (Exception e)
+        catch (Exception connectionException)
         {
-            logger.error("Failed to reach Cassandra", e);
+            logger.error("Failed to reach Cassandra", connectionException);
             if (cluster != null)
             {
                 try
                 {
                     cluster.close();
                 }
-                catch (Exception ex)
+                catch (Exception closeException)
                 {
-                    logger.error("Failed to close cluster in cleanup", ex);
+                    logger.error("Failed to close cluster in cleanup", closeException);
+                    connectionException.addSuppressed(closeException);
                 }
             }
+            throw new CassandraUnavailableException(CQL, connectionException);
         }
         return localSession;
     }

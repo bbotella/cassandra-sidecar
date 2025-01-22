@@ -122,6 +122,12 @@ public class CertificateBuilder
         return this;
     }
 
+    public CertificateBuilder addSanIpAddress(String name)
+    {
+        this.subjectAlternativeNames.add(new GeneralName(GeneralName.iPAddress, name));
+        return this;
+    }
+
     public CertificateBuilder secureRandom(SecureRandom secureRandom)
     {
         this.random = Objects.requireNonNull(secureRandom);

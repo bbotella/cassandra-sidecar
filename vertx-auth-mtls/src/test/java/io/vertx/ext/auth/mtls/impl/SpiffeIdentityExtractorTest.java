@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import io.vertx.ext.auth.authentication.CertificateCredentials;
 import io.vertx.ext.auth.authentication.CredentialValidationException;
-import io.vertx.ext.auth.mtls.utils.CertificateBuilder;
+import org.apache.cassandra.testing.utils.tls.CertificateBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,13 +41,11 @@ public class SpiffeIdentityExtractorTest
     @Test
     public void testSpiffeIdentity() throws Exception
     {
-        X509Certificate certificate
-        = CertificateBuilder
-          .builder()
-          .subject("CN=Vertx Auth, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
-          .addSanUriName("spiffe://vertx.auth/unitTest/mtls")
-          .buildSelfSigned()
-          .certificate();
+        X509Certificate certificate = new CertificateBuilder()
+                                      .subject("CN=Vertx Auth, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
+                                      .addSanUriName("spiffe://vertx.auth/unitTest/mtls")
+                                      .buildSelfSigned()
+                                      .certificate();
         assertThat(identityExtractor.validIdentities(new CertificateCredentials(certificate)))
         .contains("spiffe://vertx.auth/unitTest/mtls");
     }
@@ -63,13 +61,11 @@ public class SpiffeIdentityExtractorTest
     @Test
     public void testNonSpiffeIdentity() throws Exception
     {
-        X509Certificate certificate
-        = CertificateBuilder
-          .builder()
-          .subject("CN=Vertx Auth, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
-          .addSanUriName("randomuri://extracted/from/certificate")
-          .buildSelfSigned()
-          .certificate();
+        X509Certificate certificate = new CertificateBuilder()
+                                      .subject("CN=Vertx Auth, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
+                                      .addSanUriName("randomuri://extracted/from/certificate")
+                                      .buildSelfSigned()
+                                      .certificate();
         assertThatThrownBy(() -> identityExtractor.validIdentities(new CertificateCredentials(certificate)))
         .isInstanceOf(CredentialValidationException.class)
         .hasMessage("Unable to extract SPIFFE identity from certificate");
@@ -78,12 +74,10 @@ public class SpiffeIdentityExtractorTest
     @Test
     public void testInvalidCertificate() throws Exception
     {
-        X509Certificate certificate
-        = CertificateBuilder
-          .builder()
-          .subject("CN=Vertx Auth, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
-          .buildSelfSigned()
-          .certificate();
+        X509Certificate certificate = new CertificateBuilder()
+                                      .subject("CN=Vertx Auth, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
+                                      .buildSelfSigned()
+                                      .certificate();
         assertThatThrownBy(() -> identityExtractor.validIdentities(new CertificateCredentials(certificate)))
         .isInstanceOf(CredentialValidationException.class)
         .hasMessage("Error reading SAN of certificate");
@@ -92,13 +86,11 @@ public class SpiffeIdentityExtractorTest
     @Test
     public void testNonTrustedDomain() throws Exception
     {
-        X509Certificate certificate
-        = CertificateBuilder
-          .builder()
-          .subject("CN=Vertx Auth, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
-          .addSanUriName("spiffe://nontrusted/unitTest/mtls")
-          .buildSelfSigned()
-          .certificate();
+        X509Certificate certificate = new CertificateBuilder()
+                                      .subject("CN=Vertx Auth, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
+                                      .addSanUriName("spiffe://nontrusted/unitTest/mtls")
+                                      .buildSelfSigned()
+                                      .certificate();
         SpiffeIdentityExtractor identityExtractorWithTrust = new SpiffeIdentityExtractor("vertx.auth");
         assertThatThrownBy(() -> identityExtractorWithTrust.validIdentities(new CertificateCredentials(certificate)))
         .isInstanceOf(CredentialValidationException.class)

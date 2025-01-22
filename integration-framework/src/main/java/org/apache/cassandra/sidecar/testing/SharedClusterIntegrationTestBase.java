@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import com.google.common.util.concurrent.Uninterruptibles;
-import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -76,6 +75,7 @@ import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.common.server.JmxClient;
 import org.apache.cassandra.sidecar.common.server.dns.DnsResolver;
 import org.apache.cassandra.sidecar.common.server.utils.DriverUtils;
+import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 import org.apache.cassandra.sidecar.common.server.utils.SidecarVersionProvider;
 import org.apache.cassandra.sidecar.common.server.utils.ThrowableUtils;
 import org.apache.cassandra.sidecar.config.JmxConfiguration;
@@ -513,6 +513,9 @@ public abstract class SharedClusterIntegrationTestBase
         return builder.build();
     }
 
+    /**
+     * Test module that configures the instances based on the cluster instances
+     */
     public static class IntegrationTestModule extends AbstractModule
     {
         private static final Logger LOGGER = LoggerFactory.getLogger(IntegrationTestModule.class);

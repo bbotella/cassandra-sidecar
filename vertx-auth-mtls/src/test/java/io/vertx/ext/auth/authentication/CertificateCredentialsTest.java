@@ -26,7 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.ext.auth.mtls.utils.CertificateBuilder;
+import org.apache.cassandra.testing.utils.tls.CertificateBuilder;
 
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -79,10 +79,9 @@ public class CertificateCredentialsTest
     {
         try
         {
-            X509Certificate certificate = CertificateBuilder.builder()
-                                                            .subject(issuerName)
-                                                            .buildSelfSigned()
-                                                            .certificate();
+            X509Certificate certificate = new CertificateBuilder().subject(issuerName)
+                                                                  .buildSelfSigned()
+                                                                  .certificate();
             return new CertificateCredentials(Collections.singletonList(certificate));
         }
         catch (Exception e)

@@ -48,7 +48,6 @@ test {
 }
 
 dependencies {
-    // These dependencies (sidecar + dtest jars) must be built by running `scripts/build-dependencies.sh`
     implementation(project(":adapters:base"))
     implementation(project(":adapters:cassandra41"))
 
@@ -87,16 +86,15 @@ dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter')
     testImplementation("org.assertj:assertj-core:${assertjCoreVersion}")
 
+    compileOnly(group: 'com.intellij', name: 'annotations', version: '12.0')
+
     // Exposed to the test project
     api("io.vertx:vertx-junit5:${project.vertxVersion}")
     // The server itself
-    api(project(path: ":server"))
-//    api(group: "org.apache.cassandra", name: "cassandra-sidecar", version: "${sidecarVersion}") {
-//        exclude(group: 'org.apache.logging.log4j')
-//        exclude(group: 'org.slf4j')
-//        exclude(group: 'ch.qos.logback')
-//    }
-
+    api(project(path: ":server")) {
+        exclude(group: 'org.apache.logging.log4j')
+        exclude(group: 'org.slf4j')
+        exclude(group: 'ch.qos.logback')
+    }
     api(project(path: ":server-common"))
-//    api(group: 'org.apache.cassandra.sidecar', name: 'server-common', version: "${sidecarVersion}")
 }

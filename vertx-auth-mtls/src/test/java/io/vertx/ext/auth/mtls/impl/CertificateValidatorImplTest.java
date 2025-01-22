@@ -23,14 +23,13 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-import java.util.Date;
 
 import org.junit.jupiter.api.Test;
 
 import io.vertx.ext.auth.authentication.CertificateCredentials;
 import io.vertx.ext.auth.authentication.CredentialValidationException;
 import io.vertx.ext.auth.mtls.CertificateValidator;
-import io.vertx.ext.auth.mtls.utils.CertificateBuilder;
+import org.apache.cassandra.testing.utils.tls.CertificateBuilder;
 
 import static io.vertx.ext.auth.authentication.CertificateCredentialsTest.createTestCredentials;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -94,11 +93,10 @@ public class CertificateValidatorImplTest
     public void testExpiredCertificate() throws Exception
     {
         X509Certificate certificate
-        = CertificateBuilder.builder()
-                            .notAfter(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)))
-                            .subject("CN=Vertx Auth, OU=ssl_test, O=Vertx, L=Unknown, ST=Unknown, C=US")
-                            .buildSelfSigned()
-                            .certificate();
+        = new CertificateBuilder().notAfter(Instant.now().minus(1, ChronoUnit.DAYS))
+                                  .subject("CN=Vertx Auth, OU=ssl_test, O=Vertx, L=Unknown, ST=Unknown, C=US")
+                                  .buildSelfSigned()
+                                  .certificate();
         CertificateCredentials credentials = new CertificateCredentials(Collections.singletonList(certificate));
         assertThatThrownBy(() -> certificateValidator.verifyCertificate(credentials))
         .isInstanceOf(CredentialValidationException.class)

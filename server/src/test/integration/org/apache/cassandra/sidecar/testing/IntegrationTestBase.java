@@ -27,7 +27,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -57,8 +56,6 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JksOptions;
-import io.vertx.ext.auth.mtls.utils.CertificateBuilder;
-import io.vertx.ext.auth.mtls.utils.CertificateBundle;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.junit5.VertxTestContext;
@@ -76,6 +73,8 @@ import org.apache.cassandra.sidecar.server.Server;
 import org.apache.cassandra.sidecar.server.SidecarServerEvents;
 import org.apache.cassandra.testing.AbstractCassandraTestContext;
 import org.apache.cassandra.testing.AuthMode;
+import org.apache.cassandra.testing.utils.tls.CertificateBuilder;
+import org.apache.cassandra.testing.utils.tls.CertificateBundle;
 
 import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CASSANDRA_CQL_READY;
 import static org.apache.cassandra.sidecar.testing.IntegrationTestModule.ADMIN_IDENTITY;
@@ -465,6 +464,28 @@ public abstract class IntegrationTestBase
                          .forEach(instanceMetadata -> instanceMetadata.delegate().healthCheck());
     }
 
+    protected CertificateBundle ca() throws Exception
+    {
+        return new CertificateBuilder()
+               .subject("CN=Apache cassandra Root CA, OU=Certification Authority, O=Unknown, C=Unknown")
+               .isCertificateAuthority(true)
+               .buildSelfSigned();
+    }
+    protected Path truststorePath() throws Exception
+    {
+        return ca.toTempKeyStorePath(tempDir.toPath(), truststorePassword.toCharArray(), truststorePassword.toCharArray());
+    }
+
+    protected Path serverKeystorePath() throws Exception
+    {
+        CertificateBundle keystore = new CertificateBuilder()
+                                     .subject("CN=Apache Cassandra, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
+                                     .addSanDnsName("localhost")
+                                     .addSanIpAddress("127.0.0.1")
+                                     .buildIssuedBy(ca);
+        return keystore.toTempKeyStorePath(tempDir.toPath(), serverKeystorePassword.toCharArray(), serverKeystorePassword.toCharArray());
+    }
+
     protected Path clientKeystorePath(String identity) throws Exception
     {
         return clientKeystorePath(identity, false);
@@ -472,15 +493,14 @@ public abstract class IntegrationTestBase
 
     protected Path clientKeystorePath(String identity, boolean expired) throws Exception
     {
-        CertificateBuilder builder
-        = CertificateBuilder.builder()
+        CertificateBuilder builder = new CertificateBuilder()
                             .subject("CN=Apache Cassandra, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
                             .addSanDnsName("localhost")
                             .addSanIpAddress("127.0.0.1")
                             .addSanUriName(identity);
         if (expired)
         {
-            builder.notAfter(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)));
+            builder.notAfter(Instant.now().minus(1, ChronoUnit.DAYS));
         }
         CertificateBundle clientKeystore = builder.buildIssuedBy(ca);
         return clientKeystore.toTempKeyStorePath(tempDir.toPath(), clientKeystorePassword.toCharArray(), clientKeystorePassword.toCharArray());

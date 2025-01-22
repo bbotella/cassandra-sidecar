@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.cassandra.sidecar;
+package org.apache.cassandra.testing;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +25,7 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import io.vertx.core.Future;
 
 /**
- * Collection of methods to assit while asserting conditions in tests
+ * Collection of methods to assist while asserting conditions in tests
  */
 public class AssertionUtils
 {
@@ -37,8 +37,9 @@ public class AssertionUtils
     /**
      * Run the assertions in a loop until the first success within the timeout.
      * Otherwise, it fails with the last assertion failure.
+     *
      * @param timeoutSeconds timeout
-     * @param assertions assertions
+     * @param assertions     assertions
      */
     public static void loopAssert(int timeoutSeconds, Runnable assertions)
     {
@@ -48,8 +49,9 @@ public class AssertionUtils
     /**
      * Run the assertions in a loop until the first success within the timeout.
      * Otherwise, it fails with the last assertion failure.
+     *
      * @param timeoutSeconds timeout
-     * @param assertions assertions
+     * @param assertions     assertions
      */
     public static void loopAssert(int timeoutSeconds, int delayMillis, Runnable assertions)
     {

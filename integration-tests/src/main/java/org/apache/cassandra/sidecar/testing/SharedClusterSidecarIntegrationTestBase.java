@@ -1,54 +1,38 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.cassandra.sidecar.testing;
 
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.net.JksOptions;
-import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 
 import static io.vertx.core.Vertx.vertx;
 import static org.apache.cassandra.sidecar.testing.MtlsTestHelper.EMPTY_PASSWORD_STRING;
 
-public class SharedClusterSidecarIntegrationTestBase extends SharedClusterIntegrationTestBase
+/**
+ * Builds on top of {@link SharedClusterIntegrationTestBase} and adds functionality to interact
+ * with the Sidecar process with a trusted client
+ */
+public abstract class SharedClusterSidecarIntegrationTestBase extends SharedClusterIntegrationTestBase
 {
-
-    public static final String SIDECAR_HOST = "localhost";
-
     private WebClient trustedClient;
     private WebClient noAuthClient;
-
-    @Override
-    protected void initializeSchemaForTest()
-    {
-        // Do nothing
-    }
-
-    /**
-     * Returns the request with the configured trusted client to the provided URI.
-     * Defaults to GET requests for {@code 127.0.0.1}.
-     *
-     * @param requestURI the URI for the GET request
-     * @return the request for sidecar using the trusted client
-     */
-    protected HttpRequest<Buffer> sidecarRequestWithTrustedClient(String requestURI, int port)
-    {
-        return sidecarRequestWithTrustedClient(HttpMethod.GET, SIDECAR_HOST, requestURI, port);
-    }
-
-    /**
-     * Returns the request with the configured trusted client to the provided host and URI.
-     *
-     * @param method     the HTTP method
-     * @param host       the sidecar host
-     * @param requestURI the URI for the GET request
-     * @return the request for sidecar using the trusted client
-     */
-    protected HttpRequest<Buffer> sidecarRequestWithTrustedClient(HttpMethod method, String host, String requestURI, int port)
-    {
-        WebClient client = trustedClient();
-        return client.request(method, port, host, requestURI);
-    }
 
     /**
      * @return a client that configures the truststore and the client keystore
@@ -61,13 +45,13 @@ public class SharedClusterSidecarIntegrationTestBase extends SharedClusterIntegr
         }
 
         WebClientOptions clientOptions = new WebClientOptions()
-                .setKeyStoreOptions(new JksOptions()
-                        .setPath(mtlsTestHelper.clientKeyStorePath.toString())
-                        .setPassword(EMPTY_PASSWORD_STRING))
-                .setTrustStoreOptions(new JksOptions()
-                        .setPath(mtlsTestHelper.trustStorePath())
-                        .setPassword(EMPTY_PASSWORD_STRING))
-                .setSsl(true);
+                                         .setKeyStoreOptions(new JksOptions()
+                                                             .setPath(mtlsTestHelper.clientKeyStorePath.toString())
+                                                             .setPassword(EMPTY_PASSWORD_STRING))
+                                         .setTrustStoreOptions(new JksOptions()
+                                                               .setPath(mtlsTestHelper.trustStorePath())
+                                                               .setPassword(EMPTY_PASSWORD_STRING))
+                                         .setSsl(true);
         trustedClient = WebClient.create(vertx(), clientOptions);
         return trustedClient;
     }
@@ -83,10 +67,10 @@ public class SharedClusterSidecarIntegrationTestBase extends SharedClusterIntegr
         }
 
         WebClientOptions clientOptions = new WebClientOptions()
-                .setTrustStoreOptions(new JksOptions()
-                        .setPath(mtlsTestHelper.trustStorePath())
-                        .setPassword(mtlsTestHelper.trustStorePassword()))
-                .setSsl(true);
+                                         .setTrustStoreOptions(new JksOptions()
+                                                               .setPath(mtlsTestHelper.trustStorePath())
+                                                               .setPassword(mtlsTestHelper.trustStorePassword()))
+                                         .setSsl(true);
         noAuthClient = WebClient.create(vertx(), clientOptions);
         return noAuthClient;
     }

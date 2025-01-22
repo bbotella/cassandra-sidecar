@@ -24,7 +24,6 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -39,9 +38,9 @@ import io.vertx.ext.auth.authentication.TokenCredentials;
 import io.vertx.ext.auth.mtls.CertificateIdentityExtractor;
 import io.vertx.ext.auth.mtls.CertificateValidator;
 import io.vertx.ext.auth.mtls.MutualTlsAuthentication;
-import io.vertx.ext.auth.mtls.utils.CertificateBuilder;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.cassandra.testing.utils.tls.CertificateBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -111,13 +110,11 @@ public class MutualTlsAuthenticationProviderTest
 
         mTlsAuth = new MutualTlsAuthenticationImpl(vertx, certificateValidator, identityExtracter);
 
-        X509Certificate certificate
-        = CertificateBuilder
-          .builder()
-          .subject("CN=Vertx Auth, OU=ssl_test, O=oss, L=Unknown, ST=Unknown, C=US")
-          .addSanUriName("spiffe://vertx.auth/unitTest/mtls")
-          .buildSelfSigned()
-          .certificate();
+        X509Certificate certificate = new CertificateBuilder()
+                                      .subject("CN=Vertx Auth, OU=ssl_test, O=oss, L=Unknown, ST=Unknown, C=US")
+                                      .addSanUriName("spiffe://vertx.auth/unitTest/mtls")
+                                      .buildSelfSigned()
+                                      .certificate();
         List<Certificate> certChain = Collections.singletonList(certificate);
         CertificateCredentials credentials = new CertificateCredentials(certChain);
 
@@ -135,15 +132,13 @@ public class MutualTlsAuthenticationProviderTest
 
         mTlsAuth = new MutualTlsAuthenticationImpl(vertx, certificateValidator, identityExtracter);
 
-        Date yesterday = Date.from(Instant.now().minus(1, ChronoUnit.DAYS));
-        X509Certificate certificate
-        = CertificateBuilder
-          .builder()
-          .subject("CN=Vertx Auth, OU=ssl_test, O=oss, L=Unknown, ST=Unknown, C=US")
-          .addSanUriName("spiffe://vertx.auth/unitTest/mtls")
-          .notAfter(yesterday)
-          .buildSelfSigned()
-          .certificate();
+        Instant yesterday = Instant.now().minus(1, ChronoUnit.DAYS);
+        X509Certificate certificate = new CertificateBuilder()
+                                      .subject("CN=Vertx Auth, OU=ssl_test, O=oss, L=Unknown, ST=Unknown, C=US")
+                                      .addSanUriName("spiffe://vertx.auth/unitTest/mtls")
+                                      .notAfter(yesterday)
+                                      .buildSelfSigned()
+                                      .certificate();
         List<Certificate> certChain = Collections.singletonList(certificate);
         CertificateCredentials credentials = new CertificateCredentials(certChain);
 
@@ -206,13 +201,11 @@ public class MutualTlsAuthenticationProviderTest
 
         mTlsAuth = new MutualTlsAuthenticationImpl(vertx, certificateValidator, identityExtracter);
 
-        X509Certificate certificate
-        = CertificateBuilder
-          .builder()
-          .subject("CN=Vertx Auth, OU=ssl_test, O=oss, L=Unknown, ST=Unknown, C=US")
-          .addSanUriName("")
-          .buildSelfSigned()
-          .certificate();
+        X509Certificate certificate = new CertificateBuilder()
+                                      .subject("CN=Vertx Auth, OU=ssl_test, O=oss, L=Unknown, ST=Unknown, C=US")
+                                      .addSanUriName("")
+                                      .buildSelfSigned()
+                                      .certificate();
         List<Certificate> certChain = Collections.singletonList(certificate);
         CertificateCredentials credentials = new CertificateCredentials(certChain);
 
@@ -234,13 +227,11 @@ public class MutualTlsAuthenticationProviderTest
 
         mTlsAuth = new MutualTlsAuthenticationImpl(vertx, certificateValidator, identityExtracter);
 
-        X509Certificate certificate
-        = CertificateBuilder
-          .builder()
-          .subject("CN=Vertx Auth, OU=ssl_test, O=oss, L=Unknown, ST=Unknown, C=US")
-          .addSanUriName("badIdentity")
-          .buildSelfSigned()
-          .certificate();
+        X509Certificate certificate = new CertificateBuilder()
+                                      .subject("CN=Vertx Auth, OU=ssl_test, O=oss, L=Unknown, ST=Unknown, C=US")
+                                      .addSanUriName("badIdentity")
+                                      .buildSelfSigned()
+                                      .certificate();
         List<Certificate> certChain = Collections.singletonList(certificate);
         CertificateCredentials credentials = new CertificateCredentials(certChain);
 

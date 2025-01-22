@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +47,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.net.JksOptions;
-import io.vertx.ext.auth.mtls.utils.CertificateBuilder;
-import io.vertx.ext.auth.mtls.utils.CertificateBundle;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.junit5.VertxExtension;
@@ -68,6 +65,8 @@ import org.apache.cassandra.sidecar.config.yaml.SslConfigurationImpl;
 import org.apache.cassandra.sidecar.db.SystemAuthDatabaseAccessor;
 import org.apache.cassandra.sidecar.server.MainModule;
 import org.apache.cassandra.sidecar.server.Server;
+import org.apache.cassandra.testing.utils.tls.CertificateBuilder;
+import org.apache.cassandra.testing.utils.tls.CertificateBundle;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -206,23 +205,21 @@ class MutualTLSAuthenticationHandlerTest
 
     TestMTLSModule testModule() throws Exception
     {
-        ca
-        = CertificateBuilder.builder()
-                            .subject("CN=Apache cassandra Root CA, OU=Certification Authority, O=Unknown, C=Unknown")
-                            .addSanIpAddress("127.0.0.1")
-                            .addSanDnsName("localhost")
-                            .isCertificateAuthority(true)
-                            .buildSelfSigned();
+        ca = new CertificateBuilder()
+             .subject("CN=Apache cassandra Root CA, OU=Certification Authority, O=Unknown, C=Unknown")
+             .addSanIpAddress("127.0.0.1")
+             .addSanDnsName("localhost")
+             .isCertificateAuthority(true)
+             .buildSelfSigned();
 
         truststorePath
         = ca.toTempKeyStorePath(tempDir.toPath(), "password".toCharArray(), "password".toCharArray());
 
-        CertificateBundle keystore
-        = CertificateBuilder.builder()
-                            .subject("CN=Apache Cassandra, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
-                            .addSanDnsName("localhost")
-                            .addSanIpAddress("127.0.0.1")
-                            .buildIssuedBy(ca);
+        CertificateBundle keystore = new CertificateBuilder()
+                                     .subject("CN=Apache Cassandra, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
+                                     .addSanDnsName("localhost")
+                                     .addSanIpAddress("127.0.0.1")
+                                     .buildIssuedBy(ca);
 
         Path serverKeystorePath = keystore.toTempKeyStorePath(tempDir.toPath(),
                                                               "password".toCharArray(),
@@ -261,7 +258,7 @@ class MutualTLSAuthenticationHandlerTest
                                   .addSanUriName(identity);
         if (expired)
         {
-            builder.notAfter(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)));
+            builder.notAfter(Instant.now().minus(1, ChronoUnit.DAYS));
         }
         CertificateBundle ssc = builder.buildIssuedBy(ca);
         return ssc.toTempKeyStorePath(tempDir.toPath(), "password".toCharArray(), "password".toCharArray());
