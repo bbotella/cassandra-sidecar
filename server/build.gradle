@@ -241,7 +241,7 @@ def integrationTest = task("integrationTest")
             jvmArgs(JDK11_OPTIONS)
             println("JVM arguments for $project.name are $allJvmArgs")
         }
-        systemProperty "cassandra.test.dtest_jar_path", rootProject.file("dtest-jars")
+        systemProperty "cassandra.test.dtest_jar_path", dependencyLocation
         // Disable direct memory allocator as it doesn't release properly
         systemProperty "cassandra.netty_use_heap_allocator", "true"
         systemProperty "vertxweb.environment", "dev"

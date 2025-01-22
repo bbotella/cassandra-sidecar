@@ -55,6 +55,8 @@ plugins {
     id 'jacoco'
 }
 
+ext.dependencyLocation = (System.getenv("CASSANDRA_DEP_DIR") ?: "${rootDir}/dtest-jars") + "/"
+
 // Force checkstyle, rat, and spotBugs to run before test tasks for faster feedback
 def codeCheckTasks = task("codeCheckTasks")
 
@@ -89,9 +91,6 @@ allprojects {
         shouldRunAfter(tasks.withType(RatTask))
         shouldRunAfter(tasks.withType(SpotBugsTask))
     }
-
-    ext.dependencyLocation = (System.getenv("CASSANDRA_DEP_DIR") ?: "${rootDir}/dtest-jars") + "/"
-
 }
 
 group 'org.apache.cassandra'
