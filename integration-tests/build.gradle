@@ -150,4 +150,5 @@ java {
     }
 }
 
+compileJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
 compileTestJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
