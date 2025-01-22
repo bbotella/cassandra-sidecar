@@ -145,7 +145,7 @@ dependencies {
     testImplementation("io.vertx:vertx-junit5:${project.vertxVersion}")
     testImplementation(testFixtures(project(":client-common")))
     testImplementation(testFixtures(project(":server-common")))
-    testImplementation(project(":integration-framework"))
+    testImplementation(testFixtures(project(":test-common")))
 
     implementation(project(":server-common"))
     implementation(project(":adapters:base"))
@@ -163,7 +163,7 @@ dependencies {
     testFixturesImplementation("io.vertx:vertx-web:${project.vertxVersion}") {
         exclude group: 'junit', module: 'junit'
     }
-    integrationTestImplementation(project(":integration-framework"))
+    integrationTestImplementation(testFixtures(project(":test-common")))
     integrationTestImplementation(group: 'org.apache.cassandra', name: "${dtestDependencyName}", version: "${dtestVersion}")
     integrationTestImplementation(group: 'org.apache.cassandra', name: 'dtest-api', version: "${dtestApiVersion}")
     integrationTestImplementation "org.junit.jupiter:junit-jupiter-api:${project.junitVersion}"

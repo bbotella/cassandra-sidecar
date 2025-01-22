@@ -42,7 +42,7 @@ import org.apache.cassandra.sidecar.config.yaml.ServiceConfigurationImpl;
 import org.apache.cassandra.sidecar.coordination.ClusterLease;
 import org.apache.cassandra.sidecar.coordination.ExecuteOnClusterLeaseholderOnly;
 
-import static org.apache.cassandra.testing.AssertionUtils.loopAssert;
+import static org.apache.cassandra.testing.utils.AssertionUtils.loopAssert;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

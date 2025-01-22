@@ -49,7 +49,7 @@ import org.apache.cassandra.sidecar.tasks.ScheduleDecision;
 import org.mockito.Mockito;
 
 import static org.apache.cassandra.sidecar.utils.TestMetricUtils.registry;
-import static org.apache.cassandra.testing.AssertionUtils.loopAssert;
+import static org.apache.cassandra.testing.utils.AssertionUtils.loopAssert;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;

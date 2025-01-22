@@ -26,7 +26,7 @@ import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import org.apache.cassandra.sidecar.common.response.GossipInfoResponse;
 import org.apache.cassandra.sidecar.testing.SharedClusterSidecarIntegrationTestBase;
 
-import static org.apache.cassandra.testing.AssertionUtils.getBlocking;
+import static org.apache.cassandra.testing.utils.AssertionUtils.getBlocking;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

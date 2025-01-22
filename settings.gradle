@@ -31,3 +31,4 @@ include "vertx-client-shaded"
 include "vertx-auth-mtls"
 include "integration-framework"
 include 'integration-tests'
+include 'test-common'

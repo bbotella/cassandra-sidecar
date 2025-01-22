@@ -41,7 +41,7 @@ import org.apache.cassandra.testing.CassandraIntegrationTest;
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.FAILED;
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.RUNNING;
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.SUCCEEDED;
-import static org.apache.cassandra.testing.AssertionUtils.loopAssert;
+import static org.apache.cassandra.testing.utils.AssertionUtils.loopAssert;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 /**
