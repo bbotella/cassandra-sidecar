@@ -149,3 +149,5 @@ java {
         usingSourceSet(sourceSets.test)
     }
 }
+
+compileTestJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
