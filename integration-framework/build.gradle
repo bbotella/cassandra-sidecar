@@ -97,5 +97,5 @@ dependencies {
     api(project(path: ":server-common"))
 }
 
-compileJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
+compileTestJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
 javadoc.onlyIf { "true" != System.getenv("skipIntegrationTest") }
