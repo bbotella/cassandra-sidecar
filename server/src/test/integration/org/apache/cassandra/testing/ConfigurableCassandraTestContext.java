@@ -21,8 +21,8 @@ package org.apache.cassandra.testing;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
-import io.vertx.ext.auth.mtls.utils.CertificateBundle;
 import org.apache.cassandra.distributed.UpgradeableCluster;
+import org.apache.cassandra.testing.utils.tls.CertificateBundle;
 
 /**
  * A Cassandra Test Context implementation that allows advanced cluster configuration before cluster creation

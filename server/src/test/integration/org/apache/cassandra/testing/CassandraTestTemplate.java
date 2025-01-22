@@ -43,14 +43,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.vdurmont.semver4j.Semver;
-import io.vertx.ext.auth.mtls.utils.CertificateBuilder;
-import io.vertx.ext.auth.mtls.utils.CertificateBundle;
 import org.apache.cassandra.distributed.UpgradeableCluster;
 import org.apache.cassandra.distributed.api.Feature;
 import org.apache.cassandra.distributed.api.TokenSupplier;
 import org.apache.cassandra.distributed.impl.AbstractCluster;
 import org.apache.cassandra.distributed.shared.Versions;
 import org.apache.cassandra.sidecar.common.utils.Preconditions;
+import org.apache.cassandra.testing.utils.tls.CertificateBuilder;
+import org.apache.cassandra.testing.utils.tls.CertificateBundle;
 import org.apache.cassandra.utils.Throwables;
 import software.amazon.awssdk.utils.ImmutableMap;
 
@@ -186,7 +186,7 @@ public class CassandraTestTemplate implements TestTemplateInvocationContextProvi
                 Path serverKeystorePath = serverKeystorePath(ca, tempDirPath);
                 Path truststorePath = truststorePath(ca, tempDirPath);
 
-                switch(annotation.authMode())
+                switch (annotation.authMode())
                 {
                     case PASSWORD:
                     {
@@ -371,10 +371,10 @@ public class CassandraTestTemplate implements TestTemplateInvocationContextProvi
 
     private CertificateBundle ca() throws Exception
     {
-        return CertificateBuilder.builder()
-                                 .subject("CN=Apache cassandra Root CA, OU=Certification Authority, O=Unknown, C=Unknown")
-                                 .isCertificateAuthority(true)
-                                 .buildSelfSigned();
+        return new CertificateBuilder()
+                .subject("CN=Apache cassandra Root CA, OU=Certification Authority, O=Unknown, C=Unknown")
+                .isCertificateAuthority(true)
+                .buildSelfSigned();
     }
 
     private Path truststorePath(CertificateBundle ca, Path path) throws Exception
@@ -385,11 +385,11 @@ public class CassandraTestTemplate implements TestTemplateInvocationContextProvi
     private Path serverKeystorePath(CertificateBundle ca, Path path) throws Exception
     {
         CertificateBundle keystore
-        = CertificateBuilder.builder()
-                            .subject("CN=Apache Cassandra, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
-                            .addSanDnsName("localhost")
-                            .addSanIpAddress("127.0.0.1")
-                            .buildIssuedBy(ca);
+        = new CertificateBuilder()
+            .subject("CN=Apache Cassandra, OU=ssl_test, O=Unknown, L=Unknown, ST=Unknown, C=Unknown")
+            .addSanDnsName("localhost")
+            .addSanIpAddress("127.0.0.1")
+            .buildIssuedBy(ca);
         return keystore.toTempKeyStorePath(path, serverKeystorePassword.toCharArray(), serverKeystorePassword.toCharArray());
     }
 

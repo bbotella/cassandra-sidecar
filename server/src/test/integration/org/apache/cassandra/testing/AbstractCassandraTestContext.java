@@ -26,9 +26,9 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.vertx.ext.auth.mtls.utils.CertificateBundle;
 import org.apache.cassandra.distributed.UpgradeableCluster;
 import org.apache.cassandra.distributed.shared.ShutdownException;
+import org.apache.cassandra.testing.utils.tls.CertificateBundle;
 
 /**
  * The base class for all CassandraTestContext implementations

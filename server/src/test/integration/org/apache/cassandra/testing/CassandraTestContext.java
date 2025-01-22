@@ -20,8 +20,8 @@ package org.apache.cassandra.testing;
 
 import java.nio.file.Path;
 
-import io.vertx.ext.auth.mtls.utils.CertificateBundle;
 import org.apache.cassandra.distributed.UpgradeableCluster;
+import org.apache.cassandra.testing.utils.tls.CertificateBundle;
 
 /**
  * Passed to integration tests.
