@@ -176,3 +176,4 @@ check.dependsOn integrationTest
 
 compileJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
 compileTestJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
+compileIntegrationTestJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
