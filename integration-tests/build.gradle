@@ -38,6 +38,20 @@ publishing {
     }
 }
 
+sourceSets {
+    integrationTest {
+        java {
+                compileClasspath += main.output + test.output
+                runtimeClasspath += main.output + test.output
+                srcDir file('src/test')
+            }
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+}
+
 def integrationMaxHeapSize = System.getenv("INTEGRATION_MAX_HEAP_SIZE") ?: "3000M"
 println("Using ${integrationMaxHeapSize} maxHeapSize")
 
@@ -63,92 +77,102 @@ configurations {
 }
 
 dependencies {
-    implementation("io.vertx:vertx-web:${project.vertxVersion}") {
+    testImplementation("io.vertx:vertx-web:${project.vertxVersion}") {
         exclude group: 'junit', module: 'junit'
     }
-    implementation("io.vertx:vertx-dropwizard-metrics:${project.vertxVersion}")
-    implementation("io.vertx:vertx-web-client:${project.vertxVersion}")
+    testImplementation("io.vertx:vertx-dropwizard-metrics:${project.vertxVersion}")
+    testImplementation("io.vertx:vertx-web-client:${project.vertxVersion}")
 
-    testImplementation(group: 'net.java.dev.jna', name: 'jna', version: '5.9.0')
+    integrationTestImplementation(group: 'net.java.dev.jna', name: 'jna', version: '5.9.0')
     testImplementation(project(path: ":integration-framework"))
     testImplementation('com.google.inject:guice:4.2.2')
     testRuntimeOnly 'com.fasterxml.jackson.core:jackson-annotations:2.14.2'
 }
 
-test {
-    // Because system properties aren't passed from the command line through to tests, we need to specifically
-    // set them again here.
-    systemProperty "cassandra.test.dtest_jar_path", dependencyLocation
-    systemProperty "cassandra.sidecar.versions_to_test",
-            System.getProperty("cassandra.sidecar.versions_to_test", "4.1")
-    systemProperty "SKIP_STARTUP_VALIDATIONS", "true"
-    systemProperty "logback.configurationFile", "src/test/resources/logback-test.xml"
-    systemProperty "cassandra.integration.sidecar.test.enable_mtls", integrationEnableMtls
-    minHeapSize = '1g'
-    maxHeapSize = integrationMaxHeapSize
-    maxParallelForks = integrationMaxParallelForks
-    forkEvery = 1  // Enables different end-to-end test classes use Spark contexts with different configurations
+def JDK11_OPTIONS = ['-XX:-MaxFDLimit',
+                     '-Djdk.attach.allowAttachSelf=true',
+                     '--add-exports', 'java.base/jdk.internal.misc=ALL-UNNAMED',
+                     '--add-exports', 'java.base/jdk.internal.ref=ALL-UNNAMED',
+                     '--add-exports', 'java.base/sun.nio.ch=ALL-UNNAMED',
+                     '--add-exports', 'java.management.rmi/com.sun.jmx.remote.internal.rmi=ALL-UNNAMED',
+                     '--add-exports', 'java.rmi/sun.rmi.registry=ALL-UNNAMED',
+                     '--add-exports', 'java.rmi/sun.rmi.server=ALL-UNNAMED',
+                     '--add-exports', 'java.sql/java.sql=ALL-UNNAMED',
+                     '--add-opens', 'java.base/java.lang.module=ALL-UNNAMED',
+                     '--add-opens', 'java.base/jdk.internal.loader=ALL-UNNAMED',
+                     '--add-opens', 'java.base/jdk.internal.ref=ALL-UNNAMED',
+                     '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
+                     '--add-opens', 'java.base/jdk.internal.math=ALL-UNNAMED',
+                     '--add-opens', 'java.base/jdk.internal.module=ALL-UNNAMED',
+                     '--add-opens', 'java.base/jdk.internal.util.jar=ALL-UNNAMED',
+                     '--add-opens', 'jdk.management/com.sun.management.internal=ALL-UNNAMED']
 
-    beforeTest { descriptor ->
-        // println("Setting test tags to ${descriptor.className}-${descriptor.name}")
-        systemProperty "cassandra.testtag", "${descriptor.className}"
-        systemProperty "suitename", "${descriptor.name}"
-    }
+def integrationTest = task("integrationTest")
 
-    testLogging {
-        events "passed", "skipped", "failed"
-    }
-
-    if (JavaVersion.current().isJava11Compatible()) {
-        def JDK11_OPTIONS = ['-Djdk.attach.allowAttachSelf=true',
-                             '--add-exports', 'java.base/jdk.internal.misc=ALL-UNNAMED',
-                             '--add-exports', 'java.base/jdk.internal.ref=ALL-UNNAMED',
-                             '--add-exports', 'java.base/sun.nio.ch=ALL-UNNAMED',
-                             '--add-exports', 'java.management.rmi/com.sun.jmx.remote.internal.rmi=ALL-UNNAMED',
-                             '--add-exports', 'java.rmi/sun.rmi.registry=ALL-UNNAMED',
-                             '--add-exports', 'java.rmi/sun.rmi.server=ALL-UNNAMED',
-                             '--add-exports', 'java.sql/java.sql=ALL-UNNAMED',
-                             '--add-opens', 'java.base/java.lang.module=ALL-UNNAMED',
-                             '--add-opens', 'java.base/jdk.internal.loader=ALL-UNNAMED',
-                             '--add-opens', 'java.base/jdk.internal.ref=ALL-UNNAMED',
-                             '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
-                             '--add-opens', 'java.base/jdk.internal.math=ALL-UNNAMED',
-                             '--add-opens', 'java.base/jdk.internal.module=ALL-UNNAMED',
-                             '--add-opens', 'java.base/jdk.internal.util.jar=ALL-UNNAMED',
-                             '--add-opens', 'jdk.management/com.sun.management.internal=ALL-UNNAMED']
-        jvmArgs(JDK11_OPTIONS)
-        println("JVM arguments for $project.name are $allJvmArgs")
-    }
-
-    // container test does not run on java 8
-    if ("true" == System.getenv("skipContainerTest") || JavaVersion.current().isJava8()) {
-        exclude("**/testcontainer/**")
-
-        filter {
-            setFailOnNoMatchingTests(false) // do not fail the build if no matching test found, since in CI we run individual test class
+['integrationTestLightWeight', 'integrationTestHeavyWeight'].each { name ->
+    tasks.register(name, Test) {
+        if (JavaVersion.current().isJava11Compatible()) {
+            jvmArgs(JDK11_OPTIONS)
+            println("JVM arguments for $project.name are $allJvmArgs")
         }
-    }
+        systemProperty "cassandra.test.dtest_jar_path", rootProject.file("dtest-jars")
+        // Disable direct memory allocator as it doesn't release properly
+        systemProperty "cassandra.netty_use_heap_allocator", "true"
+        systemProperty "vertxweb.environment", "dev"
+        // config logback for in-jvm clusters
+        systemProperty "logback.configurationFile", "src/test/resources/logback-in-jvm-dtest.xml"
+        // Because tests are forked, we need to explicitly pass the system property from the
+        // Gradle JVM down to the children
 
-    useJUnitPlatform()
-    def destDir = Paths.get(rootProject.rootDir.absolutePath, "build", "test-reports", "integration").toFile()
-    reports {
-        junitXml {
-            enabled true
-            destination = destDir
+        def versionsToTest = System.getProperty("cassandra.sidecar.versions_to_test", null)
+        if (versionsToTest != "" && versionsToTest != null) {
+            systemProperty "cassandra.sidecar.versions_to_test", versionsToTest
         }
-        html {
-            enabled true
-            destination = destDir
+        useJUnitPlatform() {
+            if (name.contains("HeavyWeight"))
+            {
+                includeTags "heavy"
+            }
+            else
+            {
+                excludeTags "heavy"
+            }
         }
+
+        reports {
+            junitXml.setRequired(true)
+            def destDir = Paths.get(rootProject.rootDir.absolutePath, "build", "test-results", "integration").toFile()
+            println("Destination directory for integration tests: ${destDir}")
+            junitXml.getOutputLocation().set(destDir)
+            html.setRequired(true)
+        }
+        testLogging {
+            events "started", "passed", "skipped", "failed"
+        }
+
+        testClassesDirs = sourceSets.integrationTest.output.classesDirs
+        classpath = sourceSets.integrationTest.runtimeClasspath
+        shouldRunAfter test
+        forkEvery = 1 // DTest framework tends to have issues without forkEvery test class
+        maxHeapSize = integrationMaxHeapSize
+        maxParallelForks = integrationMaxParallelForks
+
+        afterTest { descriptor, result ->
+            def totalTime = (result.endTime - result.startTime) / 1000.0
+            logger.lifecycle("--")
+            if (totalTime >= 60) { // log the tests that take 1 minute and more
+                logger.warn("$descriptor.displayName took $totalTime s")
+            }
+            else {
+                logger.info("$descriptor.displayName took $totalTime s")
+            }
+        }
+        finalizedBy jacocoTestReport // report is always generated after tests run
     }
 }
 
-java {
-    // Allows publishing the test jar
-    registerFeature("test") {
-        usingSourceSet(sourceSets.test)
-    }
-}
+integrationTest.dependsOn integrationTestLightWeight, integrationTestHeavyWeight
+check.dependsOn integrationTest
 
 compileJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
 compileTestJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }

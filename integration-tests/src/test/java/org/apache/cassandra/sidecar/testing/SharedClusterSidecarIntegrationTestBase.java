@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
-package testing;
+package org.apache.cassandra.sidecar.testing;
 
 import io.vertx.core.net.JksOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
-import org.apache.cassandra.sidecar.testing.SharedClusterIntegrationTestBase;
 
 import static io.vertx.core.Vertx.vertx;
 import static org.apache.cassandra.sidecar.testing.MtlsTestHelper.EMPTY_PASSWORD_STRING;
