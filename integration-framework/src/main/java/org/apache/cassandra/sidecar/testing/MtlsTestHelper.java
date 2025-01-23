@@ -100,6 +100,11 @@ public class MtlsTestHelper
         return truststorePath.toString();
     }
 
+    public String clientKeyStorePath()
+    {
+        return clientKeyStorePath.toString();
+    }
+
     public String trustStorePassword()
     {
         return EMPTY_PASSWORD_STRING;

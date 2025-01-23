@@ -16,11 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.cassandra.sidecar.testing;
+package testing;
 
 import io.vertx.core.net.JksOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
+import org.apache.cassandra.sidecar.testing.SharedClusterIntegrationTestBase;
 
 import static io.vertx.core.Vertx.vertx;
 import static org.apache.cassandra.sidecar.testing.MtlsTestHelper.EMPTY_PASSWORD_STRING;
@@ -46,7 +47,7 @@ public abstract class SharedClusterSidecarIntegrationTestBase extends SharedClus
 
         WebClientOptions clientOptions = new WebClientOptions()
                                          .setKeyStoreOptions(new JksOptions()
-                                                             .setPath(mtlsTestHelper.clientKeyStorePath.toString())
+                                                             .setPath(mtlsTestHelper.clientKeyStorePath())
                                                              .setPassword(EMPTY_PASSWORD_STRING))
                                          .setTrustStoreOptions(new JksOptions()
                                                                .setPath(mtlsTestHelper.trustStorePath())
