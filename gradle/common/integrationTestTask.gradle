@@ -1,0 +1,98 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import java.nio.file.Paths
+
+def integrationMaxHeapSize = System.getenv("INTEGRATION_MAX_HEAP_SIZE") ?: "3000M"
+println("Using ${integrationMaxHeapSize} maxHeapSize")
+
+def integrationMaxParallelForks = (System.getenv("INTEGRATION_MAX_PARALLEL_FORKS") ?: "4") as int
+println("Using ${integrationMaxParallelForks} maxParallelForks")
+
+def integrationEnableMtls = (System.getenv("INTEGRATION_MTLS_ENABLED") ?: "true") as boolean
+println("Using mTLS for tests? ${integrationEnableMtls}")
+
+apply from: "${project.rootDir}/gradle/common/java11Options.gradle"
+
+['integrationTestLightWeight', 'integrationTestHeavyWeight'].each { name ->
+    tasks.register(name, Test) {
+        if (JavaVersion.current().isJava11Compatible()) {
+            jvmArgs(project.ext.JDK11_OPTIONS)
+            println("JVM arguments for $project.name are $allJvmArgs")
+        }
+        systemProperty "cassandra.integration.sidecar.test.enable_mtls", integrationEnableMtls
+        systemProperty "cassandra.test.dtest_jar_path", dependencyLocation
+        // Disable direct memory allocator as it doesn't release properly
+        systemProperty "cassandra.netty_use_heap_allocator", "true"
+        systemProperty "vertxweb.environment", "dev"
+        // config logback for in-jvm clusters
+        systemProperty "logback.configurationFile", "src/test/resources/logback-in-jvm-dtest.xml"
+        // Because tests are forked, we need to explicitly pass the system property from the
+        // Gradle JVM down to the children
+
+        def versionsToTest = System.getProperty("cassandra.sidecar.versions_to_test", null)
+        if (versionsToTest != "" && versionsToTest != null) {
+            systemProperty "cassandra.sidecar.versions_to_test", versionsToTest
+        }
+        useJUnitPlatform() {
+            if (name.contains("HeavyWeight"))
+            {
+                includeTags "heavy"
+            }
+            else
+            {
+                excludeTags "heavy"
+            }
+        }
+
+        reports {
+            junitXml.setRequired(true)
+            def destDir = Paths.get(rootProject.rootDir.absolutePath, "build", "test-results", "integration").toFile()
+            println("Destination directory for integration tests: ${destDir}")
+            junitXml.getOutputLocation().set(destDir)
+            html.setRequired(true)
+        }
+        testLogging {
+            events "started", "passed", "skipped", "failed"
+        }
+        testClassesDirs = sourceSets.integrationTest.output.classesDirs
+        classpath = sourceSets.integrationTest.runtimeClasspath
+        shouldRunAfter test
+        forkEvery = 1 // DTest framework tends to have issues without forkEvery test class
+        maxHeapSize = integrationMaxHeapSize
+        maxParallelForks = integrationMaxParallelForks
+
+        afterTest { descriptor, result ->
+            def totalTime = (result.endTime - result.startTime) / 1000.0
+            logger.lifecycle("--")
+            if (totalTime >= 60) { // log the tests that take 1 minute and more
+                logger.warn("$descriptor.displayName took $totalTime s")
+            }
+            else {
+                logger.info("$descriptor.displayName took $totalTime s")
+            }
+        }
+        finalizedBy jacocoTestReport // report is always generated after tests run
+    }
+}
+
+task("integrationTest").dependsOn integrationTestLightWeight, integrationTestHeavyWeight
+
+compileIntegrationTestJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
+checkstyleIntegrationTest.onlyIf { "true" != System.getenv("skipIntegrationTest") }
+spotbugsIntegrationTest.onlyIf { "true" != System.getenv("skipIntegrationTest") }

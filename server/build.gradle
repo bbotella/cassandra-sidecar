@@ -36,12 +36,6 @@ sourceCompatibility = 1.8
 
 println("Using DTest jar: ${dtestVersion}")
 
-def integrationMaxHeapSize = System.getenv("INTEGRATION_MAX_HEAP_SIZE") ?: "8g"
-println("Using ${integrationMaxHeapSize} maxHeapSize")
-
-def integrationMaxParallelForks = (System.getenv("INTEGRATION_MAX_PARALLEL_FORKS") ?: "4") as int
-println("Using ${integrationMaxParallelForks} maxParallelForks")
-
 // add additional test source set
 sourceSets {
     integrationTest {
@@ -215,90 +209,12 @@ test {
     finalizedBy jacocoTestReport // report is always generated after tests run
 }
 
-def JDK11_OPTIONS = ['-XX:-MaxFDLimit',
-                     '-Djdk.attach.allowAttachSelf=true',
-                     '--add-exports', 'java.base/jdk.internal.misc=ALL-UNNAMED',
-                     '--add-exports', 'java.base/jdk.internal.ref=ALL-UNNAMED',
-                     '--add-exports', 'java.base/sun.nio.ch=ALL-UNNAMED',
-                     '--add-exports', 'java.management.rmi/com.sun.jmx.remote.internal.rmi=ALL-UNNAMED',
-                     '--add-exports', 'java.rmi/sun.rmi.registry=ALL-UNNAMED',
-                     '--add-exports', 'java.rmi/sun.rmi.server=ALL-UNNAMED',
-                     '--add-exports', 'java.sql/java.sql=ALL-UNNAMED',
-                     '--add-opens', 'java.base/java.lang.module=ALL-UNNAMED',
-                     '--add-opens', 'java.base/jdk.internal.loader=ALL-UNNAMED',
-                     '--add-opens', 'java.base/jdk.internal.ref=ALL-UNNAMED',
-                     '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
-                     '--add-opens', 'java.base/jdk.internal.math=ALL-UNNAMED',
-                     '--add-opens', 'java.base/jdk.internal.module=ALL-UNNAMED',
-                     '--add-opens', 'java.base/jdk.internal.util.jar=ALL-UNNAMED',
-                     '--add-opens', 'jdk.management/com.sun.management.internal=ALL-UNNAMED']
-
-def integrationTest = task("integrationTest")
-
-['integrationTestLightWeight', 'integrationTestHeavyWeight'].each { name ->
-    tasks.register(name, Test) {
-        if (JavaVersion.current().isJava11Compatible()) {
-            jvmArgs(JDK11_OPTIONS)
-            println("JVM arguments for $project.name are $allJvmArgs")
-        }
-        systemProperty "cassandra.test.dtest_jar_path", dependencyLocation
-        // Disable direct memory allocator as it doesn't release properly
-        systemProperty "cassandra.netty_use_heap_allocator", "true"
-        systemProperty "vertxweb.environment", "dev"
-        // config logback for in-jvm clusters
-        systemProperty "logback.configurationFile", "src/test/resources/logback-in-jvm-dtest.xml"
-        // Because tests are forked, we need to explicitly pass the system property from the
-        // Gradle JVM down to the children
-
-        def versionsToTest = System.getProperty("cassandra.sidecar.versions_to_test", null)
-        if (versionsToTest != "" && versionsToTest != null) {
-            systemProperty "cassandra.sidecar.versions_to_test", versionsToTest
-        }
-        useJUnitPlatform() {
-            if (name.contains("HeavyWeight"))
-            {
-                includeTags "heavy"
-            }
-            else
-            {
-                excludeTags "heavy"
-            }
-        }
-
-        reports {
-            junitXml.setRequired(true)
-            def destDir = Paths.get(rootProject.rootDir.absolutePath, "build", "test-results", "integration").toFile()
-            println("Destination directory for integration tests: ${destDir}")
-            junitXml.getOutputLocation().set(destDir)
-            html.setRequired(true)
-        }
-        testLogging {
-            events "started", "passed", "skipped", "failed"
-        }
-        testClassesDirs = sourceSets.integrationTest.output.classesDirs
-        classpath = sourceSets.integrationTest.runtimeClasspath
-        shouldRunAfter test
-        forkEvery = 1 // DTest framework tends to have issues without forkEvery test class
-        maxHeapSize = integrationMaxHeapSize
-        maxParallelForks = integrationMaxParallelForks
-
-        afterTest { descriptor, result ->
-            def totalTime = (result.endTime - result.startTime) / 1000.0
-            logger.lifecycle("--")
-            if (totalTime >= 60) { // log the tests that take 1 minute and more
-                logger.warn("$descriptor.displayName took $totalTime s")
-            }
-            else {
-                logger.info("$descriptor.displayName took $totalTime s")
-            }
-        }
-        finalizedBy jacocoTestReport // report is always generated after tests run
-    }
-}
+apply from: "${project.rootDir}/gradle/common/integrationTestTask.gradle"
+apply from: "${project.rootDir}/gradle/common/java11Options.gradle"
 
 tasks.register("containerTest", Test) {
     if (JavaVersion.current().isJava11Compatible()) {
-        jvmArgs(JDK11_OPTIONS)
+        jvmArgs(project.ext.JDK11_OPTIONS)
         println("JVM arguments for $project.name are $allJvmArgs")
     } else {
         jvmArgs '-XX:-MaxFDLimit'
@@ -330,12 +246,8 @@ jib {
     }
 }
 
-compileIntegrationTestJava.onlyIf { "true" != System.getenv("skipIntegrationTest") }
-checkstyleIntegrationTest.onlyIf { "true" != System.getenv("skipIntegrationTest") }
-spotbugsIntegrationTest.onlyIf { "true" != System.getenv("skipIntegrationTest") }
 compileContainerTestJava.onlyIf { "true" != System.getenv("skipContainerTest") }
 checkstyleContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 spotbugsContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 
-integrationTest.dependsOn integrationTestLightWeight, integrationTestHeavyWeight
 check.dependsOn containerTest, integrationTest, jacocoTestReport
