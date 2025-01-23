@@ -41,10 +41,10 @@ publishing {
 sourceSets {
     integrationTest {
         java {
-                compileClasspath += main.output + test.output
-                runtimeClasspath += main.output + test.output
-                srcDir file('src/test')
-            }
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir(file('src/test'))
+        }
     }
 }
 
@@ -77,15 +77,15 @@ configurations {
 }
 
 dependencies {
-    testImplementation("io.vertx:vertx-web:${project.vertxVersion}") {
+    integrationTestImplementation("io.vertx:vertx-web:${project.vertxVersion}") {
         exclude group: 'junit', module: 'junit'
     }
-    testImplementation("io.vertx:vertx-dropwizard-metrics:${project.vertxVersion}")
-    testImplementation("io.vertx:vertx-web-client:${project.vertxVersion}")
+    integrationTestImplementation("io.vertx:vertx-dropwizard-metrics:${project.vertxVersion}")
+    integrationTestImplementation("io.vertx:vertx-web-client:${project.vertxVersion}")
 
     integrationTestImplementation(group: 'net.java.dev.jna', name: 'jna', version: '5.9.0')
-    testImplementation(project(path: ":integration-framework"))
-    testImplementation('com.google.inject:guice:4.2.2')
+    integrationTestImplementation(project(path: ":integration-framework"))
+    integrationTestImplementation('com.google.inject:guice:4.2.2')
     testRuntimeOnly 'com.fasterxml.jackson.core:jackson-annotations:2.14.2'
 }
 
