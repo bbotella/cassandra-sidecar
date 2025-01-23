@@ -43,7 +43,7 @@ sourceSets {
         java {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
-            srcDir(file('src/test'))
+            srcDir(file('src/integrationTest'))
         }
     }
 }
@@ -118,6 +118,10 @@ def integrationTest = task("integrationTest")
         systemProperty "cassandra.test.dtest_jar_path", rootProject.file("dtest-jars")
         // Disable direct memory allocator as it doesn't release properly
         systemProperty "cassandra.netty_use_heap_allocator", "true"
+
+        if (integrationEnableMtls)
+            systemProperty "cassandra.integration.sidecar.test.enable_mtls", "true"
+
         systemProperty "vertxweb.environment", "dev"
         // config logback for in-jvm clusters
         systemProperty "logback.configurationFile", "src/test/resources/logback-in-jvm-dtest.xml"
