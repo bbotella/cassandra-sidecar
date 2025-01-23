@@ -178,14 +178,12 @@ dependencies {
     jolokia 'org.jolokia:jolokia-jvm:1.6.0:agent'
 }
 
-jar {
-    doFirst {
-        // Store current Cassandra Sidecar build version in an embedded resource file;
-        // the file is either created or overwritten, and ignored by Git source control
-        Files.createDirectories(Paths.get("$projectDir/server-common/src/main/resources"))
-        new File("$projectDir/server-common/src/main/resources/sidecar.version").text = version
-    }
-}
+// Generate the sidecar.version file as soon as possible.
+// Store current Cassandra Sidecar build version in an embedded resource file;
+// the file is either created or overwritten, and ignored by Git source control
+Files.createDirectories(Paths.get("$projectDir/server-common/src/main/resources"))
+new File("$projectDir/server-common/src/main/resources/sidecar.version").text = version
+println("Created sidecar.version")
 
 tasks.register('copyIdeaSettings', Copy) {
     from "ide/idea"

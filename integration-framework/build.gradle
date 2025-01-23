@@ -40,6 +40,8 @@ publishing {
 
 ext.dtestJar = System.getenv("DTEST_JAR") ?: "dtest-4.1.8.jar" // latest supported Cassandra build is 4.1
 def dtestJarFullPath = "${dependencyLocation}${ext.dtestJar}"
+File dtestJarFile = new File(dtestJarFullPath)
+println("Using DTest jar: " + dtestJarFullPath + "; present? " + dtestJarFile.exists())
 
 sourceCompatibility = 1.8
 
@@ -51,8 +53,6 @@ dependencies {
     implementation(project(":adapters:base"))
     implementation(project(":adapters:cassandra41"))
 
-    File dtestJarFile = new File(dtestJarFullPath)
-    println("Using DTest jar: " + dtestJarFullPath + "; present? " + dtestJarFile.exists())
     // The dtest jar must be a compile only dependency. We want to avoid having this jar in the
     // classpath while running integration tests. Instead, a dedicated classloader will load the
     // dtest jar while provisioning the in-jvm dtest Cassandra cluster
@@ -70,6 +70,8 @@ dependencies {
 
     api('com.datastax.cassandra:cassandra-driver-core:3.11.3')
     implementation('com.google.inject:guice:4.2.2')
+    // required by in-jvm-dtest class loader, specifically for dtest-4.0.*
+    implementation('org.javassist:javassist:3.28.0-GA')
 
     implementation("com.google.guava:guava:27.0.1-jre")
     api("io.vertx:vertx-web:${project.vertxVersion}") {
