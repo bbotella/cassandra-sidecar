@@ -464,18 +464,6 @@ public abstract class IntegrationTestBase
                          .forEach(instanceMetadata -> instanceMetadata.delegate().healthCheck());
     }
 
-    protected CertificateBundle ca() throws Exception
-    {
-        return new CertificateBuilder()
-               .subject("CN=Apache cassandra Root CA, OU=Certification Authority, O=Unknown, C=Unknown")
-               .isCertificateAuthority(true)
-               .buildSelfSigned();
-    }
-    protected Path truststorePath() throws Exception
-    {
-        return ca.toTempKeyStorePath(tempDir.toPath(), truststorePassword.toCharArray(), truststorePassword.toCharArray());
-    }
-
     protected Path clientKeystorePath(String identity) throws Exception
     {
         return clientKeystorePath(identity, false);

@@ -18,12 +18,20 @@
 
 package org.apache.cassandra.sidecar.common.server.utils;
 
+import org.jetbrains.annotations.VisibleForTesting;
+
 /**
  * Retrieves, caches, and provides build version of this Sidecar binary
  */
 public class SidecarVersionProvider
 {
     private final String sidecarVersion;
+
+    @VisibleForTesting
+    public SidecarVersionProvider()
+    {
+        this.sidecarVersion = "1.0-TEST";
+    }
 
     public SidecarVersionProvider(String resource)
     {

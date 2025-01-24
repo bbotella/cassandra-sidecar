@@ -18,14 +18,17 @@
 
 package org.apache.cassandra.sidecar.routes;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import org.apache.cassandra.sidecar.common.response.GossipInfoResponse;
+import org.apache.cassandra.sidecar.common.response.HealthResponse;
 import org.apache.cassandra.sidecar.testing.SharedClusterSidecarIntegrationTestBase;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static org.apache.cassandra.testing.utils.AssertionUtils.getBlocking;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,6 +37,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class RoutesIntegrationTest extends SharedClusterSidecarIntegrationTestBase
 {
+    @BeforeEach
+    void ensureGossipRunning()
+    {
+        // This is fast when it's already enabled (no-op on the Cassandra side)
+        assertThat(cluster.getFirstRunningInstance().nodetool("enablegossip")).isEqualTo(0);
+    }
+
     @Test
     void healthHappyPathTest()
     {
@@ -59,6 +69,29 @@ class RoutesIntegrationTest extends SharedClusterSidecarIntegrationTestBase
         assertThat(gossipInfo.hostId()).isNotNull();
         String releaseVersion = cluster.getFirstRunningInstance().getReleaseVersionString();
         assertThat(gossipInfo.releaseVersion()).startsWith(releaseVersion);
+    }
+
+    @Test
+    void testGossipHealth()
+    {
+        int disableGossip = cluster.getFirstRunningInstance().nodetool("disablegossip");
+        assertThat(disableGossip).isEqualTo(0);
+
+        HealthResponse gossipHealth = getGossipHealth();
+        assertThat(gossipHealth.status()).isEqualTo("NOT_OK");
+        assertThat(cluster.getFirstRunningInstance().nodetool("enablegossip")).isEqualTo(0);
+        gossipHealth = getGossipHealth();
+        assertThat(gossipHealth.status()).isEqualTo("OK");
+    }
+
+    private HealthResponse getGossipHealth()
+    {
+        String testRoute = "/api/v1/cassandra/gossip/__health";
+        HttpResponse<Buffer> response = getBlocking(trustedClient().get(server.actualPort(), "localhost", testRoute)
+                                                                   .expect(ResponsePredicate.SC_OK)
+                                                                   .send());
+        assertThat(response.statusCode()).isEqualTo(OK.code());
+        return response.bodyAsJson(HealthResponse.class);
     }
 
     @Override

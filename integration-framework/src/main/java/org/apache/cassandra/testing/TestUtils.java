@@ -31,7 +31,7 @@ import org.apache.cassandra.sidecar.testing.QualifiedName;
  */
 public final class TestUtils
 {
-    public static final String TEST_KEYSPACE = "spark_test";
+    public static final String TEST_KEYSPACE = "testkeyspace";
     public static final String TEST_TABLE_PREFIX = "testtable";
     private static final AtomicInteger TEST_TABLE_ID = new AtomicInteger(0);
 

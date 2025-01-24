@@ -523,6 +523,7 @@ public abstract class SharedClusterIntegrationTestBase
         private final IsolatedDTestClassLoaderWrapper wrapper;
         private final MtlsTestHelper mtlsTestHelper;
         private final DnsResolver dnsResolver;
+        private final SidecarVersionProvider sidecarVersionProvider = new SidecarVersionProvider();
         private final Function<SidecarConfigurationImpl.Builder, SidecarConfigurationImpl.Builder> configurationOverrides;
 
         public IntegrationTestModule(Iterable<? extends IInstance> instances,
@@ -549,12 +550,18 @@ public abstract class SharedClusterIntegrationTestBase
 
         @Provides
         @Singleton
-        public InstancesMetadata instancesConfig(Vertx vertx,
-                                               SidecarConfiguration configuration,
-                                               CassandraVersionProvider cassandraVersionProvider,
-                                               SidecarVersionProvider sidecarVersionProvider,
-                                               CQLSessionProvider cqlSessionProvider,
-                                               DnsResolver dnsResolver)
+        public SidecarVersionProvider sidecarVersionProvider()
+        {
+            return sidecarVersionProvider;
+        }
+
+        @Provides
+        @Singleton
+        public InstancesMetadata instancesMetadata(Vertx vertx,
+                                                   SidecarConfiguration configuration,
+                                                   CassandraVersionProvider cassandraVersionProvider,
+                                                   CQLSessionProvider cqlSessionProvider,
+                                                   DnsResolver dnsResolver)
         {
             JmxConfiguration jmxConfiguration = configuration.serviceConfiguration().jmxConfiguration();
             List<InstanceMetadata> instanceMetadataList =
@@ -593,7 +600,7 @@ public abstract class SharedClusterIntegrationTestBase
                 new KeyStoreConfigurationImpl(mtlsTestHelper.trustStorePath(),
                                               mtlsTestHelper.trustStorePassword(),
                                               mtlsTestHelper.trustStoreType(),
-                        SecondBoundConfiguration.parse("60s"));
+                                              SecondBoundConfiguration.parse("60s"));
 
                 KeyStoreConfiguration keyStoreConfiguration =
                 new KeyStoreConfigurationImpl(mtlsTestHelper.serverKeyStorePath(),
