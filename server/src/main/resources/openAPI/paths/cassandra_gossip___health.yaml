@@ -1,0 +1,14 @@
+get:
+  tags:
+    - healthchecks
+  operationId: cassandraGossipHealthcheck
+  description: Check Gossip health
+  summary: Endpoint used to perform gossip health checks to a Cassandra instance
+  security: []
+  responses:
+    '200':
+      description: Healthy
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/healthCheckResponse.yaml

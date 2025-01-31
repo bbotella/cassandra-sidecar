@@ -36,6 +36,8 @@ paths:
     $ref: paths/__health.yaml
   /cassandra/__health:
     $ref: paths/cassandra___health.yaml
+  /cassandra/gossip/__health:
+    $ref: paths/cassandra_gossip___health.yaml
   /cassandra/native/__health:
     $ref: paths/cassandra_native___health.yaml
   /cassandra/jmx/__health:
