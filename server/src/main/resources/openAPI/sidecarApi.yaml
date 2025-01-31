@@ -67,8 +67,10 @@ paths:
     $ref: paths/cassandra_ring.yaml
   /cassandra/ring/keyspaces/{keyspace}:
     $ref: paths/cassandra_ring_keyspaces_keyspace.yaml
-  /cassandra/stats/stats/connected-clients:
+  /cassandra/stats/connected-clients:
     $ref: paths/cassandra_stats_stats_connected-clients.yaml
+  /cassandra/stats/streams:
+    $ref: paths/cassandra_stats_streams.yaml
   /keyspaces/{keyspace}/token-range-replicas:
     $ref: paths/keyspaces_keyspace_token-range-replicas.yaml
   /uploads/{uploadId}/keyspaces/{keyspace}/tables/{table}/components/{component}:

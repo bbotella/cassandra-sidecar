@@ -1,0 +1,8 @@
+type: object
+properties:
+  operationMode:
+    type: string
+    description: The operation Mode
+    example: Mode
+  streamsProgressStats:
+    $ref: ./streamsProgressStats.yaml

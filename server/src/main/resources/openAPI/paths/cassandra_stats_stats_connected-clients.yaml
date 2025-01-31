@@ -8,7 +8,7 @@ get:
     - mTLS: []
   responses:
     '200':
-      description: Ring status
+      description: Connected clients stats
       content:
         application/json:
           schema:

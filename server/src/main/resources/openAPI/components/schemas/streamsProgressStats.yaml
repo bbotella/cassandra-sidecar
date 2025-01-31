@@ -1,0 +1,34 @@
+type: object
+properties:
+  totalFilesToReceive:
+    type: number
+    description: The amount of files to be received
+    example: 1000
+  totalFilesReceived:
+    type: number
+    description: The amount of files that have been received
+    example: 1000
+  totalBytesToReceive:
+    type: number
+    description: The amount of bytes to be received
+    example: 1000
+  totalBytesReceived:
+    type: number
+    description: The amount of bytes that have been received
+    example: 1000
+  totalFilesToSend:
+    type: number
+    description: The amount of files to be sent
+    example: 1000
+  totalFilesSent:
+    type: number
+    description: The amount of files that have been sent
+    example: 1000
+  totalBytesToSend:
+    type: number
+    description: The amount of bytes to be sent
+    example: 1000
+  totalBytesSent:
+    type: number
+    description: The amount of bytes that have been sent
+    example: 1000

@@ -1,0 +1,15 @@
+get:
+  tags:
+    - stats
+  operationId: getStreamStats
+  description: Gets stats of streams
+  summary: Endpoint to retrieve the information related to streams
+  security:
+    - mTLS: []
+  responses:
+    '200':
+      description: Stream stats
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/streamStatsResponse.yaml"
