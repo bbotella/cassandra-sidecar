@@ -339,7 +339,18 @@ Within that project, the classes should all be named `Cassandra40*`, so `Cassand
 
 ### <a name="rest-apis"></a>REST APIs
 The project maintains an Open API documentation of all the provided REST APIs, located in `server/src/main/resources/openAPI`.
-When an API is modified or updated, this documentation needs to be maintained accordingly.
+When an API is modified or updated, this documentation needs to be maintained accordingly. For that, please take a look at the folder structure
+for the openAPI specification. The main file is called `sidecarApi.yaml`. There, all the endpoints are referenced. Let's take the health endpoint
+as an example:
+```yaml
+paths:
+  /__health:
+    $ref: paths/__health.yaml
+```
+
+That references the definition of the health endpoint, which can be found on the `paths` folder. On those references, we can find further references
+to their specific object schemas (which can be found under the `components/schemas` folder). For any common or shared parameters, please use
+the `components/parameters folder`.
 
 ## <a name="source-code-style"></a>Source Code Style
 
