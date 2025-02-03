@@ -20,7 +20,7 @@ get:
     - healthchecks
   operationId: cassandraGossipHealthcheck
   description: Check Gossip health
-  summary: Endpoint used to perform gossip health checks to a Cassandra instance
+  summary: Endpoint used to check the gossip health of a Cassandra instance
   security: []
   responses:
     '200':
