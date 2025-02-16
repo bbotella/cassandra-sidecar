@@ -19,32 +19,21 @@
 package org.apache.cassandra.sidecar.db;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Row;
 import org.apache.cassandra.sidecar.common.DataObjectBuilder;
 import org.apache.cassandra.sidecar.common.request.data.CreateSliceRequestPayload;
-import org.apache.cassandra.sidecar.common.response.TokenRangeReplicasResponse;
-import org.apache.cassandra.sidecar.common.server.cluster.locator.Token;
 import org.apache.cassandra.sidecar.common.server.cluster.locator.TokenRange;
 import org.apache.cassandra.sidecar.common.server.data.QualifiedTableName;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Data object that contains all values that matter to the restore job slice.
  */
 public class RestoreSlice
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RestoreSlice.class);
-
     private final UUID jobId;
     private final String keyspace;
     private final String table;
@@ -53,8 +42,8 @@ public class RestoreSlice
     private final String bucket;
     private final String key;
     private final String checksum; // etag
-    private final BigInteger startToken;
-    private final BigInteger endToken;
+    private final BigInteger startToken; // exclusive
+    private final BigInteger endToken; // inclusive
     private final long creationTimeNanos;
     private final long compressedSize;
     private final long uncompressedSize;
@@ -118,69 +107,40 @@ public class RestoreSlice
     }
 
     /**
-     * Splits the slice based on the topology changes.
-     * <p></p>
-     * When the current topology has pending ranges, it results into the slice S being split into
-     * multiple sub-ranges, say, s1 and s2. The updater splits, and persists the new slices to database.
-     * The original slice S is then deleted.
-     * The new slices still reference to the same s3 object, i.e. {@code <bucket/key/checksum>}
+     * Trim the slice based on the reference local token range.
      *
-     * @param topology topology to guide the splitting
-     * @return a list of slices of the sub-ranges
+     * <p>The range of the slice might not be entirely enclosed by the localTokenRange.
+     * In such case, the slice is trimmed to align with the localTokenRange. For example,
+     * the slice covers range {@code (1, 100])} and the localTokenRange covers {@code (50, 90]}.
+     * The slice is trimmed to match with the localTokenRange, updating the range to {@code (50, 90]}.
+     * <p>The trimmed slice still reference to the same s3 object, i.e. {@code <bucket/key/checksum>}
+     *
+     * @param localTokenRange local token range
+     * @return a restore slice that might be trimmed
      */
-    public List<RestoreSlice> splitMaybe(@Nullable TokenRangeReplicasResponse topology)
+    public RestoreSlice trimMaybe(@NotNull TokenRange localTokenRange)
     {
-        if (topology == null)
-        {
-            return Collections.singletonList(this);
-        }
-
-        List<RestoreSlice> splits = new ArrayList<>();
         TokenRange sliceRange = new TokenRange(startToken(), endToken());
-        for (TokenRangeReplicasResponse.ReplicaInfo replicaInfo : topology.writeReplicas())
+        if (localTokenRange.encloses(sliceRange))
         {
-            TokenRange range = new TokenRange(Token.from(replicaInfo.start()), Token.from(replicaInfo.end()));
-            if (range.encloses(sliceRange))
-            {
-                return Collections.singletonList(this);
-            }
-            else if (range.overlaps(sliceRange))
-            {
-                TokenRange intersection = range.intersection(sliceRange);
-                // Adjust the slice range to match with the write replica and persist.
-                // The object location remains the same as sidecar need to download the same object.
-                // It just needs a narrower range of data within the slice
-                splits.add(unbuild()
-                           .startToken(intersection.start().toBigInteger())
-                           .endToken(intersection.end().toBigInteger())
-                           .build());
-            }
-
-            if (range.largerThan(sliceRange))
-            {
-                // all following ranges are larger the original range; exit the iteration early.
-                break;
-            }
+            return this;
         }
 
-        if (splits.isEmpty())
+        if (localTokenRange.intersects(sliceRange))
         {
-            throw new IllegalStateException("Token range of the slice is not found in the write replicas. " +
-                                            "slice range: " + formatRange(startToken, endToken));
-        }
-        else
-        {
-            LOGGER.info("The slice is split. splitsCount={} splits={}",
-                        splits.size(), splits.stream().map(s -> formatRange(s.startToken, s.endToken))
-                        .collect(Collectors.toList()));
+            TokenRange intersection = localTokenRange.intersection(sliceRange);
+            // Adjust the slice range to match with localTokenRange
+            // The object location remains the same as sidecar need to download the same object.
+            // It only narrows the range of data within the slice
+            return unbuild()
+                   .startToken(intersection.start().toBigInteger())
+                   .endToken(intersection.end().toBigInteger())
+                   .build();
         }
 
-        return splits;
-    }
-
-    private String formatRange(BigInteger start, BigInteger end)
-    {
-        return "(" + start + ", " + end + ']';
+        throw new IllegalStateException("Token range of the slice does not intersect with the local token range. " +
+                                        "slice_range: " + sliceRange +
+                                        ", local_range: " + localTokenRange);
     }
 
     // -- (self-explanatory) GETTERS --
@@ -283,8 +243,8 @@ public class RestoreSlice
         private String bucket;
         private String key;
         private String checksum; // etag
-        private BigInteger startToken;
-        private BigInteger endToken;
+        private BigInteger startToken; // exclusive
+        private BigInteger endToken; // inclusive
         private long compressedSize;
         private long uncompressedSize;
 
@@ -388,7 +348,7 @@ public class RestoreSlice
                 b.bucket = payload.bucket();
                 b.key = payload.key();
                 b.checksum = payload.checksum();
-                b.startToken = payload.startToken();
+                b.startToken = payload.firstToken().subtract(BigInteger.ONE);
                 b.endToken = payload.endToken();
                 b.compressedSize = payload.compressedSizeOrZero();
                 b.uncompressedSize = payload.uncompressedSizeOrZero();

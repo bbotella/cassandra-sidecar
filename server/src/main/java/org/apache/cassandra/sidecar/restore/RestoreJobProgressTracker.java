@@ -18,21 +18,28 @@
 
 package org.apache.cassandra.sidecar.restore;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
 import org.apache.cassandra.sidecar.common.server.StorageOperations;
+import org.apache.cassandra.sidecar.common.server.cluster.locator.Token;
+import org.apache.cassandra.sidecar.common.server.cluster.locator.TokenRange;
 import org.apache.cassandra.sidecar.db.RestoreJob;
 import org.apache.cassandra.sidecar.db.RestoreRange;
 import org.apache.cassandra.sidecar.db.RestoreSlice;
 import org.apache.cassandra.sidecar.exceptions.RestoreJobFatalException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * In-memory only tracker that tracks the progress of the slices in a restore job.
@@ -67,13 +74,13 @@ public class RestoreJobProgressTracker
         if (failureRef.get() != null)
             throw failureRef.get();
 
-        Status status = ranges.putIfAbsent(range, Status.PENDING);
+        RestoreRange rangeWithTracker = range.unbuild()
+                                             .restoreJobProgressTracker(this)
+                                             .build();
 
+        Status status = ranges.putIfAbsent(rangeWithTracker, Status.PENDING);
         if (status == null)
         {
-            RestoreRange rangeWithTracker = range.unbuild()
-                                                 .restoreJobProgressTracker(this)
-                                                 .build();
             processor.submit(rangeWithTracker);
             return Status.CREATED;
         }
@@ -81,14 +88,27 @@ public class RestoreJobProgressTracker
         return status;
     }
 
-    void removeRange(RestoreRange range)
+    /**
+     * Discard all the {@link RestoreRange} that overlap with the {@param otherRanges}
+     * @param otherRanges token ranges to find the overlapping {@link RestoreRange} and discard
+     * @return set of overlapping {@link RestoreRange}
+     */
+    @SuppressWarnings("UnstableApiUsage")
+    Set<RestoreRange> discardOverlappingRanges(Set<TokenRange> otherRanges)
     {
-        Status status = ranges.remove(range);
-
-        if (status != null)
-        {
-            processor.remove(range);
-        }
+        RangeSet<Token> rangeSet = TreeRangeSet.create();
+        otherRanges.forEach(r -> rangeSet.add(r.range));
+        Set<RestoreRange> overlapping = new HashSet<>();
+        ranges.keySet().removeIf(restoreRange -> {
+            if (rangeSet.intersects(restoreRange.tokenRange().range))
+            {
+                overlapping.add(restoreRange);
+                processor.discardAndRemove(restoreRange);
+                return true;
+            }
+            return false;
+        });
+        return overlapping;
     }
 
     void updateRestoreJob(@NotNull RestoreJob restoreJob)
@@ -170,8 +190,14 @@ public class RestoreJobProgressTracker
         }
     }
 
+    @VisibleForTesting // do not call in production code
+    Map<RestoreRange, Status> rangesForTesting()
+    {
+        return ranges;
+    }
+
     /**
-     * Enum holds possible statues of {@link RestoreSlice}
+     * Task status of {@link RestoreRangeTask}
      */
     public enum Status
     {

@@ -26,6 +26,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
+import com.google.common.collect.TreeRangeMap;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,12 +64,12 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toSet;
 
 /**
- * Checks restore job with the configured consistency level
+ * Checks restore job import consistency with the configured consistency level
  */
 @Singleton
-public class RestoreJobConsistencyLevelChecker
+public class RestoreJobConsistencyChecker
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RestoreJobConsistencyLevelChecker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestoreJobConsistencyChecker.class);
 
     private final RingTopologyRefresher ringTopologyRefresher;
     private final RestoreJobDiscoverer restoreJobDiscoverer;
@@ -75,11 +79,11 @@ public class RestoreJobConsistencyLevelChecker
     private volatile boolean firstTimeSinceImportReady = true;
 
     @Inject
-    public RestoreJobConsistencyLevelChecker(RingTopologyRefresher ringTopologyRefresher,
-                                             RestoreJobDiscoverer restoreJobDiscoverer,
-                                             RestoreRangeDatabaseAccessor rangeDatabaseAccessor,
-                                             ExecutorPools executorPools,
-                                             SidecarMetrics sidecarMetrics)
+    public RestoreJobConsistencyChecker(RingTopologyRefresher ringTopologyRefresher,
+                                        RestoreJobDiscoverer restoreJobDiscoverer,
+                                        RestoreRangeDatabaseAccessor rangeDatabaseAccessor,
+                                        ExecutorPools executorPools,
+                                        SidecarMetrics sidecarMetrics)
     {
         this.ringTopologyRefresher = ringTopologyRefresher;
         this.restoreJobDiscoverer = restoreJobDiscoverer;
@@ -146,45 +150,103 @@ public class RestoreJobConsistencyLevelChecker
         return false;
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     private static void concludeRanges(List<RestoreRange> ranges,
                                        TokenRangeReplicasResponse topology,
                                        ConsistencyVerifier verifier,
                                        RestoreRangeStatus successCriteria,
                                        RestoreJobProgressCollector collector)
     {
-        for (RestoreRange range : ranges)
+        RangeMap<Token, InstanceSetByDc> replicasPerRange = populateReplicas(topology);
+        Map<Range<Token>, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> statusPerRange = populateStatusByReplica(ranges);
+
+        for (Map.Entry<Range<Token>, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> entry : statusPerRange.entrySet())
         {
             if (!collector.canCollectMore())
             {
                 return;
             }
 
-            ConsistencyVerificationResult res = concludeOneRange(topology, verifier, successCriteria, range);
-            collector.collect(range, res);
+            Range<Token> tokenRange = entry.getKey();
+            Map<String, RestoreRangeStatus> status = entry.getValue().getLeft();
+            RestoreRange relevantRestoreRange = entry.getValue().getRight();
+            ConsistencyVerificationResult res = concludeOneRange(replicasPerRange, verifier, successCriteria, tokenRange, status);
+            collector.collect(relevantRestoreRange, res);
         }
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    static RangeMap<Token, InstanceSetByDc> populateReplicas(TokenRangeReplicasResponse topology)
+    {
+        RangeMap<Token, InstanceSetByDc> replicasPerRange = TreeRangeMap.create();
+        for (TokenRangeReplicasResponse.ReplicaInfo replicaInfo : topology.writeReplicas())
+        {
+            TokenRange tokenRange = new TokenRange(Token.from(replicaInfo.start()), Token.from(replicaInfo.end()));
+            Map<String, List<String>> replicasByDc = replicaInfo.replicasByDatacenter();
+            Map<String, Set<String>> mapping = new HashMap<>(replicasByDc.size());
+            replicasByDc.forEach((dc, instances) -> mapping.put(dc, new HashSet<>(instances)));
+            InstanceSetByDc instanceSetByDc = new InstanceSetByDc(mapping);
+            replicasPerRange.put(tokenRange.range, instanceSetByDc);
+        }
+        return replicasPerRange;
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    static Map<Range<Token>, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> populateStatusByReplica(List<RestoreRange> ranges)
+    {
+        RangeMap<Token, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> rangeMap = TreeRangeMap.create();
+        rangeMap.put(Range.all(), Pair.of(Collections.emptyMap(), null));
+        for (RestoreRange restoreRange : ranges)
+        {
+            Range<Token> tokenRange = restoreRange.tokenRange().range;
+            RangeMap<Token, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> sub = rangeMap.subRangeMap(tokenRange);
+            Map<Range<Token>, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> map = sub.asMapOfRanges();
+            if (map.isEmpty())
+            {
+                rangeMap.put(tokenRange, Pair.of(restoreRange.statusByReplica(), restoreRange));
+            }
+            else
+            {
+                // If subrange map is non-empty, i.e. RestoreRanges has overlapping, the overlapping token range should belong to the same RestoreSlice.
+                // Because RestoreRange is derived from RestoreSlice and RestoreSlices do not overlap.
+                RangeMap<Token, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> updated = TreeRangeMap.create();
+                map.forEach((key, value) -> {
+                    Map<String, RestoreRangeStatus> statusMap = new HashMap<>(value.getKey());
+                    statusMap.putAll(restoreRange.statusByReplica());
+                    updated.put(key, Pair.of(statusMap, restoreRange));
+                });
+                rangeMap.putAll(updated);
+            }
+        }
+        Map<Range<Token>, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> result = rangeMap.asMapOfRanges();
+        result.entrySet().removeIf(e -> e.getValue().getValue() == null);
+        return result;
     }
 
     /**
      * Examine a range and all its replica should be in the expected status, i.e. {@param successCriteria}.
      * If enough replicas are in the expected status, the conclusion can be made that the range has satisfied.
-     * If enough replicas are {@link RestoreRangeStatus.FAILED}, it concludes that the range has failed.
+     * If enough replicas are {@link RestoreRangeStatus#FAILED}, it concludes that the range has failed.
      * Otherwise, no conclusion is made and the range is pending.
      *
-     * @param topology current cluster topology
+     * @param replicasByRange replica set of each token range
      * @param verifier check whether the replicas status can satisfy the consistency level
      * @param successCriteria the expected {@link RestoreRangeStatus} for replicas
      * @param range range to check
+     * @param statusByReplica restore progress of each instance
      * @return result of the consistency verification
      */
-    private static ConsistencyVerificationResult concludeOneRange(TokenRangeReplicasResponse topology,
+    @SuppressWarnings("UnstableApiUsage")
+    private static ConsistencyVerificationResult concludeOneRange(RangeMap<Token, InstanceSetByDc> replicasByRange,
                                                                   ConsistencyVerifier verifier,
                                                                   RestoreRangeStatus successCriteria,
-                                                                  RestoreRange range)
+                                                                  Range<Token> range,
+                                                                  Map<String, RestoreRangeStatus> statusByReplica)
     {
-        Map<RestoreRangeStatus, Set<String>> groupByStatus = groupReplicaByStatus(range.statusByReplica());
+        Map<RestoreRangeStatus, Set<String>> groupByStatus = groupReplicaByStatus(statusByReplica);
         Set<String> succeeded = groupByStatus.getOrDefault(successCriteria, Collections.emptySet());
         Set<String> failed = groupByStatus.getOrDefault(RestoreRangeStatus.FAILED, Collections.emptySet());
-        InstanceSetByDc replicaSet = replicaSetForRange(range, topology);
+        InstanceSetByDc replicaSet = replicaSetForRange(range, replicasByRange);
         if (replicaSet == null) // cannot proceed to verify yet. Return pending
         {
             return ConsistencyVerificationResult.PENDING;
@@ -212,36 +274,32 @@ public class RestoreJobConsistencyLevelChecker
 
     /**
      * Find the replica set for the token range. Returns null if no complete match can be found or topology has changed.
+     * The input tokenRange should be fully enclosed by one of the range in the replicasByRange
      */
-    private static @Nullable InstanceSetByDc replicaSetForRange(RestoreRange range, TokenRangeReplicasResponse topology)
+    @SuppressWarnings("UnstableApiUsage")
+    private static @Nullable InstanceSetByDc replicaSetForRange(Range<Token> tokenRange, RangeMap<Token, InstanceSetByDc> replicasByRange)
     {
-        TokenRange restoreRange = new TokenRange(range.startToken(), range.endToken());
-        for (TokenRangeReplicasResponse.ReplicaInfo replicaInfo : topology.writeReplicas())
+        Map<Range<Token>, InstanceSetByDc> subRange = replicasByRange.subRangeMap(tokenRange).asMapOfRanges();
+        if (subRange.size() == 1)
         {
-            TokenRange tokenRange = new TokenRange(Token.from(replicaInfo.start()), Token.from(replicaInfo.end()));
-            if (tokenRange.encloses(restoreRange))
+            // finding one range does not necessarily mean the found range fully encloses the token range
+            // subRangeMap could contain the partially overlapping range
+            Map.Entry<Range<Token>, InstanceSetByDc> foundEntry = subRange.entrySet().iterator().next();
+            if (foundEntry.getKey().encloses(tokenRange))
             {
-                Map<String, List<String>> replicasByDc = replicaInfo.replicasByDatacenter();
-                Map<String, Set<String>> mapping = new HashMap<>(replicasByDc.size());
-                replicasByDc.forEach((k, instances) -> mapping.put(k, new HashSet<>(instances)));
-                return new InstanceSetByDc(mapping);
+                return foundEntry.getValue();
             }
-            else if (tokenRange.overlaps(restoreRange))
+            else
             {
-                LOGGER.info("Topology change detected");
+                LOGGER.info("Topology is changed");
                 return null;
             }
-
-            if (tokenRange.largerThan(restoreRange))
-            {
-                // all following ranges are larger the original range; exit the iteration early.
-                break;
-            }
         }
-
-        LOGGER.warn("Unable to find a complete match for range. startToken={} endToken={}",
-                    range.startToken(), range.endToken());
-        return null;
+        else
+        {
+            LOGGER.warn("Unable to find a single match for range. tokenRange={} matchingRanges={}", tokenRange, subRange);
+            return null;
+        }
     }
 
     private static long sliceCountFromRanges(List<RestoreRange> ranges)
@@ -255,12 +313,12 @@ public class RestoreJobConsistencyLevelChecker
                                                                 RestoreRangeStatus successCriteria,
                                                                 RestoreRange range)
     {
-        return concludeOneRange(topology, verifier, successCriteria, range);
+        return concludeOneRange(populateReplicas(topology), verifier, successCriteria, range.tokenRange().range, range.statusByReplica());
     }
 
     @VisibleForTesting
     static InstanceSetByDc replicaSetForRangeUnsafe(RestoreRange range, TokenRangeReplicasResponse topology)
     {
-        return replicaSetForRange(range, topology);
+        return replicaSetForRange(range.tokenRange().range, populateReplicas(topology));
     }
 }

@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.vertx.core.Future;
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
+import org.apache.cassandra.sidecar.common.server.cluster.locator.TokenRange;
 import org.apache.cassandra.sidecar.common.server.utils.ThrowableUtils;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.RestoreJobConfiguration;
@@ -112,9 +114,20 @@ public class RestoreJobManager
      */
     void updateRestoreJob(RestoreJob restoreJob)
     {
-        RestoreJobProgressTracker tracker = jobs.computeIfAbsent(restoreJob.jobId,
-                                                                 id -> new RestoreJobProgressTracker(restoreJob, processor, instanceMetadata));
+        RestoreJobProgressTracker tracker = progressTracker(restoreJob);
         tracker.updateRestoreJob(restoreJob);
+    }
+
+    /**
+     * Discard all the {@link RestoreRange} that overlap with {@param otherRanges} in the {@link RestoreJob}
+     * @param restoreJob restore job to find out the restore ranges
+     * @param otherRanges token ranges to find the overlapping {@link RestoreRange} and discard
+     * @return set of overlapping {@link RestoreRange}
+     */
+    Set<RestoreRange> discardOverlappingRanges(RestoreJob restoreJob, Set<TokenRange> otherRanges)
+    {
+        RestoreJobProgressTracker tracker = progressTracker(restoreJob);
+        return tracker.discardOverlappingRanges(otherRanges);
     }
 
     /**

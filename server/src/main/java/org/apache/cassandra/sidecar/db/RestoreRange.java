@@ -22,6 +22,7 @@ import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +34,7 @@ import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
 import org.apache.cassandra.sidecar.cluster.locator.LocalTokenRangesProvider;
 import org.apache.cassandra.sidecar.common.DataObjectBuilder;
 import org.apache.cassandra.sidecar.common.response.data.RestoreRangeJson;
+import org.apache.cassandra.sidecar.common.server.cluster.locator.TokenRange;
 import org.apache.cassandra.sidecar.common.server.data.RestoreRangeStatus;
 import org.apache.cassandra.sidecar.common.server.utils.StringUtils;
 import org.apache.cassandra.sidecar.concurrent.TaskExecutorPool;
@@ -80,6 +82,9 @@ import org.jetbrains.annotations.VisibleForTesting;
  */
 public class RestoreRange
 {
+    public static final Comparator<RestoreRange> TOKEN_BASED_NATURAL_ORDER = Comparator.comparing(RestoreRange::startToken)
+                                                                                       .thenComparing(RestoreRange::endToken);
+
     // @NotNull fields are persisted
     @NotNull
     private final UUID jobId;
@@ -92,9 +97,7 @@ public class RestoreRange
     @NotNull
     private final String sliceKey;
     @NotNull
-    private final BigInteger startToken;
-    @NotNull
-    private final BigInteger endToken;
+    private final TokenRange tokenRange;
     @NotNull
     private final Map<String, RestoreRangeStatus> statusByReplica;
 
@@ -118,6 +121,7 @@ public class RestoreRange
     private boolean hasImported = false;
     private int downloadAttempt = 0;
     private volatile boolean isCancelled = false;
+    private volatile boolean discarded = false;
 
     public static RestoreRange from(Row row)
     {
@@ -142,8 +146,7 @@ public class RestoreRange
     {
         this.jobId = builder.jobId;
         this.bucketId = builder.bucketId;
-        this.startToken = builder.startToken;
-        this.endToken = builder.endToken;
+        this.tokenRange = new TokenRange(builder.startToken, builder.endToken);
         this.source = builder.sourceSlice;
         this.sliceId = builder.sliceId;
         this.sliceKey = builder.sliceKey;
@@ -154,6 +157,7 @@ public class RestoreRange
         this.owner = builder.owner;
         this.statusByReplica = new HashMap<>(builder.statusByReplica);
         this.tracker = builder.tracker;
+        this.discarded = builder.discarded;
     }
 
     public Builder unbuild()
@@ -163,13 +167,13 @@ public class RestoreRange
 
     public RestoreRangeJson toJson()
     {
-        return new RestoreRangeJson(sliceId, bucketId, sliceBucket, sliceKey, startToken, endToken);
+        return new RestoreRangeJson(sliceId, bucketId, sliceBucket, sliceKey, tokenRange.startAsBigInt(), tokenRange.endAsBigInt());
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(startToken, endToken, jobId, bucketId, sliceId);
+        return Objects.hash(tokenRange, jobId, bucketId, sliceId);
     }
 
     @Override
@@ -184,12 +188,25 @@ public class RestoreRange
         RestoreRange that = (RestoreRange) obj;
         // Note: destinationPathInStaging and owner are not included as they are 'transient'.
         // Mutable states are not included, e.g. status_by_replicas.
-        return Objects.equals(this.startToken, that.startToken)
-               && Objects.equals(this.endToken, that.endToken)
+        return Objects.equals(this.tokenRange, that.tokenRange)
                && Objects.equals(this.jobId, that.jobId)
                && Objects.equals(this.bucketId, that.bucketId)
                && Objects.equals(this.sliceId, that.sliceId);
     }
+
+    @Override
+    public String toString()
+    {
+        return "RestoreRange{" +
+               "jobId=" + jobId +
+               ", sliceId='" + sliceId + '\'' +
+               ", tokenRange=" + tokenRange +
+               ", statusByReplica=" + statusByReplica +
+               ", sliceKey='" + sliceKey + '\'' +
+               ", sliceBucket='" + sliceBucket + '\'' +
+               '}';
+    }
+
     // -- INTERNAL FLOW CONTROL METHODS --
 
     /**
@@ -252,6 +269,21 @@ public class RestoreRange
     public void cancel()
     {
         isCancelled = true;
+    }
+
+    /**
+     * Mark the restore range as discarded for this instance, then cancel it
+     */
+    public void discard()
+    {
+        discarded = true;
+        updateRangeStatusForInstance(owner(), RestoreRangeStatus.DISCARDED);
+        cancel();
+    }
+
+    public boolean isDiscarded()
+    {
+        return discarded;
     }
 
     /**
@@ -377,12 +409,17 @@ public class RestoreRange
 
     public BigInteger startToken()
     {
-        return this.startToken;
+        return tokenRange.startAsBigInt();
     }
 
     public BigInteger endToken()
     {
-        return this.endToken;
+        return tokenRange.endAsBigInt();
+    }
+
+    public TokenRange tokenRange()
+    {
+        return tokenRange;
     }
 
     public Map<String, RestoreRangeStatus> statusByReplica()
@@ -529,6 +566,7 @@ public class RestoreRange
         private String uploadId;
         private Map<String, RestoreRangeStatus> statusByReplica = Collections.emptyMap();
         private RestoreJobProgressTracker tracker = null;
+        private boolean discarded;
 
         private Builder()
         {
@@ -545,10 +583,11 @@ public class RestoreRange
             this.stageDirectory = range.stageDirectory;
             this.uploadId = range.uploadId;
             this.owner = range.owner;
-            this.startToken = range.startToken;
-            this.endToken = range.endToken;
-            this.statusByReplica = Collections.unmodifiableMap(range.statusByReplica);
+            this.startToken = range.tokenRange.startAsBigInt();
+            this.endToken = range.tokenRange.endAsBigInt();
+            this.statusByReplica = new HashMap<>(range.statusByReplica);
             this.tracker = range.tracker;
+            this.discarded = range.discarded;
         }
 
         public Builder jobId(UUID jobId)

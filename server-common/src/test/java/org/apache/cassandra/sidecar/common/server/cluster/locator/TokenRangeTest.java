@@ -21,8 +21,13 @@ package org.apache.cassandra.sidecar.common.server.cluster.locator;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,18 +45,6 @@ class TokenRangeTest
         assertThat(r1).isEqualTo(r2);
         assertThat(r3).isNotEqualTo(r1)
                       .isNotEqualTo(r2);
-    }
-
-    @Test
-    void testFirstToken()
-    {
-        TokenRange range = new TokenRange(1, 100);
-        assertThat(range.firstToken()).isEqualTo(Token.from(2));
-        // test the first token refer is the same
-        assertThat(range.firstToken()).isSameAs(range.firstToken());
-
-        TokenRange emptyRange = new TokenRange(1, 1);
-        assertThat(emptyRange.firstToken()).isNull();
     }
 
     @Test
@@ -114,20 +107,20 @@ class TokenRangeTest
     }
 
     @Test
-    void testOverlaps()
+    void testIntersects()
     {
         TokenRange r1 = new TokenRange(3, 5);
         TokenRange r2 = new TokenRange(1, 10);
         TokenRange r3 = new TokenRange(10, 11);
         TokenRange r4 = new TokenRange(4, 11);
-        assertThat(r1.overlaps(r2)).isTrue();
-        assertThat(r2.overlaps(r1)).isTrue();
-        assertThat(r3.overlaps(r4)).isTrue();
-        assertThat(r4.overlaps(r3)).isTrue();
-        assertThat(r2.overlaps(r4)).isTrue();
-        assertThat(r4.overlaps(r2)).isTrue();
-        assertThat(r2.overlaps(r3)).isFalse();
-        assertThat(r3.overlaps(r2)).isFalse();
+        assertThat(r1.intersects(r2)).isTrue();
+        assertThat(r2.intersects(r1)).isTrue();
+        assertThat(r3.intersects(r4)).isTrue();
+        assertThat(r4.intersects(r3)).isTrue();
+        assertThat(r2.intersects(r4)).isTrue();
+        assertThat(r4.intersects(r2)).isTrue();
+        assertThat(r2.intersects(r3)).isFalse();
+        assertThat(r3.intersects(r2)).isFalse();
     }
 
     @Test
@@ -157,6 +150,66 @@ class TokenRangeTest
         assertThat(r3.intersection(r1)).isEqualTo(new TokenRange(4, 5));
         assertThat(r2.intersection(r4)).isEqualTo(new TokenRange(10, 10)); // empty range
         assertThat(r2.intersection(r4)).isNotEqualTo(new TokenRange(5, 5)); // but not any empty range
+    }
+
+    @ParameterizedTest(name = "{index} - {0}: inputLeft={1} inputRight={2} expectedLeft={3} expectedRight={4}")
+    @MethodSource("inputAndExpectedResultAfterSymmetricDiff")
+    void testSymmetricDiff(String testTitle, Set<TokenRange> left, Set<TokenRange> right, Set<TokenRange> expectedLeft, Set<TokenRange> expectedRight)
+    {
+        TokenRange.SymmetricDiffResult symmetricDiffResult = TokenRange.symmetricDiff(left, right);
+        assertThat(symmetricDiffResult.onlyInLeft).isEqualTo(expectedLeft);
+        assertThat(symmetricDiffResult.onlyInRight).isEqualTo(expectedRight);
+
+        // exchange left and right; it is to test the commutative property of diff
+        symmetricDiffResult = TokenRange.symmetricDiff(right, left);
+        assertThat(symmetricDiffResult.onlyInLeft).isEqualTo(expectedRight);
+        assertThat(symmetricDiffResult.onlyInRight).isEqualTo(expectedLeft);
+    }
+
+    public static Stream<Arguments> inputAndExpectedResultAfterSymmetricDiff()
+    {
+        return Stream.of(
+        //  inputLeft, inputRight, expectedLeft, expectedRight
+        args("Diff on identical sets",
+             Set.of(r(0, 1000), r(1000, 2000)), // inputLeft
+             Set.of(r(0, 2000)), // inputRight
+             Set.of(), // expectedLeft
+             Set.of()), // expectedRight
+
+        args("Diff on enclosing sets",
+             Set.of(r(0, 1000), r(1000, 2000)), // inputLeft
+             Set.of(r(1000, 2000)), // inputRight
+             Set.of(r(0, 1000)), // expectedLeft
+             Set.of()), // expectedRight
+
+        args("Diff on overlapping sets",
+             Set.of(r(0, 1000), r(1000, 2000)), // inputLeft
+             Set.of(r(500, 1500), r(2000, 2500)), // inputRight
+             Set.of(r(0, 500), r(1500, 2000)), // expectedLeft
+             Set.of(r(2000, 2500))), // expectedRight
+
+        args("Diff on disjoint ranges",
+             Set.of(r(0, 1000)), // inputLeft
+             Set.of(r(2000, 2500)), // inputRight
+             Set.of(r(0, 1000)), // expectedLeft
+             Set.of(r(2000, 2500))), // expectedRight
+
+        args("Diff on overlapping singleton sets",
+             Set.of(r(0, 1000)), // inputLeft
+             Set.of(r(500, 1500)), // inputRight
+             Set.of(r(0, 500)), // expectedLeft
+             Set.of(r(1000, 1500))) // expectedRight
+        );
+    }
+
+    private static TokenRange r(long start, long end)
+    {
+        return new TokenRange(start, end);
+    }
+
+    private static Arguments args(Object... args)
+    {
+        return Arguments.arguments(args);
     }
 
     private com.datastax.driver.core.TokenRange mockRange(long start, long end)

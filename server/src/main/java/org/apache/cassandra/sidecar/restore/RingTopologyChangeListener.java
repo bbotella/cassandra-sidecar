@@ -16,31 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.cassandra.sidecar.config;
+package org.apache.cassandra.sidecar.restore;
 
-import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
+import org.apache.cassandra.sidecar.common.response.TokenRangeReplicasResponse;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Configuration relevant for {@link org.apache.cassandra.sidecar.tasks.PeriodicTask}s
+ * To receive notifications on ring topology changed
  */
-public interface PeriodicTaskConfiguration
+public interface RingTopologyChangeListener
 {
     /**
-     * @return {@code true} if the task is to be executed, {@code false} if the task is to be skipped
+     * Notification on ring topology changed
+     * @param keyspace keyspace (which defines replication factor) to derive the topology from
+     * @param oldTopology old topology. The value is nullable. When the ring topology of the keyspace is just learned, the value is null.
+     * @param newTopology new topology. The value is always non-null
      */
-    boolean enabled();
-
-    /**
-     * @return the initial delay for the first execution of this task after being scheduled or rescheduled
-     */
-    @NotNull
-    MillisecondBoundConfiguration initialDelay();
-
-    /**
-     * @return how often this task will execute after the previous task has completed the {@link io.vertx.core.Promise}
-     * of the execution
-     */
-    @NotNull
-    MillisecondBoundConfiguration executeInterval();
+    void onRingTopologyChanged(String keyspace,
+                               @Nullable TokenRangeReplicasResponse oldTopology,
+                               @NotNull TokenRangeReplicasResponse newTopology);
 }

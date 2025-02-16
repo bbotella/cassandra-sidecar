@@ -43,6 +43,9 @@ public class PeriodicTaskConfigurationImpl implements PeriodicTaskConfiguration
     private MillisecondBoundConfiguration initialDelay;
     private MillisecondBoundConfiguration executeInterval;
 
+    /**
+     * Default constructor for jackson deserialization and allows to set the fields, including the aliased ones.
+     */
     public PeriodicTaskConfigurationImpl()
     {
         this.enabled = DEFAULT_ENABLED;
@@ -144,7 +147,7 @@ public class PeriodicTaskConfigurationImpl implements PeriodicTaskConfiguration
     public void setExecuteIntervalMillis(long executeIntervalMillis)
     {
         LOGGER.warn("'execute_interval_millis', 'poll_freq_millis', and 'poll_interval_millis' are deprecated, " +
-                    "use 'execute_interval' instead");
+                    "use 'execute_interval' instead.");
         setExecuteInterval(new MillisecondBoundConfiguration(executeIntervalMillis, TimeUnit.MILLISECONDS));
     }
 }

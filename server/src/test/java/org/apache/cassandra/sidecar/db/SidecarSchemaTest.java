@@ -168,10 +168,10 @@ public class SidecarSchemaTest
 
             "SELECT job_id, bucket_id, slice_id, bucket, key, checksum, start_token, end_token, compressed_size, " +
             "uncompressed_size FROM sidecar_internal.restore_slice_v3 " +
-            "WHERE job_id = ? AND bucket_id = ? AND end_token >= ? AND start_token <= ? ALLOW FILTERING",
+            "WHERE job_id = ? AND bucket_id = ? AND end_token > ? AND start_token < ? ALLOW FILTERING",
 
-            "INSERT INTO sidecar_internal.restore_range_v1 (  job_id,  bucket_id,  start_token,  end_token,  " +
-            "slice_id,  slice_bucket,  slice_key,  status_by_replica) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "UPDATE sidecar_internal.restore_range_v1 SET slice_id = ?, slice_bucket = ?, slice_key = ?, status_by_replica = status_by_replica + ? " +
+            "WHERE job_id = ? AND bucket_id = ? AND start_token = ? AND end_token = ?",
 
             "SELECT job_id, bucket_id, slice_id, slice_bucket, slice_key, start_token, end_token, status_by_replica " +
             "FROM sidecar_internal.restore_range_v1 WHERE job_id = ? AND bucket_id = ? ALLOW FILTERING",

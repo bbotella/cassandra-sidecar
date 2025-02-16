@@ -18,6 +18,7 @@
 
 package org.apache.cassandra.sidecar.restore;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Range;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import org.apache.cassandra.sidecar.cluster.ConsistencyVerifier;
@@ -34,23 +39,26 @@ import org.apache.cassandra.sidecar.common.data.ConsistencyLevel;
 import org.apache.cassandra.sidecar.common.data.ConsistencyVerificationResult;
 import org.apache.cassandra.sidecar.common.response.TokenRangeReplicasResponse;
 import org.apache.cassandra.sidecar.common.response.TokenRangeReplicasResponse.ReplicaInfo;
+import org.apache.cassandra.sidecar.common.server.cluster.locator.Token;
 import org.apache.cassandra.sidecar.common.server.data.RestoreRangeStatus;
 import org.apache.cassandra.sidecar.db.RestoreRange;
+import org.assertj.core.api.MapAssert;
 
-import static org.apache.cassandra.sidecar.restore.RestoreJobConsistencyLevelChecker.concludeOneRangeUnsafe;
-import static org.apache.cassandra.sidecar.restore.RestoreJobConsistencyLevelChecker.replicaSetForRangeUnsafe;
+import static org.apache.cassandra.sidecar.restore.RestoreJobConsistencyChecker.concludeOneRangeUnsafe;
+import static org.apache.cassandra.sidecar.restore.RestoreJobConsistencyChecker.populateStatusByReplica;
+import static org.apache.cassandra.sidecar.restore.RestoreJobConsistencyChecker.replicaSetForRangeUnsafe;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class RestoreJobConsistencyLevelCheckerTest
+class RestoreJobConsistencyCheckerTest
 {
     @Test
     void testReplicaSetForRangeNotFound()
     {
         RestoreRange range = RestoreRangeTest.createTestRange(1, 10);
         TokenRangeReplicasResponse topology = mock(TokenRangeReplicasResponse.class);
-        ReplicaInfo r1 = new ReplicaInfo("100", "110", null);
+        ReplicaInfo r1 = new ReplicaInfo("100", "110", ImmutableMap.of("dc1", ImmutableList.of("i1", "i2")));
         when(topology.writeReplicas()).thenReturn(Collections.singletonList(r1));
         InstanceSetByDc result = replicaSetForRangeUnsafe(range, topology);
         assertThat(result).isNull();
@@ -65,7 +73,7 @@ class RestoreJobConsistencyLevelCheckerTest
     {
         RestoreRange range = RestoreRangeTest.createTestRange(1, 10);
         TokenRangeReplicasResponse topology = mock(TokenRangeReplicasResponse.class);
-        ReplicaInfo r1 = new ReplicaInfo("5", "15", null);
+        ReplicaInfo r1 = new ReplicaInfo("5", "15", ImmutableMap.of("dc1", ImmutableList.of("i1", "i2")));
         when(topology.writeReplicas()).thenReturn(Collections.singletonList(r1));
         InstanceSetByDc result = replicaSetForRangeUnsafe(range, topology);
         assertThat(result)
@@ -168,6 +176,68 @@ class RestoreJobConsistencyLevelCheckerTest
         .isEqualTo(ConsistencyVerificationResult.FAILED);
     }
 
+    @Test
+    void testConcludeOneRangeWithDiscarded()
+    {
+        RestoreRange range = RestoreRangeTest.createTestRange(1, 10);
+        TokenRangeReplicasResponse topology = mock(TokenRangeReplicasResponse.class);
+        ReplicaInfo r1 = new ReplicaInfo("0", "15", replicaByDc(1, 3));
+        when(topology.writeReplicas()).thenReturn(Collections.singletonList(r1));
+
+        ConsistencyVerifier localQuorumVerifier = ConsistencyVerifiers.forConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM, "dc-1");
+
+        // has quorum replicas of desired status
+        Map<String, RestoreRangeStatus> replicaStatus = new HashMap<>();
+        replicaStatus.put("i-1", RestoreRangeStatus.STAGED);
+        replicaStatus.put("i-2", RestoreRangeStatus.CREATED);
+        replicaStatus.put("i-3", RestoreRangeStatus.FAILED);
+        replicaStatus.put("i-4", RestoreRangeStatus.DISCARDED); // i-4 worked on the range, but discards it since it loses the ownership
+        range = range.unbuild().replicaStatus(replicaStatus).build();
+        assertThat(concludeOneRangeUnsafe(topology, localQuorumVerifier, RestoreRangeStatus.STAGED, range))
+        .isEqualTo(ConsistencyVerificationResult.PENDING);
+
+        replicaStatus.put("i-1", RestoreRangeStatus.STAGED);
+        replicaStatus.put("i-2", RestoreRangeStatus.STAGED);
+        replicaStatus.put("i-3", RestoreRangeStatus.FAILED);
+        replicaStatus.put("i-4", RestoreRangeStatus.DISCARDED); // i-4 worked on the range, but discards it since it loses the ownership
+        range = range.unbuild().replicaStatus(replicaStatus).build();
+        assertThat(concludeOneRangeUnsafe(topology, localQuorumVerifier, RestoreRangeStatus.STAGED, range))
+        .isEqualTo(ConsistencyVerificationResult.SATISFIED);
+    }
+
+    @Test
+    void testPopulateStatusByReplica()
+    {
+        List<RestoreRange> restoreRanges = Arrays.asList(r(1, 10, ImmutableMap.of("i1", RestoreRangeStatus.STAGED,
+                                                                                  "i2", RestoreRangeStatus.CREATED)),
+                                                         r(5, 15, ImmutableMap.of("i3", RestoreRangeStatus.STAGED)),
+                                                         r(15, 20, ImmutableMap.of("i3", RestoreRangeStatus.STAGED,
+                                                                                   "i4", RestoreRangeStatus.CREATED)));
+        List<Range<Token>> expectedKeys =
+        Arrays.asList(Range.openClosed(Token.from(1), Token.from(5)),
+                      Range.openClosed(Token.from(5), Token.from(10)), // overlapping range of (1, 10] and (5, 15]
+                      Range.openClosed(Token.from(10), Token.from(15)),
+                      Range.openClosed(Token.from(15), Token.from(20)));
+        List<Map<String, RestoreRangeStatus>> expectedStatus =
+        Arrays.asList(ImmutableMap.of("i1", RestoreRangeStatus.STAGED,
+                                      "i2", RestoreRangeStatus.CREATED),
+                      ImmutableMap.of("i1", RestoreRangeStatus.STAGED,
+                                      "i2", RestoreRangeStatus.CREATED,
+                                      "i3", RestoreRangeStatus.STAGED), // merged from range (5, 15]
+                      ImmutableMap.of("i3", RestoreRangeStatus.STAGED),
+                      ImmutableMap.of("i3", RestoreRangeStatus.STAGED,
+                                      "i4", RestoreRangeStatus.CREATED));
+        Map<Range<Token>, Pair<Map<String, RestoreRangeStatus>, RestoreRange>> result = populateStatusByReplica(restoreRanges);
+        MapAssert<Range<Token>, ?> assertion = assertThat(result).hasSize(4);
+        for (int i = 0; i < 4; i++)
+        {
+            Range<Token> expectedKey = expectedKeys.get(i);
+            assertion.containsKey(expectedKey);
+            Map<String, RestoreRangeStatus> status = result.get(expectedKey).getLeft();
+            assertThat(status).isEqualTo(expectedStatus.get(i));
+        }
+    }
+
     private Map<String, List<String>> replicaByDc(int dcCount, int replicasPerDc)
     {
         Map<String, List<String>> result = new HashMap<>(dcCount);
@@ -177,5 +247,10 @@ class RestoreJobConsistencyLevelCheckerTest
             result.put("dc-" + i, replicas);
         }
         return result;
+    }
+
+    private static RestoreRange r(long start, long end, Map<String, RestoreRangeStatus> status)
+    {
+        return RestoreRangeTest.createTestRange(start, end).unbuild().replicaStatus(status).build();
     }
 }

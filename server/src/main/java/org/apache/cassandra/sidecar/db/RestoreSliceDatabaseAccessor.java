@@ -27,9 +27,7 @@ import com.datastax.driver.core.Row;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
-import org.apache.cassandra.sidecar.common.server.cluster.locator.Token;
 import org.apache.cassandra.sidecar.common.server.cluster.locator.TokenRange;
-import org.apache.cassandra.sidecar.common.utils.Preconditions;
 import org.apache.cassandra.sidecar.db.schema.RestoreSlicesSchema;
 import org.apache.cassandra.sidecar.db.schema.SidecarSchema;
 
@@ -80,13 +78,10 @@ public class RestoreSliceDatabaseAccessor extends DatabaseAccessor<RestoreSlices
     public List<RestoreSlice> selectByJobByBucketByTokenRange(RestoreJob restoreJob, short bucketId, TokenRange range)
     {
         sidecarSchema.ensureInitialized();
-        Token firstToken = range.firstToken();
-        Preconditions.checkArgument(firstToken != null, "range cannot be empty");
-
         BoundStatement statement = tableSchema.findAllByTokenRange()
                                               .bind(restoreJob.jobId,
                                                     bucketId,
-                                                    firstToken.toBigInteger(),
+                                                    range.start().toBigInteger(),
                                                     range.end().toBigInteger());
         ResultSet result = execute(statement);
         List<RestoreSlice> slices = new ArrayList<>();

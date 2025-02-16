@@ -19,13 +19,18 @@
 package org.apache.cassandra.sidecar.restore;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
 import org.apache.cassandra.sidecar.common.data.RestoreJobStatus;
+import org.apache.cassandra.sidecar.common.server.cluster.locator.TokenRange;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.RestoreJobConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
@@ -40,6 +45,8 @@ import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
 @Singleton
 public class RestoreJobManagerGroup
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestoreJobManagerGroup.class);
+
     private final RestoreJobConfiguration restoreJobConfig;
     // instance id --> RestoreJobManager
     private final Map<Integer, RestoreJobManager> managerGroup = new ConcurrentHashMap<>();
@@ -112,6 +119,29 @@ public class RestoreJobManagerGroup
             throw new IllegalStateException("Cannot update with a restore job in final status");
         }
         managerGroup.values().forEach(manager -> manager.updateRestoreJob(restoreJob));
+    }
+
+    /**
+     * Discard the ranges that overlap with the given {@param otherRanges}
+     * @param instanceMetadata cassandra instance to discard the restore range from
+     * @param restoreJob restore job instance
+     * @param otherRanges set of {@link TokenRange} to find the overlapping {@link RestoreRange} and discard
+     * @return set of overlapping {@link RestoreRange}
+     */
+    Set<RestoreRange> discardOverlappingRanges(InstanceMetadata instanceMetadata, RestoreJob restoreJob, Set<TokenRange> otherRanges)
+    {
+        if (restoreJob.status.isFinal())
+        {
+            throw new IllegalStateException("Cannot remove ranges from a restore job in final status");
+        }
+        RestoreJobManager manager = managerGroup.get(instanceMetadata.id());
+        if (manager == null)
+        {
+            LOGGER.debug("No RestoreJobManager found for Cassandra instance. No ranges to discard. instanceId={}",
+                         instanceMetadata.id());
+            return Set.of();
+        }
+        return manager.discardOverlappingRanges(restoreJob, otherRanges);
     }
 
     /**

@@ -18,6 +18,11 @@
 
 package org.apache.cassandra.sidecar.restore;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import com.datastax.driver.core.utils.UUIDs;
@@ -30,10 +35,14 @@ import org.apache.cassandra.sidecar.restore.RingTopologyRefresher.ReplicaByToken
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class RingTopologyRefresherTest
 {
-    private final ReplicaByTokenRangePerKeyspace replicaByTokenRangePerKeyspace = new ReplicaByTokenRangePerKeyspace();
+    private final List<List<Object>> listenerValueCaptor = new ArrayList<>();
+    private final RingTopologyChangeListener testListener = (keyspace, oldTopology, newTopology) ->
+                                                            listenerValueCaptor.add(Arrays.asList(keyspace, oldTopology, newTopology));
+    private final ReplicaByTokenRangePerKeyspace replicaByTokenRangePerKeyspace = new ReplicaByTokenRangePerKeyspace(testListener);
 
     @Test
     void testRegisterJobs()
@@ -67,6 +76,7 @@ class RingTopologyRefresherTest
         assertThat(replicaByTokenRangePerKeyspace.jobsByKeyspaceUnsafe().get(job3.keyspaceName)).containsExactlyInAnyOrder(job3.jobId);
         assertThat(replicaByTokenRangePerKeyspace.promisesUnsafe()).isEmpty();
         assertThat(replicaByTokenRangePerKeyspace.mappingUnsafe()).isEmpty();
+        assertThat(listenerValueCaptor).isEmpty();
     }
 
     @Test
@@ -85,6 +95,7 @@ class RingTopologyRefresherTest
         .isSameAs(future2);
         assertThat(future1.isComplete()).isFalse();
         assertThat(replicaByTokenRangePerKeyspace.mappingUnsafe()).isEmpty();
+        assertThat(listenerValueCaptor).isEmpty();
         // load the topology should complete the futures
         replicaByTokenRangePerKeyspace.load(ks -> mockTopology);
         assertThat(future1.isComplete()).isTrue();
@@ -94,6 +105,8 @@ class RingTopologyRefresherTest
         assertThat(replicaByTokenRangePerKeyspace.jobsByKeyspaceUnsafe()).containsOnlyKeys(job1.keyspaceName);
         assertThat(replicaByTokenRangePerKeyspace.promisesUnsafe()).containsOnlyKeys(job1.keyspaceName);
         assertThat(replicaByTokenRangePerKeyspace.mappingUnsafe()).containsEntry(job1.keyspaceName, mockTopology);
+        assertThat(listenerValueCaptor).hasSize(1);
+        assertListenerCapturedValues(listenerValueCaptor.get(0), job1.keyspaceName, null, mockTopology);
 
         // now unregister the jobs. start with job1; because the job2 is still registered, the mapping remains
         replicaByTokenRangePerKeyspace.unregister(job1);
@@ -141,10 +154,42 @@ class RingTopologyRefresherTest
         Future<TokenRangeReplicasResponse> future = replicaByTokenRangePerKeyspace.futureOf(job);
         assertThat(future.isComplete()).isFalse();
         assertThat(replicaByTokenRangePerKeyspace.forRestoreJob(job)).isNull();
+        assertThat(listenerValueCaptor).isEmpty();
         TokenRangeReplicasResponse mockTopology = mock(TokenRangeReplicasResponse.class);
         replicaByTokenRangePerKeyspace.load(ks -> mockTopology);
         assertThat(future.isComplete()).isTrue();
         assertThat(future.result()).isSameAs(mockTopology);
         assertThat(replicaByTokenRangePerKeyspace.forRestoreJob(job)).isSameAs(mockTopology);
+        assertThat(listenerValueCaptor).hasSize(1);
+        assertListenerCapturedValues(listenerValueCaptor.get(0), job.keyspaceName, null, mockTopology);
+    }
+
+    @Test
+    void testTopologyChanged()
+    {
+        assertThat(listenerValueCaptor).isEmpty();
+        RestoreJob job = RestoreJobTest.createNewTestingJob(UUIDs.timeBased());
+        replicaByTokenRangePerKeyspace.futureOf(job);
+        TokenRangeReplicasResponse mockTopologyEpoch1 = mock(TokenRangeReplicasResponse.class);
+        when(mockTopologyEpoch1.writeReplicas())
+        .thenReturn(Collections.singletonList(new TokenRangeReplicasResponse.ReplicaInfo("1", "10", null)));
+        replicaByTokenRangePerKeyspace.load(ks -> mockTopologyEpoch1);
+        assertThat(listenerValueCaptor).hasSize(1);
+        assertListenerCapturedValues(listenerValueCaptor.get(0), job.keyspaceName, null, mockTopologyEpoch1);
+        TokenRangeReplicasResponse mockTopologyEpoch2 = mock(TokenRangeReplicasResponse.class);
+        when(mockTopologyEpoch1.writeReplicas())
+        .thenReturn(Collections.singletonList(new TokenRangeReplicasResponse.ReplicaInfo("100", "110", null)));
+        replicaByTokenRangePerKeyspace.load(ks -> mockTopologyEpoch2);
+        assertThat(listenerValueCaptor).hasSize(2);
+        assertListenerCapturedValues(listenerValueCaptor.get(1), job.keyspaceName, mockTopologyEpoch1, mockTopologyEpoch2);
+    }
+
+    private void assertListenerCapturedValues(List<Object> values,
+                                              String keyspace, TokenRangeReplicasResponse oldValue, TokenRangeReplicasResponse newValue)
+    {
+        assertThat(values).hasSize(3);
+        assertThat(values.get(0)).isEqualTo(keyspace);
+        assertThat(values.get(1)).isSameAs(oldValue);
+        assertThat(values.get(2)).isSameAs(newValue);
     }
 }
