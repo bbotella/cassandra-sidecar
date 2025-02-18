@@ -35,6 +35,7 @@ import org.apache.cassandra.sidecar.client.retry.RetryPolicy;
 import org.apache.cassandra.sidecar.client.retry.RunnableOnStatusCodeRetryPolicy;
 import org.apache.cassandra.sidecar.client.selection.InstanceSelectionPolicy;
 import org.apache.cassandra.sidecar.client.selection.RandomInstanceSelectionPolicy;
+import org.apache.cassandra.sidecar.common.client.SidecarInstance;
 import org.apache.cassandra.sidecar.common.request.AbortRestoreJobRequest;
 import org.apache.cassandra.sidecar.common.request.CreateRestoreJobRequest;
 import org.apache.cassandra.sidecar.common.request.CreateRestoreJobSliceRequest;
