@@ -90,6 +90,7 @@ import org.apache.cassandra.sidecar.config.yaml.SchemaKeyspaceConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.ServiceConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.SidecarConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.SslConfigurationImpl;
+import org.apache.cassandra.sidecar.coordination.ClusterLease;
 import org.apache.cassandra.sidecar.metrics.instance.InstanceHealthMetrics;
 import org.apache.cassandra.sidecar.server.MainModule;
 import org.apache.cassandra.sidecar.server.Server;
@@ -353,7 +354,9 @@ public abstract class SharedClusterIntegrationTestBase
         sidecarServerInjector = Guice.createInjector(Modules.override(new MainModule()).with(testModule));
         Vertx vertx = sidecarServerInjector.getInstance(Vertx.class);
         vertx.eventBus()
-             .localConsumer(SidecarServerEvents.ON_SIDECAR_SCHEMA_INITIALIZED.address(), msg -> sidecarSchemaReadyLatch.countDown());
+             .localConsumer(SidecarServerEvents.ON_SIDECAR_SCHEMA_INITIALIZED.address(), msg -> {
+                 sidecarSchemaReadyLatch.countDown();
+             });
         Server sidecarServer = sidecarServerInjector.getInstance(Server.class);
         sidecarServer.start()
                      .onSuccess(s -> context.completeNow())
@@ -636,6 +639,13 @@ public abstract class SharedClusterIntegrationTestBase
         public DnsResolver dnsResolver()
         {
             return dnsResolver;
+        }
+
+        @Provides
+        @Singleton
+        public ClusterLease clusterLease()
+        {
+            return new ClusterLease(ClusterLease.Ownership.CLAIMED);
         }
 
         private List<InetSocketAddress> buildContactPoints()

@@ -103,6 +103,7 @@ import org.apache.cassandra.sidecar.datahub.EmitterFactory;
 import org.apache.cassandra.sidecar.datahub.IdentifiersProvider;
 import org.apache.cassandra.sidecar.datahub.SchemaReportingTask;
 import org.apache.cassandra.sidecar.db.SidecarLeaseDatabaseAccessor;
+import org.apache.cassandra.sidecar.db.schema.ConfigsSchema;
 import org.apache.cassandra.sidecar.db.schema.RestoreJobsSchema;
 import org.apache.cassandra.sidecar.db.schema.RestoreRangesSchema;
 import org.apache.cassandra.sidecar.db.schema.RestoreSlicesSchema;
@@ -140,8 +141,11 @@ import org.apache.cassandra.sidecar.routes.TableStatsHandler;
 import org.apache.cassandra.sidecar.routes.TimeSkewHandler;
 import org.apache.cassandra.sidecar.routes.TokenRangeReplicaMapHandler;
 import org.apache.cassandra.sidecar.routes.cassandra.NodeSettingsHandler;
+import org.apache.cassandra.sidecar.routes.cdc.AllServiceConfigHandler;
+import org.apache.cassandra.sidecar.routes.cdc.DeleteServiceConfigHandler;
 import org.apache.cassandra.sidecar.routes.cdc.ListCdcDirHandler;
 import org.apache.cassandra.sidecar.routes.cdc.StreamCdcSegmentHandler;
+import org.apache.cassandra.sidecar.routes.cdc.UpdateServiceConfigHandler;
 import org.apache.cassandra.sidecar.routes.restore.AbortRestoreJobHandler;
 import org.apache.cassandra.sidecar.routes.restore.CreateRestoreJobHandler;
 import org.apache.cassandra.sidecar.routes.restore.CreateRestoreSliceHandler;
@@ -351,6 +355,9 @@ public class MainModule extends AbstractModule
                               AbortRestoreJobHandler abortRestoreJobHandler,
                               CreateRestoreSliceHandler createRestoreSliceHandler,
                               RestoreJobProgressHandler restoreJobProgressHandler,
+                              UpdateServiceConfigHandler updateServiceConfigHandler,
+                              DeleteServiceConfigHandler deleteServiceConfigHandler,
+                              AllServiceConfigHandler getServiceConfigHandler,
                               ConnectedClientStatsHandler connectedClientStatsHandler,
                               OperationalJobHandler operationalJobHandler,
                               ListOperationalJobsHandler listOperationalJobsHandler,
@@ -606,6 +613,23 @@ public class MainModule extends AbstractModule
                                     .handler(streamCdcSegmentHandler)
                                     .build();
 
+        protectedRouteBuilderFactory.get().router(router).method(HttpMethod.PUT)
+                                    .endpoint(ApiEndpointsV1.SERVICE_CONFIG_ROUTE)
+                                    .setBodyHandler(true)
+                                    .handler(updateServiceConfigHandler)
+                                    .build();
+
+        protectedRouteBuilderFactory.get().router(router).method(HttpMethod.DELETE)
+                                    .endpoint(ApiEndpointsV1.SERVICE_CONFIG_ROUTE)
+                                    .setBodyHandler(true)
+                                    .handler(deleteServiceConfigHandler)
+                                    .build();
+
+        protectedRouteBuilderFactory.get().router(router).method(HttpMethod.GET)
+                                    .endpoint(ApiEndpointsV1.SERVICES_CONFIG_ROUTE)
+                                    .handler(getServiceConfigHandler)
+                                    .build();
+
         return router;
     }
 
@@ -803,6 +827,7 @@ public class MainModule extends AbstractModule
                                        SidecarRolePermissionsSchema sidecarRolePermissionsSchema,
                                        SystemAuthSchema systemAuthSchema,
                                        SidecarLeaseSchema sidecarLeaseSchema,
+                                       ConfigsSchema configsSchema,
                                        SidecarMetrics metrics,
                                        ClusterLease clusterLease)
     {
@@ -813,6 +838,7 @@ public class MainModule extends AbstractModule
         sidecarInternalKeyspace.registerTableSchema(sidecarRolePermissionsSchema);
         sidecarInternalKeyspace.registerTableSchema(systemAuthSchema);
         sidecarInternalKeyspace.registerTableSchema(sidecarLeaseSchema);
+        sidecarInternalKeyspace.registerTableSchema(configsSchema);
         SchemaMetrics schemaMetrics = metrics.server().schema();
         return new SidecarSchema(vertx, periodicTaskExecutor, configuration,
                                  sidecarInternalKeyspace, cqlSessionProvider, schemaMetrics, clusterLease);

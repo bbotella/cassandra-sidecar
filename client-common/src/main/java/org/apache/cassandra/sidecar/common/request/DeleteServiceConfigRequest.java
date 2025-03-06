@@ -15,30 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.cassandra.sidecar.config;
 
-import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
-import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
+package org.apache.cassandra.sidecar.common.request;
+
+import io.netty.handler.codec.http.HttpMethod;
+import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
 
 /**
- * This class encapsulates configuration values for cdc.
+ * Represents a request for deleting configurations for a service from "configs" table inside
+ * sidecar internal keyspace.
  */
-public interface CdcConfiguration
+public class DeleteServiceConfigRequest extends Request
 {
     /**
-     * @return segment hard link cache expiration time used in {@link org.apache.cassandra.sidecar.cdc.CdcLogCache}
+     * Constructs a Sidecar request with the given {@code requestURI}. Defaults to {@code ssl} enabled.
      */
-    SecondBoundConfiguration segmentHardLinkCacheExpiry();
+    public DeleteServiceConfigRequest(Service service)
+    {
+        super(ApiEndpointsV1.SERVICE_CONFIG_ROUTE.replaceAll(ApiEndpointsV1.SERVICE_PARAM, service.serviceName));
+    }
 
-    /**
-     *
-     * @return true if cdc feature is enabled
-     */
-    boolean isEnabled();
-
-    /**
-     *
-     * @return how frequently CDC configs are to be refreshed
-     */
-    MillisecondBoundConfiguration cdcConfigRefreshTime();
+    @Override
+    public HttpMethod method()
+    {
+        return HttpMethod.DELETE;
+    }
 }

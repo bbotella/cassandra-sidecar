@@ -29,7 +29,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -66,8 +68,11 @@ import org.apache.cassandra.sidecar.common.data.RestoreJobSecrets;
 import org.apache.cassandra.sidecar.common.request.ImportSSTableRequest;
 import org.apache.cassandra.sidecar.common.request.NodeSettingsRequest;
 import org.apache.cassandra.sidecar.common.request.Request;
+import org.apache.cassandra.sidecar.common.request.Service;
+import org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload;
 import org.apache.cassandra.sidecar.common.request.data.CreateRestoreJobRequestPayload;
 import org.apache.cassandra.sidecar.common.request.data.MD5Digest;
+import org.apache.cassandra.sidecar.common.request.data.UpdateCdcServiceConfigPayload;
 import org.apache.cassandra.sidecar.common.request.data.XXHash32Digest;
 import org.apache.cassandra.sidecar.common.response.ConnectedClientStatsResponse;
 import org.apache.cassandra.sidecar.common.response.GossipInfoResponse;
@@ -654,6 +659,7 @@ abstract class SidecarClientTest
         client.createSnapshot(sidecarInstance, "cycling", "cyclist_name", "2023.04.11")
               .get(30, TimeUnit.SECONDS);
 
+        assertThat(mockWebServer.getRequestCount()).isEqualTo(1);
         assertThat(mockWebServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockWebServer.takeRequest();
         assertThat(request.getPath()).isEqualTo(ApiEndpointsV1.SNAPSHOTS_ROUTE
@@ -1658,6 +1664,59 @@ abstract class SidecarClientTest
             baos.write(bytes, 0, bytes.length);
         }
         assertThat(new String(baos.toByteArray(), StandardCharsets.UTF_8)).isEqualTo("Test Content");
+    }
+
+    @Test
+    public void testAllServiceSuccessTests() throws IOException, ExecutionException, InterruptedException
+    {
+        List<AllServicesConfigPayload.Service> services = new ArrayList<>();
+        Map<String, String> kafkaConfigs = new HashMap<>();
+        kafkaConfigs.put("k1", "v1");
+        kafkaConfigs.put("k2", "v2");
+        Map<String, String> cdcConfigs = new HashMap<>();
+        cdcConfigs.put("k1", "v1");
+        cdcConfigs.put("k2", "v2");
+        services.add(new AllServicesConfigPayload.Service("kafka", kafkaConfigs));
+        services.add(new AllServicesConfigPayload.Service("cdc", cdcConfigs));
+        AllServicesConfigPayload expectedResponse = new AllServicesConfigPayload(services);
+
+        MockResponse response = new MockResponse();
+        response.setResponseCode(200);
+        response.setHeader("content-type", "application/json");
+        ObjectMapper mapper = new ObjectMapper();
+        response.setBody(mapper.writeValueAsString(expectedResponse));
+        enqueue(response);
+        assertThat(client.allServicesConfig().get()).isEqualTo(expectedResponse);
+        validateResponseServed(ApiEndpointsV1.SERVICES_CONFIG_ROUTE,
+                               request -> assertThat(request.getMethod()).isEqualTo("GET"));
+    }
+
+    @Test
+    public void testUpdateConfigSuccessTests() throws IOException, ExecutionException, InterruptedException
+    {
+        Map<String, String> payload = new HashMap<>();
+        payload.put("testKey", "testValue");
+        UpdateCdcServiceConfigPayload putResponse = new UpdateCdcServiceConfigPayload(payload);
+        MockResponse response = new MockResponse();
+        response.setResponseCode(200);
+        response.setHeader("content-type", "application/json");
+        ObjectMapper mapper = new ObjectMapper();
+        response.setBody(mapper.writeValueAsString(putResponse));
+        enqueue(response);
+        assertThat(client.updateCdcServiceConfig(Service.CDC, payload).get()).isEqualTo(putResponse);
+        validateResponseServed(ApiEndpointsV1.SERVICE_CONFIG_ROUTE.replaceAll(ApiEndpointsV1.SERVICE_PARAM, "cdc"),
+                               request -> assertThat(request.getMethod()).isEqualTo("PUT"));
+    }
+
+    @Test
+    public void testDeleteConfigTests() throws ExecutionException, InterruptedException
+    {
+        MockResponse response = new MockResponse();
+        response.setResponseCode(200);
+        enqueue(response);
+        client.deleteCdcServiceConfig(Service.CDC).get();
+        validateResponseServed(ApiEndpointsV1.SERVICE_CONFIG_ROUTE.replaceAll(ApiEndpointsV1.SERVICE_PARAM, "cdc"),
+                request -> assertThat(request.getMethod()).isEqualTo("DELETE"));
     }
 
     @Test
