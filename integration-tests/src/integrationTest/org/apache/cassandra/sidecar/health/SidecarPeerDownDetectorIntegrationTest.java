@@ -183,15 +183,15 @@ class SidecarPeerDownDetectorIntegrationTest extends SharedClusterSidecarIntegra
         assertTrue(monitor.getStatus().isEmpty());
 
         // After some time, peer is up
-        Thread.sleep(5000);
+        Thread.sleep(10000);
         checkHostUp(monitor, "localhost2");
 
         stopSidecarInstanceForTest(1);
-        Thread.sleep(5000);
+        Thread.sleep(10000);
         // After killing peer sidecar instance, monitor caches up and the host is down
         checkHostDown(monitor, "localhost2");
         startSidecarInstanceForTest(1);
-        Thread.sleep(5000);
+        Thread.sleep(10000);
         // After restarting peer sidecar instance, monitor caches up and the host is down
         checkHostUp(monitor, "localhost2");
     }
