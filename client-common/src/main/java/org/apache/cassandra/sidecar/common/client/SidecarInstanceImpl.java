@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.cassandra.sidecar.client;
+package org.apache.cassandra.sidecar.common.client;
 
 import java.util.Objects;
 

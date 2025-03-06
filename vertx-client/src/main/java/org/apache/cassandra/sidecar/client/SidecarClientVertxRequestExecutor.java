@@ -18,18 +18,30 @@
 
 package org.apache.cassandra.sidecar.client;
 
-import java.util.List;
+import io.vertx.core.Vertx;
 
-import org.apache.cassandra.sidecar.common.client.SidecarInstance;
+import static java.util.Objects.requireNonNull;
 
 /**
- * A class that provides the list of {@link SidecarInstance}s. This class allows for statically or dynamically
- * providing a list of instances. It is meant to support expansions and shrink of Cassandra clusters.
+ * A {@link RequestExecutor} implementation that uses vertx primitives
  */
-public interface SidecarInstancesProvider
+public class SidecarClientVertxRequestExecutor extends VertxRequestExecutor
 {
+    private final Vertx vertx;
+
+    public SidecarClientVertxRequestExecutor(VertxHttpClient httpClient)
+    {
+        super(httpClient);
+        this.vertx = requireNonNull(httpClient.vertx(), "The vertx instance is required");
+    }
+
     /**
-     * @return the list of {@link SidecarInstance}s
+     * @throws Exception Closing the client vertx should not close general Vertx, that's why we are overriding
+     * the close method from the VertxRequestExecutor class.
      */
-    List<SidecarInstance> instances();
+    @Override
+    public void close() throws Exception
+    {
+        httpClient.close();
+    }
 }

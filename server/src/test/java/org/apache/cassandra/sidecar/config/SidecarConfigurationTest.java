@@ -295,6 +295,66 @@ class SidecarConfigurationTest
     }
 
     @Test
+    void testSidecarPeerHealthConfiguration() throws IOException
+    {
+        String yaml = "sidecar_peer_health:\n" +
+                      "  enabled: true\n" +
+                      "  execute_interval: 63s\n" +
+                      "  max_retries: 15\n" +
+                      "  retry_delay: 5s";
+        SidecarConfigurationImpl sidecarConfiguration = SidecarConfigurationImpl.fromYamlString(yaml);
+        assertThat(sidecarConfiguration).isNotNull();
+        SidecarPeerHealthConfiguration config = sidecarConfiguration.sidecarPeerHealthConfiguration();
+        assertThat(config).isNotNull();
+        assertThat(config.enabled()).isTrue();
+        assertThat(config.executeInterval().toMillis()).isEqualTo(63_000);
+        assertThat(config.maxRetries()).isEqualTo(15);
+        assertThat(config.retryDelay().toMillis()).isEqualTo(5_000);
+    }
+
+    @Test
+    void testSidecarClientConfiguration() throws IOException
+    {
+        String yaml = "sidecar_client:\n" +
+                      "  request_timeout: 1s\n" +
+                      "  request_idle_timeout: 1s\n" +
+                      "  connection_pool_max_size: 10\n" +
+                      "  connection_pool_clearing_period: 10s\n" +
+                      "  connection_pool_event_loop_size: 10\n" +
+                      "  connection_pool_max_wait_queue_size: 10\n" +
+                      "  max_retries: 3\n" +
+                      "  retry_delay: 1s\n" +
+                      "  max_retry_delay: 2s\n" +
+                      "  ssl:\n" +
+                      "    enabled: false\n" +
+                      "    keystore:\n" +
+                      "      type: PKCS12\n" +
+                      "      path: path/to/keystore.p12\n" +
+                      "      password: password\n" +
+                      "    truststore:\n" +
+                      "      type: PKCS12\n" +
+                      "      path: path/to/keystore.p12\n" +
+                      "      password: password";
+        SidecarConfigurationImpl sidecarConfiguration = SidecarConfigurationImpl.fromYamlString(yaml);
+        assertThat(sidecarConfiguration).isNotNull();
+        SidecarClientConfiguration config = sidecarConfiguration.sidecarClientConfiguration();
+        assertThat(config).isNotNull();
+        assertThat(config.sslConfiguration()).isNotNull();
+        assertThat(config.sslConfiguration().enabled()).isFalse();
+        assertThat(config.sslConfiguration().isKeystoreConfigured()).isTrue();
+        assertThat(config.sslConfiguration().isTrustStoreConfigured()).isTrue();
+        assertThat(config.requestTimeout().toMillis()).isEqualTo(1_000);
+        assertThat(config.requestIdleTimeout().toMillis()).isEqualTo(1_000);
+        assertThat(config.connectionPoolMaxSize()).isEqualTo(10);
+        assertThat(config.connectionPoolCleanerPeriod().toMillis()).isEqualTo(10_000);
+        assertThat(config.connectionPoolEventLoopSize()).isEqualTo(10);
+        assertThat(config.connectionPoolMaxWaitQueueSize()).isEqualTo(10);
+        assertThat(config.maxRetries()).isEqualTo(3);
+        assertThat(config.retryDelay().toMillis()).isEqualTo(1_000);
+        assertThat(config.maxRetryDelay().toMillis()).isEqualTo(2_000);
+    }
+
+    @Test
     void testVertxFilesystemOptionsConfiguration() throws IOException
     {
         Path yamlPath = yaml("config/sidecar_vertx_filesystem_options.yaml");
@@ -405,6 +465,8 @@ class SidecarConfigurationTest
         // metrics configuration
         validateMetricsConfiguration(config.metricsConfiguration());
 
+        validateSidecarPeerHealthConfigurationDefaults(config.sidecarPeerHealthConfiguration());
+
         // cassandra input validation configuration
         validateCassandraInputValidationConfigurationFromYaml(config.cassandraInputValidationConfiguration());
 
@@ -486,6 +548,15 @@ class SidecarConfigurationTest
 
         // cassandra input validation configuration
         validateCassandraInputValidationConfigurationFromYaml(config.cassandraInputValidationConfiguration());
+    }
+
+    private void validateSidecarPeerHealthConfigurationDefaults(SidecarPeerHealthConfiguration config)
+    {
+        assertThat(config).isNotNull();
+        assertThat(config.enabled()).isFalse();
+        assertThat(config.executeInterval().toMillis()).isEqualTo(30_000);
+        assertThat(config.maxRetries()).isEqualTo(5);
+        assertThat(config.retryDelay().toMillis()).isEqualTo(10_000);
     }
 
     void validateServiceConfigurationFromYaml(ServiceConfiguration serviceConfiguration)

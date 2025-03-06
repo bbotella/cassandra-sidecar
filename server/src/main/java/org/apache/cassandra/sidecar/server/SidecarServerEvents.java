@@ -89,6 +89,20 @@ public enum SidecarServerEvents
     ON_SIDECAR_SCHEMA_INITIALIZED,
 
     /**
+     * The {@link io.vertx.core.eventbus.EventBus} address where events will be published when the health of a Sidecar
+     * peer instance is marked as DOWN, including in the payload the {@link org.apache.cassandra.sidecar.common.client.SidecarInstance}
+     * whose status changed.
+     */
+    ON_SIDECAR_PEER_DOWN,
+
+    /**
+     * The {@link io.vertx.core.eventbus.EventBus} address where events will be published when the health of a Sidecar
+     * peer instance is marked as UP, including in the payload the {@link org.apache.cassandra.sidecar.common.client.SidecarInstance}
+     * whose status changed.
+     */
+    ON_SIDECAR_PEER_UP,
+
+    /**
      * The {@link io.vertx.core.eventbus.EventBus} address where events will be published when the Sidecar instance
      * has claimed the cluster-wide lease.
      */

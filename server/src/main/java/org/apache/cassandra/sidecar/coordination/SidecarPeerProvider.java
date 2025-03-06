@@ -16,20 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.cassandra.sidecar.client;
+package org.apache.cassandra.sidecar.coordination;
 
-import java.util.List;
+import java.util.Set;
 
 import org.apache.cassandra.sidecar.common.client.SidecarInstance;
 
 /**
- * A class that provides the list of {@link SidecarInstance}s. This class allows for statically or dynamically
- * providing a list of instances. It is meant to support expansions and shrink of Cassandra clusters.
+ * Provides a set of Sidecar peers
  */
-public interface SidecarInstancesProvider
+public interface SidecarPeerProvider
 {
     /**
-     * @return the list of {@link SidecarInstance}s
+     * @return a set of Sidecar peers
      */
-    List<SidecarInstance> instances();
+    Set<SidecarInstance> get();
 }

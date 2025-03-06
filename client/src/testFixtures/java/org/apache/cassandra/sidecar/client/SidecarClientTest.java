@@ -63,6 +63,8 @@ import org.apache.cassandra.sidecar.client.request.RequestExecutorTest;
 import org.apache.cassandra.sidecar.client.retry.RetryAction;
 import org.apache.cassandra.sidecar.client.retry.RetryPolicy;
 import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
+import org.apache.cassandra.sidecar.common.client.SidecarInstance;
+import org.apache.cassandra.sidecar.common.client.SidecarInstanceImpl;
 import org.apache.cassandra.sidecar.common.data.OperationalJobStatus;
 import org.apache.cassandra.sidecar.common.data.RestoreJobSecrets;
 import org.apache.cassandra.sidecar.common.request.ImportSSTableRequest;
@@ -1571,7 +1573,12 @@ abstract class SidecarClientTest
         long expectedTotalSize = 2048;
         long expectedSnapshotSize = 100;
 
-        TableStatsResponse tableStatsResponse = new TableStatsResponse(testKeyspace, testTable, expectedSstables, expectedSize, expectedTotalSize, expectedSnapshotSize);
+        TableStatsResponse tableStatsResponse = new TableStatsResponse(testKeyspace,
+                                                                       testTable,
+                                                                       expectedSstables,
+                                                                       expectedSize,
+                                                                       expectedTotalSize,
+                                                                       expectedSnapshotSize);
         ObjectMapper mapper = new ObjectMapper();
         MockResponse response = new MockResponse().setResponseCode(OK.code())
                                                   .setBody(mapper.writeValueAsString(tableStatsResponse));

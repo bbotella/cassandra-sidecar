@@ -1,0 +1,221 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.cassandra.sidecar.health;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import org.apache.cassandra.distributed.api.ICluster;
+import org.apache.cassandra.distributed.api.IInstance;
+import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
+import org.apache.cassandra.sidecar.config.ServiceConfiguration;
+import org.apache.cassandra.sidecar.config.SidecarPeerHealthConfiguration;
+import org.apache.cassandra.sidecar.config.yaml.ServiceConfigurationImpl;
+import org.apache.cassandra.sidecar.config.yaml.SidecarConfigurationImpl;
+import org.apache.cassandra.sidecar.config.yaml.SidecarPeerHealthConfigurationImpl;
+import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthMonitorTask;
+import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthProvider;
+import org.apache.cassandra.sidecar.server.Server;
+import org.apache.cassandra.sidecar.testing.InnerDcTokenAdjacentPeerTestProvider.TestSidecarHostInfo;
+import org.apache.cassandra.sidecar.testing.QualifiedName;
+import org.apache.cassandra.sidecar.testing.SharedClusterSidecarIntegrationTestBase;
+import org.apache.cassandra.testing.ClusterBuilderConfiguration;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.apache.cassandra.testing.TestUtils.DC1_RF3;
+import static org.apache.cassandra.testing.utils.AssertionUtils.getBlocking;
+import static org.assertj.core.api.Assertions.assertThat;
+
+class SidecarPeerDownDetectorIntegrationTest extends SharedClusterSidecarIntegrationTestBase
+{
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SidecarPeerDownDetectorIntegrationTest.class);
+
+    List<TestSidecarHostInfo> sidecarServerList = new ArrayList<>();
+
+    @Override
+    protected ClusterBuilderConfiguration testClusterConfiguration()
+    {
+        return new ClusterBuilderConfiguration().nodesPerDc(3);
+    }
+
+    @Override
+    protected void startSidecar(ICluster<? extends IInstance> cluster) throws InterruptedException
+    {
+        Supplier<List<TestSidecarHostInfo>> supplier = () -> sidecarServerList;
+        PeersModule peersModule = new PeersModule(supplier);
+        for (IInstance cassandraInstance : cluster)
+        {
+            // Storing all the created sidecar instances into a list for further reference.
+            LOGGER.info("Starting Sidecar instance for Cassandra instance {}",
+                        cassandraInstance.config().num());
+            Server server = startSidecarWithInstances(List.of(cassandraInstance), peersModule);
+            sidecarServerList.add(new TestSidecarHostInfo(cassandraInstance, server, server.actualPort()));
+        }
+
+        assertThat(sidecarServerList.size()).as("Each Cassandra Instance will be managed by a single Sidecar instance")
+                                            .isEqualTo(cluster.size());
+
+
+        // assign the server to the first instance
+        server = sidecarServerList.get(0).sidecarServer;
+    }
+
+    @Override
+    protected void stopSidecar()
+    {
+        sidecarServerList.forEach(s -> {
+            try
+            {
+                closeServer(s.sidecarServer);
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Error trying to close sidecar server", e);
+            }
+        });
+    }
+
+    class PeersModule extends AbstractModule
+    {
+        Supplier<List<TestSidecarHostInfo>> supplier;
+
+        public PeersModule(Supplier<List<TestSidecarHostInfo>> supplier)
+        {
+            this.supplier = supplier;
+        }
+
+        @Provides
+        @Singleton
+        @Named("sidecarInstanceSupplier")
+        public Supplier<List<TestSidecarHostInfo>> supplier()
+        {
+            return supplier;
+        }
+
+        @Provides
+        @Singleton
+        public SidecarPeerHealthConfiguration sidecarPeerHealthConfiguration()
+        {
+            return new SidecarPeerHealthConfigurationImpl(true,
+                                                          new MillisecondBoundConfiguration(1, TimeUnit.SECONDS),
+                                                          1,
+                                                          new MillisecondBoundConfiguration(500, TimeUnit.MILLISECONDS));
+        }
+    }
+
+    void stopSidecarInstanceForTest(int instanceId)
+    {
+        assertThat(sidecarServerList).isNotEmpty();
+        Server server = sidecarServerList.get(instanceId).sidecarServer;
+        String deploymentId = serverDeploymentIds.get(server);
+        getBlocking(server.stop(deploymentId), 30, TimeUnit.SECONDS, "Stopping server " + deploymentId);
+    }
+
+    void startSidecarInstanceForTest(int instanceId) throws Exception
+    {
+        assertThat(sidecarServerList).isNotEmpty();
+        TestSidecarHostInfo server = sidecarServerList.get(instanceId);
+        getBlocking(server.sidecarServer.start(), 30, TimeUnit.SECONDS, "Starting server...");
+    }
+
+    @Override
+    protected Function<SidecarConfigurationImpl.Builder, SidecarConfigurationImpl.Builder> configurationOverrides()
+    {
+        return builder -> {
+            ServiceConfiguration conf;
+            if (sidecarServerList.isEmpty())
+            {
+                // As opposed to the base class, this binds the host to a specific interface (localhost)
+                conf = ServiceConfigurationImpl.builder()
+                                               .host("localhost")
+                                               .port(0) // let the test find an available port
+                                               .build();
+            }
+            else
+            {
+                // Use the same port number for all Sidecar instances that we bring up. We use the port
+                // bound for the first instance, but we bind it to a different interface (localhost2, localhost3)
+                conf = ServiceConfigurationImpl.builder()
+                                               .host("localhost" + (sidecarServerList.size() + 1))
+                                               .port(sidecarServerList.get(0).sidecarServer.actualPort())
+                                               .build();
+            }
+            builder.serviceConfiguration(conf);
+
+            return builder;
+        };
+    }
+
+    @Test
+    void onePeerDownTest() throws Exception
+    {
+        SidecarPeerHealthMonitorTask monitor = peerHealthMonitors.get(sidecarServerList.get(0).sidecarServer);
+        // Monitor hasn't had time to perform checks
+        assertTrue(monitor.getStatus().isEmpty());
+
+        // After some time, peer is up
+        Thread.sleep(5000);
+        checkHostUp(monitor, "localhost2");
+
+        stopSidecarInstanceForTest(1);
+        Thread.sleep(5000);
+        // After killing peer sidecar instance, monitor caches up and the host is down
+        checkHostDown(monitor, "localhost2");
+        startSidecarInstanceForTest(1);
+        Thread.sleep(5000);
+        // After restarting peer sidecar instance, monitor caches up and the host is down
+        checkHostUp(monitor, "localhost2");
+    }
+
+    private boolean checkHostUp(SidecarPeerHealthMonitorTask monitor, String hostname)
+    {
+        return checkHostStatus(monitor, hostname, SidecarPeerHealthProvider.Health.UP);
+    }
+
+    private boolean checkHostDown(SidecarPeerHealthMonitorTask monitor, String hostname)
+    {
+        return checkHostStatus(monitor, hostname, SidecarPeerHealthProvider.Health.DOWN);
+    }
+
+    private boolean checkHostStatus(SidecarPeerHealthMonitorTask monitor, String hostname, SidecarPeerHealthProvider.Health status)
+    {
+        return monitor.getStatus().entrySet().stream().filter(e -> e.getKey().hostname().equals(hostname)).findAny().orElseThrow().getValue().equals(status);
+    }
+
+    @Override
+    protected void initializeSchemaForTest()
+    {
+        createTestKeyspace("cdc", DC1_RF3);
+        createTestTable(new QualifiedName("cdc", "test"), "CREATE TABLE %s (id text PRIMARY KEY, name text) WITH cdc=true");
+    }
+}
+

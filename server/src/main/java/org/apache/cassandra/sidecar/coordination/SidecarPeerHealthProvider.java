@@ -16,20 +16,31 @@
  * limitations under the License.
  */
 
-package org.apache.cassandra.sidecar.client;
+package org.apache.cassandra.sidecar.coordination;
 
-import java.util.List;
 
+import io.vertx.core.Future;
 import org.apache.cassandra.sidecar.common.client.SidecarInstance;
 
 /**
- * A class that provides the list of {@link SidecarInstance}s. This class allows for statically or dynamically
- * providing a list of instances. It is meant to support expansions and shrink of Cassandra clusters.
+ * Interface to provide health information for other Sidecar instances
  */
-public interface SidecarInstancesProvider
+public interface SidecarPeerHealthProvider
 {
     /**
-     * @return the list of {@link SidecarInstance}s
+     * Possible Health states:
+     *
+     * - UP: Peer sidecar is alive
+     * - DOWN: Peer sidecar is not reachable
      */
-    List<SidecarInstance> instances();
+    enum Health
+    {
+        UP, DOWN
+    }
+
+    /**
+     * @param instance the instance where the health check will be executed
+     * @return a future with the {@link Health} of the {@code instance}
+     */
+    Future<Health> health(SidecarInstance instance);
 }

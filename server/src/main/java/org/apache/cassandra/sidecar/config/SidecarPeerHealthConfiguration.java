@@ -16,20 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.cassandra.sidecar.client;
+package org.apache.cassandra.sidecar.config;
 
-import java.util.List;
-
-import org.apache.cassandra.sidecar.common.client.SidecarInstance;
+import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 
 /**
- * A class that provides the list of {@link SidecarInstance}s. This class allows for statically or dynamically
- * providing a list of instances. It is meant to support expansions and shrink of Cassandra clusters.
+ * Configuration for Sidecar peers health checks
  */
-public interface SidecarInstancesProvider
+public interface SidecarPeerHealthConfiguration extends PeriodicTaskConfiguration
 {
     /**
-     * @return the list of {@link SidecarInstance}s
+     * @return the number of maximum retries to be performed during a Sidecar peer health check
      */
-    List<SidecarInstance> instances();
+    int maxRetries();
+
+    /**
+     * @return the delay between Sidecar peer health checks retries
+     */
+    MillisecondBoundConfiguration retryDelay();
 }

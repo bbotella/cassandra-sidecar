@@ -149,6 +149,7 @@ dependencies {
     implementation(project(":adapters:adapters-base"))
     implementation(project(":adapters:adapters-cassandra41"))
     implementation(project(":vertx-auth-mtls"))
+    implementation(project(":vertx-client"))
 
     testFixturesApi(testFixtures(project(":server-common")))
     testFixturesApi(testFixtures(project(":vertx-auth-mtls")))
