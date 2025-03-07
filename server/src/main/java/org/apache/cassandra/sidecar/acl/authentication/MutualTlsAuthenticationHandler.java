@@ -18,15 +18,27 @@
 
 package org.apache.cassandra.sidecar.acl.authentication;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.CertificateCredentials;
 import io.vertx.ext.auth.mtls.MutualTlsAuthentication;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.handler.HttpException;
 import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
+import org.apache.cassandra.sidecar.acl.IdentityToRoleCache;
+
+import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
+import static org.apache.cassandra.sidecar.utils.AuthUtils.CASSANDRA_ROLES_ATTRIBUTE_NAME;
+import static org.apache.cassandra.sidecar.utils.AuthUtils.extractIdentities;
+import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
 
 /**
  * Handler for verifying user certificates for Mutual TLS authentication. {@link MutualTlsAuthenticationHandler} can be
@@ -34,9 +46,14 @@ import io.vertx.ext.web.handler.impl.AuthenticationHandlerImpl;
  */
 public class MutualTlsAuthenticationHandler extends AuthenticationHandlerImpl<MutualTlsAuthentication>
 {
-    public MutualTlsAuthenticationHandler(MutualTlsAuthentication authProvider)
+    private static final Logger LOGGER = LoggerFactory.getLogger(MutualTlsAuthenticationHandler.class);
+    private final IdentityToRoleCache identityToRoleCache;
+
+    public MutualTlsAuthenticationHandler(MutualTlsAuthentication authProvider,
+                                          IdentityToRoleCache identityToRoleCache)
     {
         super(authProvider);
+        this.identityToRoleCache = identityToRoleCache;
     }
 
     @Override
@@ -52,8 +69,43 @@ public class MutualTlsAuthenticationHandler extends AuthenticationHandlerImpl<Mu
 
         authProvider.authenticate(certificateCredentials)
                     .recover(cause -> { // converts any exception to unauthorized http exception
-                        throw new HttpException(HttpResponseStatus.UNAUTHORIZED.code(), cause);
+                        throw wrapHttpException(UNAUTHORIZED, cause);
                     })
-                    .andThen(handler);
+                    .andThen(authN-> {
+                        if (authN.failed())
+                        {
+                            handler.handle(Future.failedFuture(wrapHttpException(UNAUTHORIZED, authN.cause())));
+                            return;
+                        }
+
+                        List<String> identities = extractIdentities(authN.result());
+                        List<String> roles = extractCassandraRoles(identities);
+                        if (!roles.isEmpty())
+                        {
+                            authN.result().attributes().put(CASSANDRA_ROLES_ATTRIBUTE_NAME, roles);
+                        }
+                        handler.handle(authN);
+                    });
+    }
+
+    private List<String> extractCassandraRoles(List<String> identities)
+    {
+        List<String> roles = new ArrayList<>();
+        try
+        {
+            for (String identity : identities)
+            {
+                String role = identityToRoleCache.get(identity);
+                if (role != null)
+                {
+                    roles.add(role);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            LOGGER.debug("Could not retrieve roles associated with the identities", e);
+        }
+        return roles;
     }
 }

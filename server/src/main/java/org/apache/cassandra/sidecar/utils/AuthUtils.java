@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 
@@ -31,6 +33,9 @@ import io.vertx.ext.auth.User;
  */
 public class AuthUtils
 {
+    public static final String CASSANDRA_ROLES_ATTRIBUTE_NAME = "cassandra_roles";
+    private static final JsonArray EMPTY_JSON_ARRAY = new JsonArray();
+
     /**
      * Extracts a list of identities a user holds from their principal.
      *
@@ -61,5 +66,17 @@ public class AuthUtils
             identities.addAll(Arrays.asList(parts));
         }
         return Collections.unmodifiableList(identities);
+    }
+
+    /**
+     * Extracts a list of cassandra roles associated with given user.
+     *
+     * @param user User representation in Vertx
+     * @return {@code List} of cassandra roles associated with user
+     */
+    public static List<String> extractCassandraRoles(User user)
+    {
+        // noinspection unchecked
+        return Objects.requireNonNullElse(user.attributes().getJsonArray(CASSANDRA_ROLES_ATTRIBUTE_NAME), EMPTY_JSON_ARRAY).getList();
     }
 }
