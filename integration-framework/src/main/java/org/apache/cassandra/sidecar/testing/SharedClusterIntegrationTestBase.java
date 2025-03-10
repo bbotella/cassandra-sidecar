@@ -404,7 +404,10 @@ public abstract class SharedClusterIntegrationTestBase
                          peerHealthMonitors.put(sidecarServer, peerHealthMonitorTask);
                          context.completeNow();
                      })
-                     .onFailure(context::failNow);
+                     .onFailure(e -> {
+                         context.failNow(e);
+                         throw new RuntimeException(e);
+                     });
 
         assertThat(context.awaitCompletion(5, TimeUnit.SECONDS)).isTrue();
         return sidecarServer;
