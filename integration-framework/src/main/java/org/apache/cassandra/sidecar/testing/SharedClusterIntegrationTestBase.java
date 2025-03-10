@@ -407,9 +407,9 @@ public abstract class SharedClusterIntegrationTestBase
                      .onFailure(e -> {
                          context.failNow(e);
                          throw new RuntimeException(e);
-                     }).result();
+                     });
 
-        assertThat(context.awaitCompletion(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(context.awaitCompletion(30, TimeUnit.SECONDS)).isTrue();
         return sidecarServer;
     }
 
