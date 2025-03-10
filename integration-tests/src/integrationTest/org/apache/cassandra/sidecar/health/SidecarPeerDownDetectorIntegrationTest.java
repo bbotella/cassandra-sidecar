@@ -166,7 +166,7 @@ class SidecarPeerDownDetectorIntegrationTest extends SharedClusterSidecarIntegra
                 // bound for the first instance, but we bind it to a different interface (localhost2, localhost3)
                 conf = ServiceConfigurationImpl.builder()
                                                .host("localhost" + (sidecarServerList.size() + 1))
-                                               .port(sidecarServerList.get(0).sidecarServer.actualPort())
+                                               .port(sidecarServerList.get(0).sidecarServer.actualPort() + sidecarServerList.size())
                                                .build();
             }
             builder.serviceConfiguration(conf);
