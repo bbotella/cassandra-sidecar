@@ -78,7 +78,7 @@ class SidecarPeerDownDetectorIntegrationTest extends SharedClusterSidecarIntegra
             LOGGER.info("Starting Sidecar instance for Cassandra instance {}",
                         cassandraInstance.config().num());
             Server server = startSidecarWithInstances(List.of(cassandraInstance), peersModule);
-            sidecarServerList.add(new TestSidecarHostInfo(cassandraInstance, server, server.actualPort()));
+            sidecarServerList.add(new TestSidecarHostInfo(cassandraInstance, server, server.actualPort() + sidecarServerList.size()));
         }
 
         assertThat(sidecarServerList.size()).as("Each Cassandra Instance will be managed by a single Sidecar instance")
