@@ -1,9 +1,12 @@
-0.1.0
+0.2.0
 -----
  * Create Endpoint that Triggers an Immediate Schema Report (CASSSIDECAR-203)
  * Add JWT Authentication support in Sidecar (CASSSIDECAR-160)
  * Add Token Ring Peer Health monitor (CASSSIDECAR-206)
  * Config APIs for storing CDC/Kafka configs for CDC feature (CASSSIDECAR-211)
+
+0.1.0
+-----
  * Add sidecar endpoint to retrieve table stats (CASSSIDECAR-215)
  * Adapt to cluster topology change for restore jobs (CASSSIDECAR-185)
  * Fix PeriodicTaskExecutor double execution due to race from reschedule (CASSSIDECAR-210)
