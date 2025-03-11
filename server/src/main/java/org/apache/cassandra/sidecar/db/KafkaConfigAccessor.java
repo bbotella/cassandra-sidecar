@@ -21,7 +21,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.cassandra.sidecar.common.request.Service;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
-import org.apache.cassandra.sidecar.db.schema.ConfigsSchema;
 import org.apache.cassandra.sidecar.db.schema.SidecarSchema;
 
 /**
@@ -33,11 +32,10 @@ import org.apache.cassandra.sidecar.db.schema.SidecarSchema;
 public class KafkaConfigAccessor extends ConfigAccessorImpl
 {
     @Inject
-    protected KafkaConfigAccessor(ConfigsSchema configsSchema,
-                                  CQLSessionProvider sessionProvider,
+    protected KafkaConfigAccessor(CQLSessionProvider sessionProvider,
                                   SidecarSchema sidecarSchema)
     {
-        super(configsSchema, sessionProvider, sidecarSchema);
+        super(sessionProvider, sidecarSchema);
     }
 
     @Override

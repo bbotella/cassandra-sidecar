@@ -28,9 +28,10 @@ package org.apache.cassandra.sidecar.routes;
 public enum RoutingOrder
 {
     HIGHEST(Integer.MIN_VALUE),
-    HIGH(-9999),
+    HIGHER(-2),
+    HIGH(-1),
     DEFAULT(0),
-    LOW(9999),
+    LOW(1),
     LOWEST(Integer.MAX_VALUE),
     ;
 

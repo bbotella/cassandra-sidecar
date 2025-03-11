@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.StreamSupport;
 
 import com.google.common.util.concurrent.Uninterruptibles;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -52,6 +53,7 @@ import org.apache.cassandra.distributed.api.IInstanceConfig;
 import org.apache.cassandra.distributed.api.SimpleQueryResult;
 import org.apache.cassandra.distributed.impl.AbstractCluster;
 import org.apache.cassandra.distributed.shared.Versions;
+import org.apache.cassandra.sidecar.TestResourceReaper;
 import org.apache.cassandra.sidecar.cluster.CQLSessionProviderImpl;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
@@ -93,8 +95,8 @@ class ClusterLeaseClaimTaskIntegrationTest
     public static final int CONCURRENT_PROCESSES = 12;
     private static final Logger LOGGER = LoggerFactory.getLogger(ClusterLeaseClaimTaskIntegrationTest.class);
     private static final int LEASE_SCHEMA_TTL_SECONDS = 10;
+    private static final Vertx vertx = Vertx.vertx();
     final List<CQLSessionProvider> sessionProviderList = new ArrayList<>();
-    final Vertx vertx = Vertx.vertx();
     SchemaKeyspaceConfiguration mockSchemaConfig;
 
     @BeforeEach
@@ -108,6 +110,12 @@ class ClusterLeaseClaimTaskIntegrationTest
         when(mockSchemaConfig.replicationStrategy()).thenReturn(SchemaKeyspaceConfigurationImpl.DEFAULT_REPLICATION_STRATEGY);
         when(mockSchemaConfig.replicationFactor()).thenReturn(SchemaKeyspaceConfigurationImpl.DEFAULT_REPLICATION_FACTOR);
         when(mockSchemaConfig.leaseSchemaTTL()).thenReturn(SecondBoundConfiguration.parse(LEASE_SCHEMA_TTL_SECONDS + "s"));
+    }
+
+    @AfterAll
+    static void cleanup()
+    {
+        TestResourceReaper.create().with(vertx).close();
     }
 
     @ParameterizedTest(name = "{index} => version {0}")
@@ -300,9 +308,10 @@ class ClusterLeaseClaimTaskIntegrationTest
                     // Every instance will try to run determineSingleInstanceExecutor at roughly the same time
                     simulatedInstances.get(finalI).clusterLeaseClaimTask.runClaimProcess();
                 }
-                catch (InterruptedException e)
+                catch (Throwable cause)
                 {
-                    throw new RuntimeException(e);
+                    LOGGER.error("Claim process failed.", cause);
+                    throw new RuntimeException(cause);
                 }
                 finally
                 {
@@ -341,12 +350,12 @@ class ClusterLeaseClaimTaskIntegrationTest
             SidecarLeaseDatabaseAccessor accessor = buildAccessor(cqlSessionProvider);
 
             ClusterLease clusterLease = new ClusterLease();
-            ClusterLeaseClaimTask task = new ClusterLeaseClaimTask(vertx,
-                                                                   serviceConfiguration,
+            ClusterLeaseClaimTask task = new ClusterLeaseClaimTask(serviceConfiguration,
                                                                    null,
                                                                    accessor,
                                                                    clusterLease,
                                                                    metrics);
+            task.deploy(vertx, null);
             processes.add(new TestInstanceWrapper(cqlSessionProvider, task, clusterLease, metrics));
         }
         return processes;
