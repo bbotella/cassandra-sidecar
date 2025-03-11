@@ -141,6 +141,7 @@ import org.apache.cassandra.sidecar.routes.KeyspaceSchemaHandler;
 import org.apache.cassandra.sidecar.routes.ListOperationalJobsHandler;
 import org.apache.cassandra.sidecar.routes.NodeDecommissionHandler;
 import org.apache.cassandra.sidecar.routes.OperationalJobHandler;
+import org.apache.cassandra.sidecar.routes.ReportSchemaHandler;
 import org.apache.cassandra.sidecar.routes.RingHandler;
 import org.apache.cassandra.sidecar.routes.RoutingOrder;
 import org.apache.cassandra.sidecar.routes.SchemaHandler;
@@ -181,7 +182,6 @@ import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.API_V1_ALL_ROUTES;
 import static org.apache.cassandra.sidecar.common.server.utils.ByteUtils.bytesToHumanReadableBinaryPrefix;
-import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_ALL_CASSANDRA_CQL_READY;
 import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CASSANDRA_CQL_READY;
 import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_SERVER_STOP;
 
@@ -364,6 +364,7 @@ public class MainModule extends AbstractModule
                               SSTableCleanupHandler ssTableCleanupHandler,
                               StreamCdcSegmentHandler streamCdcSegmentHandler,
                               ListCdcDirHandler listCdcDirHandler,
+                              ReportSchemaHandler reportSchemaHandler,
                               RestoreRequestValidationHandler validateRestoreJobRequest,
                               DiskSpaceProtectionHandler diskSpaceProtection,
                               ValidateTableExistenceHandler validateTableExistence,
@@ -629,6 +630,14 @@ public class MainModule extends AbstractModule
         protectedRouteBuilderFactory.get().router(router).method(HttpMethod.GET)
                                     .endpoint(ApiEndpointsV1.STREAM_CDC_SEGMENTS_ROUTE)
                                     .handler(streamCdcSegmentHandler)
+                                    .build();
+
+        // Schema Reporting
+        protectedRouteBuilderFactory.get()
+                                    .router(router)
+                                    .method(HttpMethod.PUT)
+                                    .endpoint(ApiEndpointsV1.REPORT_SCHEMA_ROUTE)
+                                    .handler(reportSchemaHandler)
                                     .build();
 
         protectedRouteBuilderFactory.get().router(router).method(HttpMethod.PUT)
@@ -959,9 +968,8 @@ public class MainModule extends AbstractModule
                                        ignored -> {
                                            periodicTaskExecutor.schedule(clusterLeaseClaimTask);
                                            periodicTaskExecutor.schedule(sidecarPeerHealthMonitorTask);
+                                           periodicTaskExecutor.schedule(schemaReportingTask);
                                        });
-        vertx.eventBus().localConsumer(ON_ALL_CASSANDRA_CQL_READY.address(),
-                                       message -> periodicTaskExecutor.schedule(schemaReportingTask));
         return periodicTaskExecutor;
     }
 
@@ -975,7 +983,8 @@ public class MainModule extends AbstractModule
             @NotNull
             protected String initialize()
             {
-                return fetcher.callOnFirstAvailableInstance(i -> i.delegate().storageOperations().clusterName());
+                return fetcher.callOnFirstAvailableInstance(instance ->
+                                                            instance.delegate().storageOperations().clusterName());
             }
         };
 

@@ -1,5 +1,6 @@
 0.1.0
 -----
+ * Create Endpoint that Triggers an Immediate Schema Report (CASSSIDECAR-203)
  * Add JWT Authentication support in Sidecar (CASSSIDECAR-160)
  * Add Token Ring Peer Health monitor (CASSSIDECAR-206)
  * Config APIs for storing CDC/Kafka configs for CDC feature (CASSSIDECAR-211)

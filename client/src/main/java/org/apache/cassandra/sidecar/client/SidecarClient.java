@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -540,9 +539,9 @@ public class SidecarClient implements AutoCloseable, SidecarClientBlobRestoreExt
     public CompletableFuture<ListCdcSegmentsResponse> listCdcSegments(SidecarInstance sidecarInstance)
     {
         return executor.executeRequestAsync(requestBuilder()
-                       .singleInstanceSelectionPolicy(sidecarInstance)
-                       .request(new ListCdcSegmentsRequest())
-                       .build());
+                                            .singleInstanceSelectionPolicy(sidecarInstance)
+                                            .request(new ListCdcSegmentsRequest())
+                                            .build());
     }
 
     /**
@@ -562,9 +561,26 @@ public class SidecarClient implements AutoCloseable, SidecarClientBlobRestoreExt
                                   StreamConsumer streamConsumer)
     {
         executor.streamRequest(requestBuilder()
-                .singleInstanceSelectionPolicy(sidecarInstance)
-                .request(new StreamCdcSegmentRequest(segment, range))
-                .build(), streamConsumer);
+                               .singleInstanceSelectionPolicy(sidecarInstance)
+                               .request(new StreamCdcSegmentRequest(segment, range))
+                               .build(), streamConsumer);
+    }
+
+    /**
+     * Sends a request to trigger an immediate, synchronous schema
+     * conversion and report on the specified instance of the Sidecar
+     * regardless of the periodic task schedule or status
+     *
+     * @param instance the {@link SidecarInstance} to receive the request
+     * @return a {@link CompletableFuture} for the request
+     */
+    public <T> CompletableFuture<T> reportSchema(SidecarInstance instance)
+    {
+        return executor.executeRequestAsync(requestBuilder()
+                                            .singleInstanceSelectionPolicy(instance)
+                                            .reportSchemaRequest()
+                                            .noRetryPolicy()  // {@link NoRetryPolicy} is the preferred behavior here
+                                            .build());
     }
 
     /**
@@ -576,8 +592,8 @@ public class SidecarClient implements AutoCloseable, SidecarClientBlobRestoreExt
     public CompletableFuture<AllServicesConfigPayload> allServicesConfig()
     {
         return executor.executeRequestAsync(requestBuilder()
-                       .request(new AllServicesConfigRequest())
-                       .build());
+                                            .request(new AllServicesConfigRequest())
+                                            .build());
     }
 
     /**
@@ -590,8 +606,8 @@ public class SidecarClient implements AutoCloseable, SidecarClientBlobRestoreExt
     public CompletableFuture<UpdateCdcServiceConfigPayload> updateCdcServiceConfig(Service service, Map<String, String> config)
     {
         return executor.executeRequestAsync(requestBuilder()
-                       .request(new UpdateServiceConfigRequest(service, new UpdateCdcServiceConfigPayload(config)))
-                       .build());
+                                            .request(new UpdateServiceConfigRequest(service, new UpdateCdcServiceConfigPayload(config)))
+                                            .build());
     }
 
     /**
@@ -602,8 +618,8 @@ public class SidecarClient implements AutoCloseable, SidecarClientBlobRestoreExt
     public CompletableFuture<Void> deleteCdcServiceConfig(Service service)
     {
         return executor.executeRequestAsync(requestBuilder()
-                       .request(new DeleteServiceConfigRequest(service))
-                       .build());
+                                            .request(new DeleteServiceConfigRequest(service))
+                                            .build());
     }
 
     /**

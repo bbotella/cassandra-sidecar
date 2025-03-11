@@ -113,14 +113,23 @@ public class SchemaReporter
     /**
      * Public method for converting and reporting the Cassandra schema
      *
-     * @param cluster a {@link Cluster} to extract Cassandra schema from
+     * @param cluster the {@link Cluster} to extract Cassandra schema from
      */
     public void process(@NotNull Cluster cluster)
     {
+        process(cluster.getMetadata());
+    }
+
+    /**
+     * Public method for converting and reporting the Cassandra schema
+     *
+     * @param metadata the {@link Metadata} to extract Cassandra schema from
+     */
+    public void process(@NotNull Metadata metadata)
+    {
         try (Emitter emitter = emitterFactory.emitter())
         {
-            stream(cluster.getMetadata())
-                    .forEach(ThrowableUtils.consumer(emitter::emit));
+            stream(metadata).forEach(ThrowableUtils.consumer(emitter::emit));
         }
         catch (Exception exception)
         {
@@ -140,11 +149,12 @@ public class SchemaReporter
     protected Stream<MetadataChangeProposalWrapper<? extends RecordTemplate>> stream(@NotNull Metadata metadata)
     {
         return Streams.concat(
-                clusterConverters.stream()
-                        .map(ThrowableUtils.function(converter -> converter.convert(metadata))),
-                metadata.getKeyspaces().stream()
-                        .filter(this::neitherVirtualNorSystem)
-                        .flatMap(this::stream));
+        clusterConverters.stream()
+                         .map(ThrowableUtils.function(converter -> converter.convert(metadata))),
+        metadata.getKeyspaces()
+                .stream()
+                .filter(this::neitherVirtualNorSystem)
+                .flatMap(this::stream));
     }
 
     /**
@@ -159,10 +169,11 @@ public class SchemaReporter
     protected Stream<MetadataChangeProposalWrapper<? extends RecordTemplate>> stream(@NotNull KeyspaceMetadata keyspace)
     {
         return Streams.concat(
-                keyspaceConverters.stream()
-                        .map(ThrowableUtils.function(converter -> converter.convert(keyspace))),
-                keyspace.getTables().stream()
-                        .flatMap(this::stream));
+        keyspaceConverters.stream()
+                          .map(ThrowableUtils.function(converter -> converter.convert(keyspace))),
+        keyspace.getTables()
+                .stream()
+                .flatMap(this::stream));
     }
 
     /**
@@ -176,7 +187,7 @@ public class SchemaReporter
     protected Stream<MetadataChangeProposalWrapper<? extends RecordTemplate>> stream(@NotNull TableMetadata table)
     {
         return tableConverters.stream()
-                .map(ThrowableUtils.function(converter -> converter.convert(table)));
+                              .map(ThrowableUtils.function(converter -> converter.convert(table)));
     }
 
     /**
@@ -195,8 +206,8 @@ public class SchemaReporter
         }
 
         String name = keyspace.getName();
-        return !name.equals("system")
-            && !name.startsWith("system_")
-            && !name.equals("sidecar_internal");
+        return !name.equals("system") &&
+               !name.startsWith("system_") &&
+               !name.equals("sidecar_internal");
     }
 }

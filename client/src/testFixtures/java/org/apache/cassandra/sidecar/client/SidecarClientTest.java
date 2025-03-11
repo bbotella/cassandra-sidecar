@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -114,6 +113,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatException;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
@@ -1607,7 +1607,7 @@ abstract class SidecarClientTest
     public void testListCdcSegments() throws ExecutionException, InterruptedException, JsonProcessingException
     {
         List<CdcSegmentInfo> segments = Arrays.asList(new CdcSegmentInfo("commit-log1", 100, 100, true, 1732148713725L),
-                new CdcSegmentInfo("commit-log2", 100, 10, false, 1732148713725L));
+                                                      new CdcSegmentInfo("commit-log2", 100, 10, false, 1732148713725L));
         ListCdcSegmentsResponse listSegmentsResponse = new ListCdcSegmentsResponse("localhost", 9043, segments);
         ObjectMapper mapper = new ObjectMapper();
 
@@ -1674,6 +1674,35 @@ abstract class SidecarClientTest
     }
 
     @Test
+    public void testReportSchemaSuccess()
+    {
+        MockResponse response = new MockResponse().setResponseCode(OK.code())
+                                                  .setBody("{\"status\":\"OK\"}");
+
+        enqueue(response);
+
+        SidecarInstance instance = instances.get(0);
+
+        assertThatNoException().isThrownBy(() -> client.reportSchema(instance).get());
+    }
+
+    @Test
+    public void testReportSchemaFailure()
+    {
+        MockResponse response = new MockResponse().setResponseCode(INTERNAL_SERVER_ERROR.code())
+                                                  .setBody(INTERNAL_SERVER_ERROR.reasonPhrase());
+
+        enqueue(response);
+
+        SidecarInstance instance = instances.get(0);
+
+        assertThatThrownBy(() -> client.reportSchema(instance).get()).isExactlyInstanceOf(ExecutionException.class)
+                                                                     .hasCauseInstanceOf(RetriesExhaustedException.class)
+                                                                     .hasMessageContaining(Integer.toString(INTERNAL_SERVER_ERROR.code()))
+                                                                     .hasMessageContaining(INTERNAL_SERVER_ERROR.reasonPhrase());
+    }
+
+    @Test
     public void testAllServiceSuccessTests() throws IOException, ExecutionException, InterruptedException
     {
         List<AllServicesConfigPayload.Service> services = new ArrayList<>();
@@ -1723,7 +1752,7 @@ abstract class SidecarClientTest
         enqueue(response);
         client.deleteCdcServiceConfig(Service.CDC).get();
         validateResponseServed(ApiEndpointsV1.SERVICE_CONFIG_ROUTE.replaceAll(ApiEndpointsV1.SERVICE_PARAM, "cdc"),
-                request -> assertThat(request.getMethod()).isEqualTo("DELETE"));
+                               request -> assertThat(request.getMethod()).isEqualTo("DELETE"));
     }
 
     @Test
