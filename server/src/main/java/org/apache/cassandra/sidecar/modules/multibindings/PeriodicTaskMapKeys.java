@@ -26,6 +26,7 @@ public interface PeriodicTaskMapKeys
     interface ClusterLeaseClaimTaskKey extends ClassKey {}
     interface HealthCheckPeriodicTaskKey extends ClassKey {}
     interface KeyStoreCheckPeriodicTaskKey extends ClassKey {}
+    interface ClientKeyStoreCheckPeriodicTaskKey extends ClassKey {}
     interface RestoreJobDiscovererKey extends ClassKey {}
     interface RestoreProcessorKey extends ClassKey {}
     interface RingTopologyRefresherKey extends ClassKey {}

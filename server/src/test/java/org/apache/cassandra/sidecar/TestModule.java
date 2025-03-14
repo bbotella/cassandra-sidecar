@@ -52,6 +52,7 @@ import org.apache.cassandra.sidecar.config.RestoreJobConfiguration;
 import org.apache.cassandra.sidecar.config.SSTableUploadConfiguration;
 import org.apache.cassandra.sidecar.config.SchemaKeyspaceConfiguration;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
+import org.apache.cassandra.sidecar.config.SidecarClientConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.SslConfiguration;
 import org.apache.cassandra.sidecar.config.ThrottleConfiguration;
@@ -61,6 +62,7 @@ import org.apache.cassandra.sidecar.config.yaml.PeriodicTaskConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.RestoreJobConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.SSTableUploadConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.SchemaKeyspaceConfigurationImpl;
+import org.apache.cassandra.sidecar.config.yaml.SidecarClientConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.SidecarConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.TestServiceConfiguration;
 import org.apache.cassandra.sidecar.config.yaml.ThrottleConfigurationImpl;
@@ -136,12 +138,16 @@ public class TestModule extends AbstractModule
         = new PeriodicTaskConfigurationImpl(true,
                                             MillisecondBoundConfiguration.parse("200ms"),
                                             MillisecondBoundConfiguration.parse("1s"));
+
+        SidecarClientConfiguration sidecarClientConfiguration = new SidecarClientConfigurationImpl(sslConfiguration);
+
         return SidecarConfigurationImpl.builder()
                                        .serviceConfiguration(serviceConfiguration)
                                        .sslConfiguration(sslConfiguration)
                                        .accessControlConfiguration(accessControlConfiguration)
                                        .restoreJobConfiguration(restoreJobConfiguration)
                                        .healthCheckConfiguration(healthCheckConfiguration)
+                                       .sidecarClientConfiguration(sidecarClientConfiguration)
                                        .build();
     }
 

@@ -31,6 +31,7 @@ import org.apache.cassandra.sidecar.config.yaml.SidecarConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.SslConfigurationImpl;
 
 import static org.apache.cassandra.sidecar.common.ResourceUtils.writeResourceToPath;
+import static org.apache.cassandra.sidecar.config.KeyStoreConfiguration.DEFAULT_TYPE;
 
 
 /**
@@ -72,9 +73,9 @@ public class TestSslModule extends TestModule
                             .handshakeTimeout(SecondBoundConfiguration.parse("10s"))
                             .clientAuth("NONE")
                             .keystore(new KeyStoreConfigurationImpl(keyStorePath.toAbsolutePath().toString(),
-                                                                    keyStorePassword))
+                                                                    keyStorePassword, DEFAULT_TYPE, SecondBoundConfiguration.parse("5s")))
                             .truststore(new KeyStoreConfigurationImpl(trustStorePath.toAbsolutePath().toString(),
-                                                                      trustStorePassword))
+                                                                      trustStorePassword, DEFAULT_TYPE, SecondBoundConfiguration.parse("5s")))
                             .build();
 
         return super.abstractConfig(sslConfiguration);

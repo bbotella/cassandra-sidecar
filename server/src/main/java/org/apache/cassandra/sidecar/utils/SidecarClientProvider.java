@@ -20,7 +20,7 @@ package org.apache.cassandra.sidecar.utils;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +60,9 @@ public class SidecarClientProvider implements Provider<SidecarClient>
     private final SidecarClientConfiguration clientConfig;
     private final SidecarVersionProvider sidecarVersionProvider;
     private final SidecarClient client;
+    private final String host;
+    private final int port;
+    private HttpClient httpClient;
 
     private final AtomicBoolean isClosing = new AtomicBoolean(false);
 
@@ -68,9 +71,21 @@ public class SidecarClientProvider implements Provider<SidecarClient>
                                  SidecarConfiguration sidecarConfiguration,
                                  SidecarVersionProvider sidecarVersionProvider)
     {
+        this(vertx, sidecarConfiguration, sidecarVersionProvider, "localhost", 80);
+    }
+
+    @VisibleForTesting
+    SidecarClientProvider(Vertx vertx,
+                          SidecarConfiguration clientConfig,
+                          SidecarVersionProvider sidecarVersionProvider,
+                          String host,
+                          int port)
+    {
         this.vertx = vertx;
-        this.clientConfig = sidecarConfiguration.sidecarClientConfiguration();
+        this.clientConfig = clientConfig.sidecarClientConfiguration();
         this.sidecarVersionProvider = sidecarVersionProvider;
+        this.host = host;
+        this.port = port;
         this.client = initializeSidecarClient();
     }
 
@@ -89,10 +104,16 @@ public class SidecarClientProvider implements Provider<SidecarClient>
         }
     }
 
+    // Exposing the used http client to be reused on periodic tasks
+    public HttpClient getHttpClient()
+    {
+        return httpClient;
+    }
+
     private SidecarClient initializeSidecarClient()
     {
         WebClientOptions webClientOptions = webClientOptions();
-        HttpClient httpClient = vertx.createHttpClient(webClientOptions);
+        this.httpClient = vertx.createHttpClient(webClientOptions);
         WebClient webClient = WebClient.wrap(httpClient, webClientOptions);
 
         HttpClientConfig httpClientConfig = new HttpClientConfig.Builder<>()
@@ -107,7 +128,7 @@ public class SidecarClientProvider implements Provider<SidecarClient>
                                                                            clientConfig.retryDelay().toMillis(),
                                                                            clientConfig.retryDelay().toMillis());
         SidecarClientVertxRequestExecutor requestExecutor = new SidecarClientVertxRequestExecutor(vertxHttpClient);
-        SidecarInstance instance = new SidecarInstanceImpl(webClientOptions.getDefaultHost(), webClientOptions.getDefaultPort());
+        SidecarInstance instance = new SidecarInstanceImpl(host, port);
         ArrayList<SidecarInstance> instances = new ArrayList<>();
         instances.add(instance);
         SimpleSidecarInstancesProvider instancesProvider = new SimpleSidecarInstancesProvider(instances);
