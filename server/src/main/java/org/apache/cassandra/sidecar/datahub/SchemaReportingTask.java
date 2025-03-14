@@ -19,7 +19,7 @@
 package org.apache.cassandra.sidecar.datahub;
 
 import java.util.concurrent.ThreadLocalRandom;
-
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +28,16 @@ import io.vertx.core.Vertx;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
 import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
+import org.apache.cassandra.sidecar.concurrent.TaskExecutorPool;
 import org.apache.cassandra.sidecar.config.SchemaReportingConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.coordination.ExecuteOnClusterLeaseholderOnly;
+import org.apache.cassandra.sidecar.server.SidecarServerEvents;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
 import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
 import org.apache.cassandra.sidecar.tasks.ScheduleDecision;
 import org.apache.cassandra.sidecar.utils.EventBusUtils;
 import org.jetbrains.annotations.NotNull;
-
-import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_ALL_CASSANDRA_CQL_READY;
 
 /**
  * A {@link PeriodicTask} that uses provided {@link SchemaReportingConfiguration} to report current cluster schema
@@ -53,38 +53,41 @@ public class SchemaReportingTask implements PeriodicTask, ExecuteOnClusterLeaseh
     protected final CQLSessionProvider session;
     @NotNull
     protected final SchemaReporter reporter;
+    @NotNull
+    protected final TaskExecutorPool executor;
 
     public SchemaReportingTask(@NotNull SidecarConfiguration configuration,
                                @NotNull CQLSessionProvider session,
-                               @NotNull SchemaReporter reporter)
+                               @NotNull SchemaReporter reporter,
+                               @NotNull TaskExecutorPool executor)
     {
         this.configuration = configuration.schemaReportingConfiguration();
         this.session = session;
         this.reporter = reporter;
+        this.executor = executor;
     }
 
     @Override
-    public void deploy(Vertx vertx, PeriodicTaskExecutor executor)
+    public void deploy(@NotNull Vertx vertx,
+                       @NotNull PeriodicTaskExecutor executor)
     {
-        // TODO: react on ON_CASSANDRA_CQL_READY instead? When any CQL connection is ready, cluster metadata should be available from session
-        EventBusUtils.onceLocalConsumer(vertx.eventBus(), ON_ALL_CASSANDRA_CQL_READY.address(), ignored -> executor.schedule(this));
+        EventBusUtils.onceLocalConsumer(vertx.eventBus(),
+                                        SidecarServerEvents.ON_CASSANDRA_CQL_READY.address(),
+                                        message -> executor.schedule(this));
     }
 
     @Override
     public ScheduleDecision scheduleDecision()
     {
-        return configuration.enabled()
-                ? ScheduleDecision.EXECUTE
-                : ScheduleDecision.SKIP;
+        return configuration.enabled() ? ScheduleDecision.EXECUTE
+                                       : ScheduleDecision.SKIP;
     }
 
     @Override
     public DurationSpec initialDelay()
     {
-        MillisecondBoundConfiguration maximum = configuration.initialDelay();
-
-        return new MillisecondBoundConfiguration(RANDOM.nextLong(maximum.quantity()),
-                                                 maximum.unit());
+        return new MillisecondBoundConfiguration(RANDOM.nextLong(configuration.initialDelay().toMillis()),
+                                                 TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -94,17 +97,35 @@ public class SchemaReportingTask implements PeriodicTask, ExecuteOnClusterLeaseh
     }
 
     @Override
-    public void execute(Promise<Void> promise)
+    public void execute(@NotNull Promise<Void> promise)
+    {
+        LOGGER.info("Schema report is being triggered by the schedule");
+        execute(promise, 1);
+    }
+
+    protected void execute(@NotNull Promise<Void> promise,
+                           int attempt)
     {
         try
         {
             reporter.process(session.get().getCluster());
+            LOGGER.info("Schema report has been completed successfully on attempt {}", attempt);
             promise.complete();
         }
         catch (Throwable throwable)
         {
-            LOGGER.error("Failed to convert and report the current schema", throwable);
-            promise.fail(throwable);
+            if (attempt < configuration.maxRetries())
+            {
+                LOGGER.warn("Schema report has failed, retrying in {}", configuration.retryDelay(), throwable);
+                executor.setTimer(configuration.retryDelay().toMillis(),
+                                  identifier -> execute(promise, attempt + 1));
+                // Retry will take care of either completing or failing the promise
+            }
+            else
+            {
+                LOGGER.error("Schema report has failed {} times, giving up", attempt, throwable);
+                promise.fail(throwable);
+            }
         }
     }
 }
