@@ -89,7 +89,7 @@ public class SchedulingModule extends AbstractModule
                                                  SidecarConfiguration configuration)
     {
         return new ClientKeyStoreCheckPeriodicTask(vertx,
-                                                   configuration.sslConfiguration().keystore(),
+                                                   configuration.sslConfiguration() == null ? null : configuration.sslConfiguration().keystore(),
                                                    sidecarClientProvider.getHttpClient(),
                                                    webClientOptions.getSslOptions());
     }
