@@ -78,7 +78,7 @@ public class SchedulingModule extends AbstractModule
     {
         Function<Long, Future<Boolean>> updateSSLOptionsFunction =
         lastModifiedTime -> server.get().updateSSLOptions(lastModifiedTime).compose(v -> Future.succeededFuture(true));
-        return new KeyStoreCheckPeriodicTask(vertx, configuration.sslConfiguration().keystore(), updateSSLOptionsFunction);
+        return new KeyStoreCheckPeriodicTask(vertx, configuration.sslConfiguration() == null ? null : configuration.sslConfiguration().keystore(), updateSSLOptionsFunction);
     }
 
     @ProvidesIntoMap
