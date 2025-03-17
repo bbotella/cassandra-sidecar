@@ -28,6 +28,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.net.SSLOptions;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
 import org.apache.cassandra.sidecar.config.KeyStoreConfiguration;
+import org.apache.cassandra.sidecar.config.SslConfiguration;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
 import org.apache.cassandra.sidecar.tasks.ScheduleDecision;
 
@@ -39,18 +40,18 @@ public class ClientKeyStoreCheckPeriodicTask implements PeriodicTask
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientKeyStoreCheckPeriodicTask.class);
     private final Vertx vertx;
-    private final KeyStoreConfiguration keyStoreConfiguration;
+    private final SslConfiguration sslConfiguration;
     private final HttpClient httpClient;
     private final SSLOptions sslOptions;
     private long lastModifiedTime = 0; // records the last modified timestamp
 
     public ClientKeyStoreCheckPeriodicTask(Vertx vertx,
-                                           KeyStoreConfiguration keyStoreConfiguration,
+                                           SslConfiguration sslConfiguration,
                                            HttpClient httpClient,
                                            SSLOptions sslOptions)
     {
         this.vertx = vertx;
-        this.keyStoreConfiguration = keyStoreConfiguration;
+        this.sslConfiguration = sslConfiguration;
         this.httpClient = httpClient;
         this.sslOptions = sslOptions;
         maybeRecordLastModifiedTime();
@@ -59,6 +60,9 @@ public class ClientKeyStoreCheckPeriodicTask implements PeriodicTask
     @Override
     public ScheduleDecision scheduleDecision()
     {
+        if (sslConfiguration == null)
+            return ScheduleDecision.SKIP;
+        KeyStoreConfiguration keyStoreConfiguration = sslConfiguration.keystore();
         boolean shouldSkip = keyStoreConfiguration == null ||
                              !keyStoreConfiguration.isConfigured() ||
                              !keyStoreConfiguration.reloadStore();
@@ -68,14 +72,14 @@ public class ClientKeyStoreCheckPeriodicTask implements PeriodicTask
     @Override
     public DurationSpec delay()
     {
-        return keyStoreConfiguration.checkInterval();
+        return  sslConfiguration == null ? DEFAULT_DELAY : sslConfiguration.keystore().checkInterval();
     }
 
     @Override
     public void execute(Promise<Void> promise)
     {
         LOGGER.info("Running periodic client key store checker");
-        String keyStorePath = keyStoreConfiguration.path();
+        String keyStorePath = sslConfiguration.keystore().path();
         vertx.fileSystem().props(keyStorePath)
              .onSuccess(props -> {
                  long previousLastModifiedTime = lastModifiedTime;
@@ -114,7 +118,7 @@ public class ClientKeyStoreCheckPeriodicTask implements PeriodicTask
         {
             return;
         }
-        String keyStorePath = keyStoreConfiguration.path();
+        String keyStorePath = sslConfiguration.keystore().path();
         vertx.fileSystem().props(keyStorePath)
              .onSuccess(props -> lastModifiedTime = props.lastModifiedTime())
              .onFailure(err -> {
