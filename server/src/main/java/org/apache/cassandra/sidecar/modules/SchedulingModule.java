@@ -32,7 +32,6 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
-import org.apache.cassandra.sidecar.coordination.ClientKeyStoreCheckPeriodicTask;
 import org.apache.cassandra.sidecar.coordination.ClusterLease;
 import org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey;
 import org.apache.cassandra.sidecar.modules.multibindings.MultiBindingTypeResolver;
@@ -74,11 +73,12 @@ public class SchedulingModule extends AbstractModule
 
     @ProvidesIntoMap
     @KeyClassMapKey(PeriodicTaskMapKeys.KeyStoreCheckPeriodicTaskKey.class)
-    PeriodicTask keyStoreCheckPeriodicTask(Vertx vertx, Provider<Server> server, SidecarConfiguration configuration)
+    PeriodicTask keyStoreCheckPeriodicTask(Vertx vertx, Provider<Server> server, SidecarConfiguration configuration, WebClientOptions webClientOptions)
     {
-        Function<Long, Future<Boolean>> updateSSLOptionsFunction =
+        Function<Long, Future<Boolean>> updateServerSSLOptionsFunction =
         lastModifiedTime -> server.get().updateSSLOptions(lastModifiedTime).compose(v -> Future.succeededFuture(true));
-        return new KeyStoreCheckPeriodicTask(vertx, configuration.sslConfiguration(), updateSSLOptionsFunction);
+
+        return new KeyStoreCheckPeriodicTask(vertx, configuration.sslConfiguration(), updateServerSSLOptionsFunction, "ServerKeyStoreCheckPeriodicTask");
     }
 
     @ProvidesIntoMap
@@ -88,9 +88,9 @@ public class SchedulingModule extends AbstractModule
                                                  WebClientOptions webClientOptions,
                                                  SidecarConfiguration configuration)
     {
-        return new ClientKeyStoreCheckPeriodicTask(vertx,
-                                                   configuration.sslConfiguration(),
-                                                   sidecarClientProvider.getHttpClient(),
-                                                   webClientOptions.getSslOptions());
+        Function<Long, Future<Boolean>> updateClientSSLOptionsFunction =
+        lastModifiedTime -> sidecarClientProvider.getHttpClient().updateSSLOptions(webClientOptions.getSslOptions()).compose(v -> Future.succeededFuture(true));
+
+        return new KeyStoreCheckPeriodicTask(vertx, configuration.sslConfiguration(), updateClientSSLOptionsFunction, "ClientKeyStoreCheckPeriodicTask");
     }
 }

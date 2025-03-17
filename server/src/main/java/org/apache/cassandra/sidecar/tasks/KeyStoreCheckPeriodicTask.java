@@ -44,14 +44,37 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
     private final SslConfiguration sslConfiguration;
     private final Function<Long, Future<Boolean>> updateSSLOptionsFunction;
     private long lastModifiedTime = 0; // records the last modified timestamp
+    private final String taskName;
 
     public KeyStoreCheckPeriodicTask(Vertx vertx,
                                      SslConfiguration sslConfiguration,
-                                     Function<Long, Future<Boolean>> updateSSLOptionsFunction)
+                                     Function<Long, Future<Boolean>> updateSSLOptionsFunction,
+                                     String taskName)
     {
         this.vertx = vertx;
         this.sslConfiguration = sslConfiguration;
         this.updateSSLOptionsFunction = updateSSLOptionsFunction;
+        this.taskName = taskName;
+    }
+
+    public static KeyStoreCheckPeriodicTask forServer(Vertx vertx,
+                                                      SslConfiguration sslConfiguration,
+                                                      Function<Long, Future<Boolean>> updateSSLOptionsFunction)
+    {
+        return new KeyStoreCheckPeriodicTask(vertx, sslConfiguration, updateSSLOptionsFunction, "ServerKeyStoreCheckPeriodicTask");
+    }
+
+    public static KeyStoreCheckPeriodicTask forClient(Vertx vertx,
+                                                      SslConfiguration sslConfiguration,
+                                                      Function<Long, Future<Boolean>> updateSSLOptionsFunction)
+    {
+        return new KeyStoreCheckPeriodicTask(vertx, sslConfiguration, updateSSLOptionsFunction, "ClientKeyStoreCheckPeriodicTask");
+    }
+
+    @Override
+    public String name()
+    {
+        return taskName;
     }
 
     @Override
