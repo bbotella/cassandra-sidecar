@@ -72,7 +72,7 @@ public class ClientKeyStoreCheckPeriodicTask implements PeriodicTask
     @Override
     public DurationSpec delay()
     {
-        return  sslConfiguration == null ? DEFAULT_DELAY : sslConfiguration.keystore().checkInterval();
+        return  sslConfiguration == null || sslConfiguration.keystore() == null ? DEFAULT_DELAY : sslConfiguration.keystore().checkInterval();
     }
 
     @Override
