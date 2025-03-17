@@ -18,26 +18,23 @@
 
 package org.apache.cassandra.sidecar.codecs;
 
-import com.google.inject.Singleton;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.codecs.StringMessageCodec;
+import io.vertx.core.eventbus.impl.CodecManager;
 import org.apache.cassandra.sidecar.common.client.SidecarInstance;
 import org.apache.cassandra.sidecar.common.client.SidecarInstanceImpl;
 
 /**
  * Codecs for Sidecar instances
+ * @param <T> a type implementing {@link SidecarInstance}
  */
-@Singleton
-public class SidecarInstanceCodec implements MessageCodec<SidecarInstance, SidecarInstance>
+public class SidecarInstanceCodec<T extends SidecarInstance> implements MessageCodec<T, SidecarInstance>
 {
-    public static final StringMessageCodec STRING = new StringMessageCodec();
-
     @Override
-    public void encodeToWire(Buffer buf, SidecarInstance instance)
+    public void encodeToWire(Buffer buf, T instance)
     {
         buf.appendInt(instance.port());
-        STRING.encodeToWire(buf, instance.hostname());
+        CodecManager.STRING_MESSAGE_CODEC.encodeToWire(buf, instance.hostname());
     }
 
     @Override
@@ -45,11 +42,11 @@ public class SidecarInstanceCodec implements MessageCodec<SidecarInstance, Sidec
     {
         int port = buf.getInt(pos);
         pos += 4; // advance 4 bytes after reading int
-        return new SidecarInstanceImpl(STRING.decodeFromWire(pos, buf), port);
+        return new SidecarInstanceImpl(CodecManager.STRING_MESSAGE_CODEC.decodeFromWire(pos, buf), port);
     }
 
     @Override
-    public SidecarInstance transform(SidecarInstance instance)
+    public SidecarInstance transform(T instance)
     {
         return new SidecarInstanceImpl(instance.hostname(), instance.port());
     }
