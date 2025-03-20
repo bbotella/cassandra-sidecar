@@ -21,6 +21,7 @@ package org.apache.cassandra.sidecar.coordination;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -32,8 +33,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
+import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
-import org.apache.cassandra.sidecar.config.PeriodicTaskConfiguration;
+import org.apache.cassandra.sidecar.config.ClusterLeaseClaimConfiguration;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
 import org.apache.cassandra.sidecar.db.SidecarLeaseDatabaseAccessor;
 import org.apache.cassandra.sidecar.metrics.CoordinationMetrics;
@@ -75,7 +77,7 @@ public class ClusterLeaseClaimTask implements PeriodicTask
     private final SidecarLeaseDatabaseAccessor accessor;
     private final ClusterLease clusterLease;
     private final CoordinationMetrics metrics;
-    private final PeriodicTaskConfiguration periodicTaskConfiguration;
+    private final ClusterLeaseClaimConfiguration configuration;
     private final ServiceConfiguration config;
     private EventBus eventBus;
     private String currentLeaseholder;
@@ -87,7 +89,7 @@ public class ClusterLeaseClaimTask implements PeriodicTask
                                  ClusterLease clusterLease,
                                  SidecarMetrics metrics)
     {
-        this.periodicTaskConfiguration = serviceConfiguration.coordinationConfiguration().clusterLeaseClaimConfiguration();
+        this.configuration = serviceConfiguration.coordinationConfiguration().clusterLeaseClaimConfiguration();
         this.config = serviceConfiguration;
         this.electorateMembership = electorateMembership;
         this.accessor = accessor;
@@ -110,7 +112,7 @@ public class ClusterLeaseClaimTask implements PeriodicTask
     {
         // The Sidecar schema feature is required for this implementation
         // so skip when the feature is not enabled
-        boolean isEnabled = config.schemaKeyspaceConfiguration().isEnabled() && periodicTaskConfiguration.enabled();
+        boolean isEnabled = config.schemaKeyspaceConfiguration().isEnabled() && configuration.enabled();
         boolean isMember = false;
         if (isEnabled)
         {
@@ -144,7 +146,16 @@ public class ClusterLeaseClaimTask implements PeriodicTask
     @Override
     public DurationSpec initialDelay()
     {
-        return periodicTaskConfiguration.initialDelay();
+        // Return a randomized delay to introduce jitter among all the instances participating
+        // in the lease claim process
+        long randomDeltaDelayMillis = configuration.randomDeltaDelayMillis();
+        if (randomDeltaDelayMillis == 0)
+        {
+            // no jitter
+            return configuration.initialDelay();
+        }
+        long initialDelayMillis = configuration.initialDelay().toMillis() + randomDeltaDelayMillis;
+        return new MillisecondBoundConfiguration(initialDelayMillis, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -153,7 +164,7 @@ public class ClusterLeaseClaimTask implements PeriodicTask
     @Override
     public DurationSpec delay()
     {
-        DurationSpec delay = periodicTaskConfiguration.executeInterval();
+        DurationSpec delay = configuration.executeInterval();
 
         if (delay.compareTo(MINIMUM_DELAY) < 0)
         {
@@ -207,7 +218,7 @@ public class ClusterLeaseClaimTask implements PeriodicTask
             LOGGER.debug("Attempting to {} lease for sidecarHostId={}", actionName, sidecarHostId);
             return actionFn.apply(sidecarHostId).currentOwner;
         }
-        catch (QueryConsistencyException | NoHostAvailableException e)
+        catch (QueryConsistencyException | NoHostAvailableException | IllegalArgumentException e)
         {
             LOGGER.debug("Unable to {} lease for sidecarHostId={}", actionName, sidecarHostId, e);
         }

@@ -28,7 +28,6 @@ import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.coordination.ClusterLease;
 import org.apache.cassandra.sidecar.coordination.ClusterLeaseClaimTask;
 import org.apache.cassandra.sidecar.coordination.ElectorateMembership;
-import org.apache.cassandra.sidecar.coordination.MostReplicatedKeyspaceTokenZeroElectorateMembership;
 import org.apache.cassandra.sidecar.db.SidecarLeaseDatabaseAccessor;
 import org.apache.cassandra.sidecar.db.schema.SidecarLeaseSchema;
 import org.apache.cassandra.sidecar.db.schema.TableSchema;
@@ -70,6 +69,6 @@ public class CoordinationModule extends AbstractModule
                                               CQLSessionProvider cqlSessionProvider,
                                               SidecarConfiguration configuration)
     {
-        return new MostReplicatedKeyspaceTokenZeroElectorateMembership(instanceMetadataFetcher, cqlSessionProvider, configuration);
+        return new ElectorateMembershipFactory().create(instanceMetadataFetcher, cqlSessionProvider, configuration);
     }
 }
