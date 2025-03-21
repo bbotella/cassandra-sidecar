@@ -31,7 +31,6 @@ import org.apache.cassandra.sidecar.config.yaml.SidecarConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.SslConfigurationImpl;
 
 import static org.apache.cassandra.sidecar.common.ResourceUtils.writeResourceToPath;
-import static org.apache.cassandra.sidecar.config.KeyStoreConfiguration.DEFAULT_TYPE;
 
 
 /**
@@ -59,7 +58,7 @@ public class TestSslModule extends TestModule
 
         if (!Files.exists(keyStorePath))
         {
-            logger.error("JMX password file not found in path={}", keyStorePath);
+            logger.error("Keystore file not found in path={}", keyStorePath);
         }
         if (!Files.exists(trustStorePath))
         {
@@ -73,9 +72,9 @@ public class TestSslModule extends TestModule
                             .handshakeTimeout(SecondBoundConfiguration.parse("10s"))
                             .clientAuth("NONE")
                             .keystore(new KeyStoreConfigurationImpl(keyStorePath.toAbsolutePath().toString(),
-                                                                    keyStorePassword, DEFAULT_TYPE, SecondBoundConfiguration.parse("5s")))
+                                                                    keyStorePassword))
                             .truststore(new KeyStoreConfigurationImpl(trustStorePath.toAbsolutePath().toString(),
-                                                                      trustStorePassword, DEFAULT_TYPE, SecondBoundConfiguration.parse("5s")))
+                                                                      trustStorePassword))
                             .build();
 
         return super.abstractConfig(sslConfiguration);

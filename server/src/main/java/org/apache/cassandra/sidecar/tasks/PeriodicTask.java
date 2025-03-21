@@ -21,15 +21,12 @@ package org.apache.cassandra.sidecar.tasks;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
-import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 
 /**
  * An interface that defines a periodic task that will be executed during the lifecycle of Cassandra Sidecar
  */
 public interface PeriodicTask extends Task<Void>
 {
-    static final DurationSpec DEFAULT_DELAY = SecondBoundConfiguration.parse("10s");
-
     /**
      * @return delay for periodic task
      */

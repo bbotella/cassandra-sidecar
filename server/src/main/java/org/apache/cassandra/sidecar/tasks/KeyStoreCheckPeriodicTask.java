@@ -19,6 +19,7 @@
 package org.apache.cassandra.sidecar.tasks;
 
 import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
-import org.apache.cassandra.sidecar.config.KeyStoreConfiguration;
+import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.SslConfiguration;
 import org.apache.cassandra.sidecar.utils.EventBusUtils;
 
@@ -46,10 +47,10 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
     private long lastModifiedTime = 0; // records the last modified timestamp
     private final String taskName;
 
-    public KeyStoreCheckPeriodicTask(Vertx vertx,
-                                     SslConfiguration sslConfiguration,
-                                     Function<Long, Future<Boolean>> updateSSLOptionsFunction,
-                                     String taskName)
+    protected KeyStoreCheckPeriodicTask(Vertx vertx,
+                                        SslConfiguration sslConfiguration,
+                                        Function<Long, Future<Boolean>> updateSSLOptionsFunction,
+                                        String taskName)
     {
         this.vertx = vertx;
         this.sslConfiguration = sslConfiguration;
@@ -58,17 +59,23 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
     }
 
     public static KeyStoreCheckPeriodicTask forServer(Vertx vertx,
-                                                      SslConfiguration sslConfiguration,
+                                                      SidecarConfiguration configuration,
                                                       Function<Long, Future<Boolean>> updateSSLOptionsFunction)
     {
-        return new KeyStoreCheckPeriodicTask(vertx, sslConfiguration, updateSSLOptionsFunction, "ServerKeyStoreCheckPeriodicTask");
+        return new KeyStoreCheckPeriodicTask(vertx,
+                                             configuration.sslConfiguration(),
+                                             updateSSLOptionsFunction,
+                                             "ServerKeyStoreCheckPeriodicTask");
     }
 
     public static KeyStoreCheckPeriodicTask forClient(Vertx vertx,
-                                                      SslConfiguration sslConfiguration,
+                                                      SidecarConfiguration configuration,
                                                       Function<Long, Future<Boolean>> updateSSLOptionsFunction)
     {
-        return new KeyStoreCheckPeriodicTask(vertx, sslConfiguration, updateSSLOptionsFunction, "ClientKeyStoreCheckPeriodicTask");
+        return new KeyStoreCheckPeriodicTask(vertx,
+                                             configuration.sidecarClientConfiguration().sslConfiguration(),
+                                             updateSSLOptionsFunction,
+                                             "ClientKeyStoreCheckPeriodicTask");
     }
 
     @Override
@@ -80,8 +87,9 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
     @Override
     public void deploy(Vertx vertx, PeriodicTaskExecutor executor)
     {
-        if (sslConfiguration != null &&
-            sslConfiguration.keystore() != null
+        if (sslConfiguration != null
+            && sslConfiguration.enabled()
+            && sslConfiguration.keystore() != null
             && sslConfiguration.keystore().isConfigured()
             && sslConfiguration.keystore().reloadStore())
         {
@@ -106,7 +114,7 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
     @Override
     public DurationSpec delay()
     {
-        return  sslConfiguration == null ? DEFAULT_DELAY : sslConfiguration.keystore().checkInterval();
+        return sslConfiguration.keystore().checkInterval();
     }
 
     @Override
@@ -124,15 +132,15 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
                                  props.lastModifiedTime());
 
                      updateSSLOptionsFunction.apply(props.lastModifiedTime())
-                           .onSuccess(v -> {
-                               lastModifiedTime = props.lastModifiedTime();
-                               LOGGER.info("Completed reloading certificates from path={}", keyStorePath);
-                               promise.complete(); // propagate successful completion
-                           })
-                           .onFailure(cause -> {
-                               LOGGER.error("Failed to reload certificate from path={}", keyStorePath, cause);
-                               promise.fail(cause);
-                           });
+                                             .onSuccess(v -> {
+                                                 lastModifiedTime = props.lastModifiedTime();
+                                                 LOGGER.info("Completed reloading certificates from path={}", keyStorePath);
+                                                 promise.complete(); // propagate successful completion
+                                             })
+                                             .onFailure(cause -> {
+                                                 LOGGER.error("Failed to reload certificate from path={}", keyStorePath, cause);
+                                                 promise.fail(cause);
+                                             });
                  }
                  else
                  {
@@ -168,10 +176,7 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
      */
     private boolean shouldSkip()
     {
-        if (sslConfiguration == null)
-            return true;
-        KeyStoreConfiguration keyStoreConfiguration = sslConfiguration.keystore();
-        return !keyStoreConfiguration.isConfigured()
-               || !keyStoreConfiguration.reloadStore();
+        return !sslConfiguration.isKeystoreConfigured()
+               || !sslConfiguration.keystore().reloadStore();
     }
 }

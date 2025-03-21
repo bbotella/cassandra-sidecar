@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,9 +125,10 @@ public class SidecarClient implements AutoCloseable, SidecarClientBlobRestoreExt
     /**
      * Executes the Sidecar health request using the configured selection policy and with no retries
      *
+     * @param instance the instance where the request will be executed
      * @return a completable future of the Sidecar health response
      */
-    public CompletableFuture<HealthResponse> sidecarPeerHealth(SidecarInstance instance)
+    public CompletableFuture<HealthResponse> sidecarHealth(SidecarInstance instance)
     {
         return executor.executeRequestAsync(requestBuilder()
                                             .singleInstanceSelectionPolicy(instance)
