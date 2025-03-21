@@ -23,10 +23,12 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.ProvidesIntoMap;
 import org.apache.cassandra.sidecar.cdc.CdcLogCache;
+import org.apache.cassandra.sidecar.client.SidecarInstancesProvider;
 import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
+import org.apache.cassandra.sidecar.coordination.DynamicSidecarInstancesProvider;
 import org.apache.cassandra.sidecar.coordination.InnerDcTokenAdjacentPeerProvider;
 import org.apache.cassandra.sidecar.coordination.SidecarHttpHealthProvider;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthMonitorTask;
@@ -67,7 +69,7 @@ public class CdcModule extends AbstractModule
     {
         return new ConfigsSchema(serviceConfiguration);
     }
-    
+
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.ListCdcSegmentsRouteKey.class)
     VertxRoute listCdcSegmentsRoute(RouteBuilder.Factory factory,
@@ -129,5 +131,12 @@ public class CdcModule extends AbstractModule
     public SidecarPeerProvider sidecarPeerProvider(InnerDcTokenAdjacentPeerProvider innerDcTokenAdjacentPeerProvider)
     {
         return innerDcTokenAdjacentPeerProvider;
+    }
+
+    @Provides
+    @Singleton
+    public SidecarInstancesProvider sidecarInstancesProvider(InstancesMetadata instancesMetadata, ServiceConfiguration serviceConfiguration)
+    {
+        return new DynamicSidecarInstancesProvider(instancesMetadata, serviceConfiguration);
     }
 }

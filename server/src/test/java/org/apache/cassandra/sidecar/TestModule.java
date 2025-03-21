@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import com.google.common.util.concurrent.SidecarRateLimiter;
 
@@ -45,7 +46,6 @@ import org.apache.cassandra.sidecar.common.server.StorageOperations;
 import org.apache.cassandra.sidecar.common.server.dns.DnsResolver;
 import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
-import org.apache.cassandra.sidecar.config.AccessControlConfiguration;
 import org.apache.cassandra.sidecar.config.CdcConfiguration;
 import org.apache.cassandra.sidecar.config.PeriodicTaskConfiguration;
 import org.apache.cassandra.sidecar.config.RestoreJobConfiguration;
@@ -55,7 +55,6 @@ import org.apache.cassandra.sidecar.config.ServiceConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.SslConfiguration;
 import org.apache.cassandra.sidecar.config.ThrottleConfiguration;
-import org.apache.cassandra.sidecar.config.yaml.AccessControlConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.CdcConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.PeriodicTaskConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.RestoreJobConfigurationImpl;
@@ -102,11 +101,11 @@ public class TestModule extends AbstractModule
 
     protected SidecarConfigurationImpl abstractConfig(SslConfiguration sslConfiguration)
     {
-        return abstractConfig(sslConfiguration, new AccessControlConfigurationImpl());
+        return abstractConfig(sslConfiguration, null);
     }
 
     protected SidecarConfigurationImpl abstractConfig(SslConfiguration sslConfiguration,
-                                                      AccessControlConfiguration accessControlConfiguration)
+                                                      Function<SidecarConfigurationImpl.Builder, SidecarConfigurationImpl.Builder> configurationOverrides)
     {
         ThrottleConfiguration throttleConfiguration = new ThrottleConfigurationImpl(5, SecondBoundConfiguration.parse("5s"));
         SSTableUploadConfiguration uploadConfiguration = new SSTableUploadConfigurationImpl(0F);
@@ -136,13 +135,16 @@ public class TestModule extends AbstractModule
         = new PeriodicTaskConfigurationImpl(true,
                                             MillisecondBoundConfiguration.parse("200ms"),
                                             MillisecondBoundConfiguration.parse("1s"));
-        return SidecarConfigurationImpl.builder()
-                                       .serviceConfiguration(serviceConfiguration)
-                                       .sslConfiguration(sslConfiguration)
-                                       .accessControlConfiguration(accessControlConfiguration)
-                                       .restoreJobConfiguration(restoreJobConfiguration)
-                                       .healthCheckConfiguration(healthCheckConfiguration)
-                                       .build();
+        SidecarConfigurationImpl.Builder builder = SidecarConfigurationImpl.builder()
+                                                                           .serviceConfiguration(serviceConfiguration)
+                                                                           .sslConfiguration(sslConfiguration)
+                                                                           .restoreJobConfiguration(restoreJobConfiguration)
+                                                                           .healthCheckConfiguration(healthCheckConfiguration);
+        if (configurationOverrides != null)
+        {
+            builder = configurationOverrides.apply(builder);
+        }
+        return builder.build();
     }
 
     @Provides

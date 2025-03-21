@@ -18,16 +18,17 @@
 
 package org.apache.cassandra.sidecar.tasks;
 
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Provider;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.SslConfiguration;
-import org.apache.cassandra.sidecar.server.Server;
 import org.apache.cassandra.sidecar.utils.EventBusUtils;
 
 import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_SERVER_START;
@@ -41,25 +42,56 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
     private static final Logger LOGGER = LoggerFactory.getLogger(KeyStoreCheckPeriodicTask.class);
 
     private final Vertx vertx;
-    private final Provider<Server> server;
-    private final SslConfiguration configuration;
+    private final SslConfiguration sslConfiguration;
+    private final Function<Long, Future<Boolean>> updateSSLOptionsFunction;
     private long lastModifiedTime = 0; // records the last modified timestamp
+    private final String taskName;
 
-    public KeyStoreCheckPeriodicTask(Vertx vertx, Provider<Server> server, SidecarConfiguration configuration)
+    protected KeyStoreCheckPeriodicTask(Vertx vertx,
+                                        SslConfiguration sslConfiguration,
+                                        Function<Long, Future<Boolean>> updateSSLOptionsFunction,
+                                        String taskName)
     {
         this.vertx = vertx;
-        this.server = server;
-        this.configuration = configuration.sslConfiguration();
+        this.sslConfiguration = sslConfiguration;
+        this.updateSSLOptionsFunction = updateSSLOptionsFunction;
+        this.taskName = taskName;
+    }
+
+    public static KeyStoreCheckPeriodicTask forServer(Vertx vertx,
+                                                      SidecarConfiguration configuration,
+                                                      Function<Long, Future<Boolean>> updateSSLOptionsFunction)
+    {
+        return new KeyStoreCheckPeriodicTask(vertx,
+                                             configuration.sslConfiguration(),
+                                             updateSSLOptionsFunction,
+                                             "ServerKeyStoreCheckPeriodicTask");
+    }
+
+    public static KeyStoreCheckPeriodicTask forClient(Vertx vertx,
+                                                      SidecarConfiguration configuration,
+                                                      Function<Long, Future<Boolean>> updateSSLOptionsFunction)
+    {
+        return new KeyStoreCheckPeriodicTask(vertx,
+                                             configuration.sidecarClientConfiguration().sslConfiguration(),
+                                             updateSSLOptionsFunction,
+                                             "ClientKeyStoreCheckPeriodicTask");
+    }
+
+    @Override
+    public String name()
+    {
+        return taskName;
     }
 
     @Override
     public void deploy(Vertx vertx, PeriodicTaskExecutor executor)
     {
-        if (configuration != null
-            && configuration.enabled()
-            && configuration.keystore() != null
-            && configuration.keystore().isConfigured()
-            && configuration.keystore().reloadStore())
+        if (sslConfiguration != null
+            && sslConfiguration.enabled()
+            && sslConfiguration.keystore() != null
+            && sslConfiguration.keystore().isConfigured()
+            && sslConfiguration.keystore().reloadStore())
         {
             maybeRecordLastModifiedTime();
             EventBusUtils.onceLocalConsumer(vertx.eventBus(), ON_SERVER_START.address(), message -> executor.schedule(this));
@@ -82,14 +114,14 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
     @Override
     public DurationSpec delay()
     {
-        return configuration.keystore().checkInterval();
+        return sslConfiguration.keystore().checkInterval();
     }
 
     @Override
     public void execute(Promise<Void> promise)
     {
         LOGGER.info("Running periodic key store checker");
-        String keyStorePath = configuration.keystore().path();
+        String keyStorePath = sslConfiguration.keystore().path();
         vertx.fileSystem().props(keyStorePath)
              .onSuccess(props -> {
                  long previousLastModifiedTime = lastModifiedTime;
@@ -99,17 +131,16 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
                                  "lastModifiedTime={}", keyStorePath, previousLastModifiedTime,
                                  props.lastModifiedTime());
 
-                     server.get()
-                           .updateSSLOptions(props.lastModifiedTime())
-                           .onSuccess(v -> {
-                               lastModifiedTime = props.lastModifiedTime();
-                               LOGGER.info("Completed reloading certificates from path={}", keyStorePath);
-                               promise.complete(); // propagate successful completion
-                           })
-                           .onFailure(cause -> {
-                               LOGGER.error("Failed to reload certificate from path={}", keyStorePath, cause);
-                               promise.fail(cause);
-                           });
+                     updateSSLOptionsFunction.apply(props.lastModifiedTime())
+                                             .onSuccess(v -> {
+                                                 lastModifiedTime = props.lastModifiedTime();
+                                                 LOGGER.info("Completed reloading certificates from path={}", keyStorePath);
+                                                 promise.complete(); // propagate successful completion
+                                             })
+                                             .onFailure(cause -> {
+                                                 LOGGER.error("Failed to reload certificate from path={}", keyStorePath, cause);
+                                                 promise.fail(cause);
+                                             });
                  }
                  else
                  {
@@ -128,7 +159,7 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
         {
             return;
         }
-        String keyStorePath = configuration.keystore().path();
+        String keyStorePath = sslConfiguration.keystore().path();
         vertx.fileSystem().props(keyStorePath)
              .onSuccess(props -> lastModifiedTime = props.lastModifiedTime())
              .onFailure(err -> {
@@ -145,7 +176,7 @@ public class KeyStoreCheckPeriodicTask implements PeriodicTask
      */
     private boolean shouldSkip()
     {
-        return !configuration.isKeystoreConfigured()
-               || !configuration.keystore().reloadStore();
+        return !sslConfiguration.isKeystoreConfigured()
+               || !sslConfiguration.keystore().reloadStore();
     }
 }

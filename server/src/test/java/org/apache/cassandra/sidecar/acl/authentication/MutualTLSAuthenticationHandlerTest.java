@@ -333,7 +333,7 @@ class MutualTLSAuthenticationHandlerTest
                                                  Collections.singleton(ADMIN_IDENTITY),
                                                  new CacheConfigurationImpl());
 
-            return super.abstractConfig(sslConfiguration, accessControlConfiguration);
+            return super.abstractConfig(sslConfiguration, builder -> builder.accessControlConfiguration(accessControlConfiguration));
         }
 
         @Provides

@@ -58,7 +58,7 @@ public class TestSslModule extends TestModule
 
         if (!Files.exists(keyStorePath))
         {
-            logger.error("JMX password file not found in path={}", keyStorePath);
+            logger.error("Keystore file not found in path={}", keyStorePath);
         }
         if (!Files.exists(trustStorePath))
         {

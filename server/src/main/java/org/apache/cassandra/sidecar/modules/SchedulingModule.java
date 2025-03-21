@@ -18,6 +18,8 @@
 
 package org.apache.cassandra.sidecar.modules;
 
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +28,7 @@ import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.ProvidesIntoMap;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
@@ -37,6 +40,7 @@ import org.apache.cassandra.sidecar.server.Server;
 import org.apache.cassandra.sidecar.tasks.KeyStoreCheckPeriodicTask;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
 import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
+import org.apache.cassandra.sidecar.utils.SidecarClientProvider;
 
 /**
  * Provides the scheduling capability in Sidecar. Periodic tasks are deployed to {@link PeriodicTaskExecutor}
@@ -71,6 +75,20 @@ public class SchedulingModule extends AbstractModule
     @KeyClassMapKey(PeriodicTaskMapKeys.KeyStoreCheckPeriodicTaskKey.class)
     PeriodicTask keyStoreCheckPeriodicTask(Vertx vertx, Provider<Server> server, SidecarConfiguration configuration)
     {
-        return new KeyStoreCheckPeriodicTask(vertx, server, configuration);
+        Function<Long, Future<Boolean>> updateServerSSLOptionsFunction =
+        lastModifiedTime -> server.get().updateSSLOptions(lastModifiedTime).compose(v -> Future.succeededFuture(true));
+
+        return KeyStoreCheckPeriodicTask.forServer(vertx, configuration, updateServerSSLOptionsFunction);
+    }
+
+    @ProvidesIntoMap
+    @KeyClassMapKey(PeriodicTaskMapKeys.ClientKeyStoreCheckPeriodicTaskKey.class)
+    PeriodicTask clientKeyStoreCheckPeriodicTask(Vertx vertx,
+                                                 SidecarClientProvider sidecarClientProvider,
+                                                 SidecarConfiguration configuration)
+    {
+        Function<Long, Future<Boolean>> updateClientSSLOptionsFunction = sidecarClientProvider::updateSSLOptions;
+
+        return KeyStoreCheckPeriodicTask.forClient(vertx, configuration, updateClientSSLOptionsFunction);
     }
 }

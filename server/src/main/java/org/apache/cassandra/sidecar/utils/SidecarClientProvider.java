@@ -18,7 +18,7 @@
 
 package org.apache.cassandra.sidecar.utils;
 
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -27,10 +27,10 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.SSLOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.cassandra.sidecar.client.HttpClientConfig;
@@ -38,16 +38,16 @@ import org.apache.cassandra.sidecar.client.SidecarClient;
 import org.apache.cassandra.sidecar.client.SidecarClientConfig;
 import org.apache.cassandra.sidecar.client.SidecarClientConfigImpl;
 import org.apache.cassandra.sidecar.client.SidecarClientVertxRequestExecutor;
-import org.apache.cassandra.sidecar.client.SimpleSidecarInstancesProvider;
+import org.apache.cassandra.sidecar.client.SidecarInstancesProvider;
 import org.apache.cassandra.sidecar.client.VertxHttpClient;
+import org.apache.cassandra.sidecar.client.VertxRequestExecutor;
 import org.apache.cassandra.sidecar.client.retry.ExponentialBackoffRetryPolicy;
 import org.apache.cassandra.sidecar.client.retry.RetryPolicy;
-import org.apache.cassandra.sidecar.common.client.SidecarInstance;
-import org.apache.cassandra.sidecar.common.client.SidecarInstanceImpl;
 import org.apache.cassandra.sidecar.common.server.utils.SidecarVersionProvider;
 import org.apache.cassandra.sidecar.common.server.utils.ThrowableUtils;
 import org.apache.cassandra.sidecar.config.SidecarClientConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
+import org.apache.cassandra.sidecar.config.SslConfiguration;
 
 /**
  * Provider class for retrieving the singleton {@link SidecarClient} instance
@@ -57,27 +57,47 @@ public class SidecarClientProvider implements Provider<SidecarClient>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SidecarClientProvider.class);
     private final Vertx vertx;
-    private final SidecarClientConfiguration clientConfig;
+    private final SidecarInstancesProvider sidecarInstancesProvider;
     private final SidecarVersionProvider sidecarVersionProvider;
     private final SidecarClient client;
+    private final WebClient webClient;
 
     private final AtomicBoolean isClosing = new AtomicBoolean(false);
+    private final WebClientOptions webClientOptions;
+    private final SidecarClientConfiguration sidecarClientConfiguration;
 
     @Inject
     public SidecarClientProvider(Vertx vertx,
                                  SidecarConfiguration sidecarConfiguration,
+                                 SidecarInstancesProvider sidecarInstancesProvider,
                                  SidecarVersionProvider sidecarVersionProvider)
     {
         this.vertx = vertx;
-        this.clientConfig = sidecarConfiguration.sidecarClientConfiguration();
+        this.sidecarInstancesProvider = sidecarInstancesProvider;
         this.sidecarVersionProvider = sidecarVersionProvider;
-        this.client = initializeSidecarClient();
+        this.sidecarClientConfiguration = sidecarConfiguration.sidecarClientConfiguration();
+        this.webClientOptions = webClientOptions(sidecarClientConfiguration);
+        this.webClient = WebClient.create(vertx, webClientOptions);
+        this.client = initializeSidecarClient(sidecarClientConfiguration);
     }
 
     @Override
     public SidecarClient get()
     {
         return client;
+    }
+
+    /**
+     * Updates the SSL Options for the client
+     *
+     * @param lastModifiedTime the time of last modification for the file
+     * @return a future with the result of the update
+     */
+    public Future<Boolean> updateSSLOptions(long lastModifiedTime)
+    {
+        SSLOptions sslOptions = webClientOptions.getSslOptions();
+        configureSSLOptions(sslOptions, sidecarClientConfiguration.sslConfiguration(), lastModifiedTime);
+        return webClient.updateSSLOptions(sslOptions);
     }
 
     public void close()
@@ -89,14 +109,10 @@ public class SidecarClientProvider implements Provider<SidecarClient>
         }
     }
 
-    private SidecarClient initializeSidecarClient()
+    private SidecarClient initializeSidecarClient(SidecarClientConfiguration clientConfig)
     {
-        WebClientOptions webClientOptions = webClientOptions();
-        HttpClient httpClient = vertx.createHttpClient(webClientOptions);
-        WebClient webClient = WebClient.wrap(httpClient, webClientOptions);
-
         HttpClientConfig httpClientConfig = new HttpClientConfig.Builder<>()
-                                            .ssl(webClientOptions().isSsl())
+                                            .ssl(webClientOptions.isSsl())
                                             .timeoutMillis(clientConfig.requestTimeout().toMillis())
                                             .idleTimeoutMillis(clientConfig.requestIdleTimeout().toIntMillis())
                                             .userAgent("cassandra-sidecar/" + sidecarVersionProvider.sidecarVersion())
@@ -105,26 +121,21 @@ public class SidecarClientProvider implements Provider<SidecarClient>
         VertxHttpClient vertxHttpClient = new VertxHttpClient(vertx, webClient, httpClientConfig);
         RetryPolicy defaultRetryPolicy = new ExponentialBackoffRetryPolicy(clientConfig.maxRetries(),
                                                                            clientConfig.retryDelay().toMillis(),
-                                                                           clientConfig.retryDelay().toMillis());
-        SidecarClientVertxRequestExecutor requestExecutor = new SidecarClientVertxRequestExecutor(vertxHttpClient);
-        SidecarInstance instance = new SidecarInstanceImpl(webClientOptions.getDefaultHost(), webClientOptions.getDefaultPort());
-        ArrayList<SidecarInstance> instances = new ArrayList<>();
-        instances.add(instance);
-        SimpleSidecarInstancesProvider instancesProvider = new SimpleSidecarInstancesProvider(instances);
+                                                                           clientConfig.maxRetryDelay().toMillis());
+        VertxRequestExecutor requestExecutor = new SidecarClientVertxRequestExecutor(vertxHttpClient);
 
         SidecarClientConfig config = SidecarClientConfigImpl.builder()
                                                             .retryDelayMillis(clientConfig.retryDelay().toMillis())
                                                             .maxRetryDelayMillis(clientConfig.maxRetryDelay().toMillis())
                                                             .maxRetries(clientConfig.maxRetries())
                                                             .build();
-
-        return new SidecarClient(instancesProvider,
+        return new SidecarClient(sidecarInstancesProvider,
                                  requestExecutor,
                                  config,
                                  defaultRetryPolicy);
     }
 
-    private WebClientOptions webClientOptions()
+    static WebClientOptions webClientOptions(SidecarClientConfiguration clientConfig)
     {
         WebClientOptions options = new WebClientOptions();
         options.getPoolOptions()
@@ -133,31 +144,49 @@ public class SidecarClientProvider implements Provider<SidecarClient>
                .setHttp1MaxSize(clientConfig.connectionPoolMaxSize())
                .setMaxWaitQueueSize(clientConfig.connectionPoolMaxWaitQueueSize());
 
-        boolean useSsl = clientConfig.sslConfiguration() != null && clientConfig.sslConfiguration().enabled();
-        if (clientConfig.sslConfiguration() != null && clientConfig.sslConfiguration().isKeystoreConfigured())
+        SslConfiguration ssl = clientConfig.sslConfiguration();
+        if (ssl != null && ssl.enabled())
         {
-            options.setKeyStoreOptions(new JksOptions().setPath(clientConfig.sslConfiguration().keystore().path())
-                                                       .setPassword(clientConfig.sslConfiguration().keystore().password()));
-            if (clientConfig.sslConfiguration().preferOpenSSL() && OpenSSLEngineOptions.isAvailable())
+            options.setSsl(true);
+
+            if (!ssl.secureTransportProtocols().isEmpty())
+            {
+                // Use LinkedHashSet to preserve input order
+                options.setEnabledSecureTransportProtocols(new LinkedHashSet<>(ssl.secureTransportProtocols()));
+            }
+
+            for (String cipherSuite : ssl.cipherSuites())
+            {
+                options.addEnabledCipherSuite(cipherSuite);
+            }
+
+            if (ssl.preferOpenSSL() && OpenSSLEngineOptions.isAvailable())
             {
                 LOGGER.info("Using OpenSSL for encryption in Webclient Options");
-                useSsl = true;
                 options.setSslEngineOptions(new OpenSSLEngineOptions().setSessionCacheEnabled(true));
             }
             else
             {
                 LOGGER.warn("OpenSSL not enabled, using JDK for TLS in Webclient Options");
             }
-        }
 
-        if (clientConfig.sslConfiguration() != null && clientConfig.sslConfiguration().truststore() != null
-            && clientConfig.sslConfiguration().truststore().isConfigured())
-        {
-            options.setTrustStoreOptions(new JksOptions().setPath(clientConfig.sslConfiguration().truststore().path())
-                                                         .setPassword(clientConfig.sslConfiguration().truststore().password()));
+            configureSSLOptions(options.getSslOptions(), ssl, 0);
         }
-
-        options.setSsl(useSsl);
         return options;
+    }
+
+    static void configureSSLOptions(SSLOptions options, SslConfiguration ssl, long timestamp)
+    {
+        options.setSslHandshakeTimeout(ssl.handshakeTimeout().quantity())
+               .setSslHandshakeTimeoutUnit(ssl.handshakeTimeout().unit());
+
+        if (ssl.isKeystoreConfigured())
+        {
+            SslUtils.setKeyStoreConfiguration(options, ssl.keystore(), timestamp);
+        }
+        if (ssl.isTrustStoreConfigured())
+        {
+            SslUtils.setTrustStoreConfiguration(options, ssl.truststore());
+        }
     }
 }
