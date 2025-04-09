@@ -35,6 +35,7 @@ import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthMonitorTask;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthProvider;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerProvider;
 import org.apache.cassandra.sidecar.db.schema.ConfigsSchema;
+import org.apache.cassandra.sidecar.db.schema.SystemViewsSchema;
 import org.apache.cassandra.sidecar.db.schema.TableSchema;
 import org.apache.cassandra.sidecar.handlers.cdc.AllServiceConfigHandler;
 import org.apache.cassandra.sidecar.handlers.cdc.DeleteServiceConfigHandler;
@@ -47,6 +48,7 @@ import org.apache.cassandra.sidecar.modules.multibindings.TableSchemaMapKeys;
 import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys;
 import org.apache.cassandra.sidecar.routes.RouteBuilder;
 import org.apache.cassandra.sidecar.routes.VertxRoute;
+import org.apache.cassandra.sidecar.tasks.CdcRawDirectorySpaceCleaner;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
 import org.apache.cassandra.sidecar.utils.SidecarClientProvider;
 
@@ -64,10 +66,24 @@ public class CdcModule extends AbstractModule
     }
 
     @ProvidesIntoMap
+    @KeyClassMapKey(PeriodicTaskMapKeys.CdcRawDirectorySpaceCleanerTaskKey.class)
+    PeriodicTask cdcRawDirectorySpaceCleanercPeriodicTask(CdcRawDirectorySpaceCleaner cleanerTask)
+    {
+        return cleanerTask;
+    }
+
+    @ProvidesIntoMap
     @KeyClassMapKey(TableSchemaMapKeys.ConfigsSchemaKey.class)
     TableSchema configsSchema(ServiceConfiguration serviceConfiguration)
     {
         return new ConfigsSchema(serviceConfiguration);
+    }
+
+    @ProvidesIntoMap
+    @KeyClassMapKey(TableSchemaMapKeys.SystemViewsSchemaKey.class)
+    TableSchema systemViewssSchema(SystemViewsSchema schema)
+    {
+        return schema;
     }
 
     @ProvidesIntoMap
