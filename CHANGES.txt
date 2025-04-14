@@ -1,6 +1,7 @@
 0.2.0
 -----
  * Schema Reporting Metrics Improvements (CASSSIDECAR-231)
+ * Add a Sidecar period task to monitor and delete commit log segments in the cdc_raw directory (CASSSIDECAR-220)
  * Fixing incorrect creation of MinuteBoundConfiguration & MillisecondBoundConfiguration in CdcConfigImpl (CASSSIDECAR-236)
  * Improvements to CDCConfig classes (CASSSIDECAR-235)
  * Hot Reload client and server SSL certificates (CASSSIDECAR-228)
