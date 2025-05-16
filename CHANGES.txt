@@ -1,5 +1,6 @@
 0.2.0
 -----
+ * Do not emit warning on startup when initialDelay is configured to 0 (CASSSIDECAR-248)
  * Improved Documentation on IDE Integration (CASSSIDECAR-227)
  * Schema Reporting Metrics Improvements (CASSSIDECAR-231)
  * Add a Sidecar period task to monitor and delete commit log segments in the cdc_raw directory (CASSSIDECAR-220)
