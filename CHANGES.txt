@@ -1,5 +1,6 @@
 0.2.0
 -----
+ * Add APP_HOME prefix for log config and log dir in cassandra-sidecar startup script (CASSSIDECAR-248)
  * Do not emit warning on startup when initialDelay is configured to 0 (CASSSIDECAR-248)
  * Improved Documentation on IDE Integration (CASSSIDECAR-227)
  * Schema Reporting Metrics Improvements (CASSSIDECAR-231)
