@@ -30,6 +30,13 @@ import org.apache.cassandra.sidecar.acl.authorization.CassandraPermissions;
 import org.apache.cassandra.sidecar.common.server.MetricsOperations;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.acl.authorization.ResourceScopes.DATA_SCOPE;
@@ -69,6 +76,21 @@ public class ConnectedClientStatsHandler extends AbstractHandler<Boolean> implem
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Connected Client Statistics",
+               description = "Retrieves statistics about clients connected to the Cassandra instance.")
+    @Parameter(name = "summary",
+               in = ParameterIn.QUERY,
+               description = "Whether to return only a summary of client statistics. Defaults to true.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved client statistics.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class,
+                                                     description = "JSON structure representing client statistics. " +
+                                                                   "The exact structure depends on the 'summary' " +
+                                                                   "parameter and Cassandra version.")))
+    @APIResponse(responseCode = "500", description = "Failed to retrieve client statistics.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

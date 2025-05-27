@@ -48,6 +48,13 @@ import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.CdcUtil;
 import org.apache.cassandra.sidecar.utils.FileStreamer;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.CdcUtil.getIdxFileName;
@@ -88,6 +95,29 @@ public class StreamCdcSegmentHandler extends AbstractHandler<String> implements 
     }
 
     @Override
+    @Operation(summary = "Stream CDC Segment",
+               description = "Streams a specific Change Data Capture (CDC) log segment file from the Cassandra instance. Supports partial content streaming via the HTTP Range header.")
+    @Parameter(name = "segment",
+               in = ParameterIn.PATH,
+               description = "The name of the CDC log segment file.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully streamed the entire CDC segment.",
+                 content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(type = SchemaType.STRING, format = "binary")))
+    @APIResponse(responseCode = "206",
+                 description = "Successfully streamed a partial segment based on the Range header.",
+                 content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(type = SchemaType.STRING, format = "binary")))
+    @APIResponse(responseCode = "400",
+                 description = "Bad request, e.g., invalid segment file name.")
+    @APIResponse(responseCode = "404",
+                 description = "CDC segment file not found.")
+    @APIResponse(responseCode = "416",
+                 description = "Requested range not satisfiable, e.g., file is empty or range is invalid.")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error during streaming or accessing segment information.")
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

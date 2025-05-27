@@ -33,12 +33,20 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
 import org.apache.cassandra.sidecar.cluster.CassandraAdapterDelegate;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
+import org.apache.cassandra.sidecar.common.response.TokenRangeReplicasResponse;
 import org.apache.cassandra.sidecar.common.server.StorageOperations;
 import org.apache.cassandra.sidecar.common.server.data.Name;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.HttpExceptions;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
@@ -74,6 +82,21 @@ public class TokenRangeReplicaMapHandler extends AbstractHandler<Name> implement
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Token Range Replicas",
+               description = "Retrieves the token ranges and their corresponding read and write replicas for a given keyspace. It also includes metadata about each replica, such as its state and status.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "The name of the keyspace.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved token range replica information.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = TokenRangeReplicasResponse.class)))
+    @APIResponse(responseCode = "400",
+                 description = "Bad request, for example, if 'keyspace' is not supplied.")
+    @APIResponse(responseCode = "404",
+                 description = "The specified keyspace was not found.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

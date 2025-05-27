@@ -21,12 +21,20 @@ package org.apache.cassandra.sidecar.handlers;
 import com.google.inject.Inject;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import org.apache.cassandra.sidecar.common.response.TimeSkewResponse;
 import org.apache.cassandra.sidecar.utils.TimeSkewInfo;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /**
  * Provides clients information about the current time on this host
  * and the allowable time skew between this host and the client.
  */
+@Path("/api/v1/time-skew")
 public class TimeSkewHandler implements Handler<RoutingContext>
 {
     private final TimeSkewInfo timeSkewInfo;
@@ -42,6 +50,13 @@ public class TimeSkewHandler implements Handler<RoutingContext>
         this.timeSkewInfo = timeSkewInfo;
     }
 
+    @GET
+    @Operation(summary = "Get Time Skew Information",
+               description = "Provides the current server time and the allowable time skew between the server and the client.")
+    @APIResponse(responseCode = "200",
+                 description = "Current server time and allowable skew",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = TimeSkewResponse.class)))
     @Override
     public void handle(RoutingContext context)
     {

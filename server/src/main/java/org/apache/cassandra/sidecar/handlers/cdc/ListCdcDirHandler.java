@@ -52,9 +52,14 @@ import org.apache.cassandra.sidecar.handlers.AccessProtected;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.CdcUtil;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.common.utils.StringUtils.isNullOrEmpty;
+// ListCdcSegmentsResponse is already imported
 import static org.apache.cassandra.sidecar.utils.CdcUtil.getIdxFileName;
 import static org.apache.cassandra.sidecar.utils.CdcUtil.getLogFilePrefix;
 import static org.apache.cassandra.sidecar.utils.CdcUtil.isIndexFile;
@@ -89,6 +94,16 @@ public class ListCdcDirHandler extends AbstractHandler<Void> implements AccessPr
     }
 
     @Override
+    @Operation(summary = "List CDC Segments",
+               description = "Lists available Change Data Capture (CDC) log segments from the Cassandra instance's CDC directory. Provides information about each segment including its name, size, index position, completion status, and last modified timestamp.")
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved list of CDC segments.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ListCdcSegmentsResponse.class)))
+    @APIResponse(responseCode = "500",
+                 description = "Failed to list CDC segments, possibly due to I/O errors or misconfiguration.")
+    @APIResponse(responseCode = "503",
+                 description = "CDC directory is not configured in Sidecar.")
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

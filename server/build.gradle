@@ -153,6 +153,8 @@ dependencies {
     implementation(project(":vertx-auth-mtls"))
     implementation(project(":vertx-client"))
 
+    implementation 'org.eclipse.microprofile.openapi:microprofile-openapi-api:3.0'
+
     testFixturesApi(testFixtures(project(":server-common")))
     testFixturesApi(testFixtures(project(":vertx-auth-mtls")))
     testFixturesImplementation("io.vertx:vertx-junit5:${project.vertxVersion}")

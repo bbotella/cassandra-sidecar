@@ -33,9 +33,14 @@ import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.job.OperationalJobManager;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.RUNNING;
+// ListOperationalJobsResponse is already imported
 
 /**
  * Handler for retrieving the all the jobs running on the sidecar
@@ -67,6 +72,13 @@ public class ListOperationalJobsHandler extends AbstractHandler<Void> implements
     }
 
     @Override
+    @Operation(summary = "List In-flight Operational Jobs",
+               description = "Retrieves a list of all in-flight operational jobs on the Cassandra instance. This currently only shows jobs with RUNNING status.")
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved list of in-flight jobs.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ListOperationalJobsResponse.class)))
+    @APIResponse(responseCode = "500", description = "Failed to retrieve job list.")
     protected void handleInternal(RoutingContext context, HttpServerRequest httpRequest, @NotNull String host, SocketAddress remoteAddress, Void request)
     {
         ListOperationalJobsResponse listResponse = new ListOperationalJobsResponse();

@@ -27,11 +27,19 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
+import org.apache.cassandra.sidecar.common.response.TableStatsResponse;
 import org.apache.cassandra.sidecar.common.server.MetricsOperations;
 import org.apache.cassandra.sidecar.common.server.data.QualifiedTableName;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /**
  * Handler for retrieving table stats
@@ -66,6 +74,26 @@ public class TableStatsHandler extends AbstractHandler<QualifiedTableName> imple
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Table Statistics",
+               description = "Retrieves statistics for a specific table in a keyspace, including SSTable count, disk space usage, and snapshot sizes.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "The name of the keyspace.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "The name of the table.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved table statistics.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = TableStatsResponse.class)))
+    @APIResponse(responseCode = "404",
+                 description = "The specified keyspace or table was not found.")
+    @APIResponse(responseCode = "500",
+                 description = "Failed to retrieve table statistics.")
     protected void handleInternal(RoutingContext context, HttpServerRequest httpRequest, String host, SocketAddress remoteAddress, QualifiedTableName tableName)
     {
         MetricsOperations operations = metadataFetcher.delegate(host).metricsOperations();

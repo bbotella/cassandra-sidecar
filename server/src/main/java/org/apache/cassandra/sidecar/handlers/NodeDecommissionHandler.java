@@ -40,9 +40,17 @@ import org.apache.cassandra.sidecar.job.OperationalJobManager;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.OperationalJobUtils;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.RequestUtils.parseBooleanQueryParam;
+// OperationalJobResponse is already imported
 
 /**
  * Provides REST API for asynchronously decommissioning the corresponding Cassandra node
@@ -81,6 +89,25 @@ public class NodeDecommissionHandler extends AbstractHandler<Boolean> implements
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Decommission Cassandra Node",
+               description = "Asynchronously decommissions the Cassandra node associated with this Sidecar instance. The 'force' parameter can be used to bypass safety checks, but should be used with extreme caution.")
+    @Parameter(name = "force",
+               in = ParameterIn.QUERY,
+               description = "Whether to force decommissioning, bypassing safety checks. Defaults to false. Use with caution.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN))
+    @APIResponse(responseCode = "200",
+                 description = "Decommission job has completed (succeeded or failed).",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = OperationalJobResponse.class)))
+    @APIResponse(responseCode = "202",
+                 description = "Decommission job has been accepted and is in progress.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = OperationalJobResponse.class)))
+    @APIResponse(responseCode = "409",
+                 description = "A conflicting operational job is already in progress.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = OperationalJobResponse.class)))
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

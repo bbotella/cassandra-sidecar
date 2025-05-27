@@ -31,11 +31,19 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
+import org.apache.cassandra.sidecar.common.response.data.RingEntry;
 import org.apache.cassandra.sidecar.common.server.StorageOperations;
 import org.apache.cassandra.sidecar.common.server.data.Name;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
@@ -67,6 +75,19 @@ public class KeyspaceRingHandler extends AbstractHandler<Name> implements Access
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Cassandra Ring Information",
+               description = "Retrieves the ring view for the Cassandra cluster. If the 'keyspace' path parameter is provided, it shows information specific to that keyspace; otherwise, it may show a more general view (behavior can depend on Cassandra version and configuration). The response is a list of ring entries, each detailing a node in the ring.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "The name of the keyspace. If not provided (i.e., when accessing /api/v1/cassandra/ring), ring information potentially spanning all keyspaces or a default view is returned.",
+               required = false,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved ring information.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(type = SchemaType.ARRAY, implementation = RingEntry.class)))
+    @APIResponse(responseCode = "404",
+                 description = "The specified keyspace was not found (only applicable when a keyspace is provided).")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

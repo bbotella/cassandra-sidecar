@@ -27,9 +27,14 @@ import io.vertx.core.json.Json;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.cluster.CassandraAdapterDelegate;
+import org.apache.cassandra.sidecar.common.response.HealthCheckStatus;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.JMX;
@@ -67,6 +72,16 @@ public class CassandraHealthHandler extends AbstractHandler<Void>
      * @param request       the request object
      */
     @Override
+    @Operation(summary = "Cassandra Health Check",
+               description = "Checks the health of the Cassandra instance. The specific check (JMX or Native) depends on the request path.")
+    @APIResponse(responseCode = "200",
+                 description = "Cassandra instance is healthy.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = HealthCheckStatus.class)))
+    @APIResponse(responseCode = "503",
+                 description = "Cassandra instance is not healthy.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = HealthCheckStatus.class)))
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

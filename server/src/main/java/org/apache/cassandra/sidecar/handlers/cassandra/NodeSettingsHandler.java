@@ -23,9 +23,14 @@ import com.google.inject.Singleton;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.handlers.AbstractHandler;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -53,6 +58,14 @@ public class NodeSettingsHandler extends AbstractHandler<Void>
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Cassandra Node Settings",
+               description = "Retrieves various settings and information about the Cassandra node, including version, partitioner, datacenter, RPC address, tokens, and Sidecar version.")
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved node settings.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = NodeSettings.class)))
+    @APIResponse(responseCode = "500",
+                 description = "Failed to retrieve node settings, possibly due to JMX connection issues.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

@@ -28,10 +28,15 @@ import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
 import org.apache.cassandra.sidecar.cluster.CassandraAdapterDelegate;
+import org.apache.cassandra.sidecar.common.response.GossipInfoResponse;
 import org.apache.cassandra.sidecar.common.server.ClusterMembershipOperations;
 import org.apache.cassandra.sidecar.common.server.utils.GossipInfoParser;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -62,6 +67,13 @@ public class GossipInfoHandler extends AbstractHandler<Void> implements AccessPr
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Cassandra Gossip Information",
+               description = "Retrieves raw gossip information from the Cassandra instance. The response is a map where keys are host identifiers (e.g., '/127.0.0.1:7000') and values are maps of gossip attributes for that host. Common attributes include 'status', 'load', 'schema', 'dc', 'rack', 'releaseVersion', 'generation', 'heartbeat', etc.")
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved gossip information.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = GossipInfoResponse.class)))
+    @APIResponse(responseCode = "500", description = "Failed to retrieve gossip information.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

@@ -22,17 +22,25 @@ import com.google.inject.Inject;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.cassandra.sidecar.common.response.HealthCheckStatus;
 import org.apache.cassandra.sidecar.common.server.StorageOperations;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.modules.HealthCheckModule.NOT_OK_STATUS;
 import static org.apache.cassandra.sidecar.modules.HealthCheckModule.OK_STATUS;
 
+import jakarta.ws.rs.Path;
+
 /**
  * Handler to retrieve gossip health
  */
+@Path("/api/v1/cassandra/gossip/__health")
 public class GossipHealthHandler extends AbstractHandler<Void>
 {
     /**
@@ -50,6 +58,13 @@ public class GossipHealthHandler extends AbstractHandler<Void>
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Cassandra Gossip Health Check", description = "Checks if Cassandra gossip is running.")
+    @APIResponse(responseCode = "200", description = "Cassandra gossip is running.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = HealthCheckStatus.class)))
+    @APIResponse(responseCode = "503", description = "Cassandra gossip is not running.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = HealthCheckStatus.class)))
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

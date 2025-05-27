@@ -33,10 +33,19 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
 import org.apache.cassandra.sidecar.common.response.SchemaResponse;
 import org.apache.cassandra.sidecar.common.server.data.Name;
+// SchemaResponse is already imported
+import org.apache.cassandra.sidecar.common.server.data.Name;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.MetadataUtils;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
@@ -72,6 +81,18 @@ public class KeyspaceSchemaHandler extends AbstractHandler<Name> implements Acce
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Cassandra Schema",
+               description = "Retrieves the schema for all keyspaces or for a specific keyspace if the 'keyspace' path parameter is provided. The schema is returned in a string format (usually CQL statements).")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "The name of the keyspace. If not provided (i.e., when accessing the /api/v1/cassandra/schema endpoint), the schema for all keyspaces is returned.",
+               required = false,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved the schema.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = SchemaResponse.class)))
+    @APIResponse(responseCode = "404", description = "The specified keyspace was not found.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

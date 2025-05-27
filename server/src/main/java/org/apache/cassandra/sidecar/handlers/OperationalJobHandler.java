@@ -30,11 +30,19 @@ import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
+import org.apache.cassandra.sidecar.common.response.OperationalJobResponse;
 import org.apache.cassandra.sidecar.job.OperationalJob;
 import org.apache.cassandra.sidecar.job.OperationalJobManager;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.OperationalJobUtils;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.OPERATIONAL_JOB_ID_PATH_PARAM;
@@ -67,6 +75,22 @@ public class OperationalJobHandler extends AbstractHandler<UUID> implements Acce
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Operational Job Status",
+               description = "Retrieves the status of a specific operational job running on the Cassandra instance.")
+    @Parameter(name = "operationId",
+               in = ParameterIn.PATH,
+               description = "The UUID of the operational job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING, format = "uuid"))
+    @APIResponse(responseCode = "200",
+                 description = "Job has completed (succeeded or failed).",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = OperationalJobResponse.class)))
+    @APIResponse(responseCode = "202",
+                 description = "Job is still in progress (created or running).",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = OperationalJobResponse.class)))
+    @APIResponse(responseCode = "404", description = "Job not found for the given operationId.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

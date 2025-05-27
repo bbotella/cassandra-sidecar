@@ -28,10 +28,14 @@ import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
 import org.apache.cassandra.sidecar.cluster.CassandraAdapterDelegate;
-import org.apache.cassandra.sidecar.common.response.StreamStatsResponse;
+// StreamStatsResponse is already imported
 import org.apache.cassandra.sidecar.common.response.data.StreamsProgressStats;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -62,6 +66,13 @@ public class StreamStatsHandler extends AbstractHandler<Void> implements AccessP
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Get Node Stream Statistics",
+               description = "Retrieves statistics about data streaming to and from the Cassandra instance, including the current operational mode and progress of streams.")
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved stream statistics.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = StreamStatsResponse.class)))
+    @APIResponse(responseCode = "500", description = "Failed to retrieve stream statistics.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

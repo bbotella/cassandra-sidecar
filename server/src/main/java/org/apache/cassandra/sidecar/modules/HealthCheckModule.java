@@ -28,6 +28,7 @@ import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.handlers.CassandraHealthHandler;
 import org.apache.cassandra.sidecar.handlers.GossipHealthHandler;
+import org.apache.cassandra.sidecar.handlers.SidecarHealthHandler;
 import org.apache.cassandra.sidecar.metrics.SidecarMetrics;
 import org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey;
 import org.apache.cassandra.sidecar.modules.multibindings.PeriodicTaskMapKeys;
@@ -57,10 +58,10 @@ public class HealthCheckModule extends AbstractModule
 
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.SidecarHealthRouteKey.class)
-    VertxRoute sidecarHealthRoute(RouteBuilder.Factory factory)
+    VertxRoute sidecarHealthRoute(RouteBuilder.Factory factory, SidecarHealthHandler sidecarHealthHandler)
     {
         return factory.builderForUnauthorizedRoute()
-                      .handler(context -> context.json(OK_STATUS))
+                      .handler(sidecarHealthHandler)
                       .build();
     }
 
