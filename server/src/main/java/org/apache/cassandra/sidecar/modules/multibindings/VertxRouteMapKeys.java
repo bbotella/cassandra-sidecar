@@ -248,4 +248,10 @@ public interface VertxRouteMapKeys
         HttpMethod HTTP_METHOD = HttpMethod.PUT;
         String ROUTE_URI = ApiEndpointsV1.SERVICE_CONFIG_ROUTE;
     }
+
+    interface OpenApiSpecRouteKey extends RouteClassKey
+    {
+        HttpMethod HTTP_METHOD = HttpMethod.GET;
+        String ROUTE_URI = "/openapi"; // Standard endpoint
+    }
 }

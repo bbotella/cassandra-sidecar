@@ -43,9 +43,18 @@ import org.apache.cassandra.sidecar.handlers.AccessProtected;
 import org.apache.cassandra.sidecar.routes.RoutingContextUtils;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.routes.RoutingContextUtils.SC_QUALIFIED_TABLE_NAME;
+// CreateRestoreJobRequestPayload and CreateRestoreJobResponsePayload are already imported
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
 
 /**
@@ -73,6 +82,32 @@ public class CreateRestoreJobHandler extends AbstractHandler<CreateRestoreJobReq
     }
 
     @Override
+    @Operation(summary = "Create Restore Job",
+               description = "Creates a new restore job for a specific table. The job ID can be optionally specified in the request body.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "The name of the keyspace for the table to be restored.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "The name of the table to be restored.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @RequestBody(description = "Details for the restore job, including job ID (optional), secrets for data access, import options, expiration time, and consistency level.",
+                 required = true,
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = CreateRestoreJobRequestPayload.class)))
+    @APIResponse(responseCode = "200",
+                 description = "Restore job created successfully.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = CreateRestoreJobResponsePayload.class)))
+    @APIResponse(responseCode = "400",
+                 description = "Bad request, e.g., invalid payload, missing required fields in payload, or table not found by ValidateTableExistenceHandler.")
+    @APIResponse(responseCode = "409",
+                 description = "Conflict, e.g., a job with the specified job ID already exists.")
+    @APIResponse(responseCode = "500",
+                 description = "Failed to create restore job due to an internal error.")
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

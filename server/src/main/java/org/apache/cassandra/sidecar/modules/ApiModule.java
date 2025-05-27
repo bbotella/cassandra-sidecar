@@ -46,6 +46,7 @@ import org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey;
 import org.apache.cassandra.sidecar.modules.multibindings.MultiBindingTypeResolver;
 import org.apache.cassandra.sidecar.modules.multibindings.RouteClassKey;
 import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys;
+import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys.OpenApiSpecRouteKey;
 import org.apache.cassandra.sidecar.routes.RouteBuilder;
 import org.apache.cassandra.sidecar.routes.RoutingOrder;
 import org.apache.cassandra.sidecar.routes.SettableVertxRoute;
@@ -160,6 +161,20 @@ public class ApiModule extends AbstractModule
     {
         return factory.builderForUnauthorizedRoute()
                       .handler(timeSkewHandler)
+                      .build();
+    }
+
+    @ProvidesIntoMap
+    @KeyClassMapKey(OpenApiSpecRouteKey.class)
+    VertxRoute openApiSpecRoute(RouteBuilder.Factory factory)
+    {
+        return factory.builderForUnauthorizedRoute() // OpenAPI spec is often public
+                      .handler(context -> {
+                          context.response()
+                                 .putHeader("Content-Type", "text/plain")
+                                 .end("OpenAPI documentation will be available here. " +
+                                      "Further integration of a MicroProfile OpenAPI implementation is required.");
+                      })
                       .build();
     }
 }

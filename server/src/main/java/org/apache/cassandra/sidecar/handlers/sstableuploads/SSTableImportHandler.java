@@ -43,9 +43,17 @@ import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.SSTableImporter;
 import org.apache.cassandra.sidecar.utils.SSTableUploadsPathBuilder;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.acl.authorization.ResourceScopes.TABLE_SCOPE;
+// SSTableImportResponse is already imported
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
 
 /**
@@ -97,6 +105,70 @@ public class SSTableImportHandler extends AbstractHandler<SSTableImportRequestPa
      * @param context the context for the handler
      */
     @Override
+    @Operation(summary = "Import Uploaded SSTables",
+               description = "Imports previously uploaded SSTable components for a given upload session into the Cassandra table. Various import options can be specified as query parameters.")
+    @Parameter(name = "uploadId",
+               in = ParameterIn.PATH,
+               description = "Identifier for the upload session containing the SSTables to import.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Target keyspace for the SSTable import.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Target table for the SSTable import.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "resetLevel",
+               in = ParameterIn.QUERY,
+               description = "Reset level on new SSTables. Default: true.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "true"))
+    @Parameter(name = "clearRepaired",
+               in = ParameterIn.QUERY,
+               description = "Clear repaired info from new SSTables. Default: true.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "true"))
+    @Parameter(name = "verifySSTables",
+               in = ParameterIn.QUERY,
+               description = "Verify that new SSTables are not corrupt. Default: true.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "true"))
+    @Parameter(name = "verifyTokens",
+               in = ParameterIn.QUERY,
+               description = "Verify that tokens in new SSTables are owned by the current node. Default: true.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "true"))
+    @Parameter(name = "invalidateCaches",
+               in = ParameterIn.QUERY,
+               description = "Invalidate row cache for keys in new SSTables. Default: true.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "true"))
+    @Parameter(name = "extendedVerify",
+               in = ParameterIn.QUERY,
+               description = "Run extended verify checking all values in new SSTables. Default: true.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "true"))
+    @Parameter(name = "copyData",
+               in = ParameterIn.QUERY,
+               description = "Copy data from source paths instead of moving them. Default: false.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "false"))
+    @APIResponse(responseCode = "200",
+                 description = "SSTable import completed successfully.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = SSTableImportResponse.class)))
+    @APIResponse(responseCode = "202",
+                 description = "SSTable import has been accepted and is in progress.")
+    @APIResponse(responseCode = "400",
+                 description = "Bad request (e.g., invalid options).")
+    @APIResponse(responseCode = "404",
+                 description = "Not found (e.g., upload directory or specified table/keyspace does not exist).")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error during import process.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

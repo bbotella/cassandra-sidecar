@@ -46,9 +46,18 @@ import org.apache.cassandra.sidecar.metrics.server.RestoreMetrics;
 import org.apache.cassandra.sidecar.routes.RoutingContextUtils;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.routes.RoutingContextUtils.SC_RESTORE_JOB;
+// UpdateRestoreJobRequestPayload is already imported
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
 
 /**
@@ -79,6 +88,37 @@ public class UpdateRestoreJobHandler extends AbstractHandler<UpdateRestoreJobReq
     }
 
     @Override
+    @Operation(summary = "Update Restore Job",
+               description = "Updates an existing restore job. Allows updating job agent, secrets, status, expiration time, or slice count. All fields in the request body are optional.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Table name for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "jobId",
+               in = ParameterIn.PATH,
+               description = "UUID of the restore job to update.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING, format = "uuid"))
+    @RequestBody(description = "Fields to update for the restore job. All fields are optional. Possible statuses include: CREATED, STAGE_READY, STAGED, IMPORT_READY, ABORTED, SUCCEEDED.",
+                 required = true,
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = UpdateRestoreJobRequestPayload.class)))
+    @APIResponse(responseCode = "200",
+                 description = "Restore job updated successfully.")
+    @APIResponse(responseCode = "400",
+                 description = "Bad request (e.g., invalid payload, empty payload, or table not found by previous handlers).")
+    @APIResponse(responseCode = "404",
+                 description = "Restore job not found (or table/keyspace not found by previous handlers).")
+    @APIResponse(responseCode = "409",
+                 description = "Conflict, e.g., job is already in a final state and cannot be updated.")
+    @APIResponse(responseCode = "500",
+                 description = "Failed to update restore job due to an internal error.")
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

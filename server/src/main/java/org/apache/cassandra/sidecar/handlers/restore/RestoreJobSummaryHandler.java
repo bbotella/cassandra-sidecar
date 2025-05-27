@@ -37,9 +37,17 @@ import org.apache.cassandra.sidecar.handlers.AccessProtected;
 import org.apache.cassandra.sidecar.routes.RoutingContextUtils;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.routes.RoutingContextUtils.SC_RESTORE_JOB;
+// RestoreJobSummaryResponsePayload is already imported
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
 
 /**
@@ -63,6 +71,31 @@ public class RestoreJobSummaryHandler extends AbstractHandler<String> implements
     }
 
     @Override
+    @Operation(summary = "Get Restore Job Summary",
+               description = "Retrieves a summary of a specific restore job, including its creation time, agent, target keyspace/table, secrets (masked or partial), and current status.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Table name for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "jobId",
+               in = ParameterIn.PATH,
+               description = "UUID of the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING, format = "uuid"))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved restore job summary.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = RestoreJobSummaryResponsePayload.class)))
+    @APIResponse(responseCode = "404",
+                 description = "Restore job not found (or table/keyspace not found by previous handlers).")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error retrieving job summary.")
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

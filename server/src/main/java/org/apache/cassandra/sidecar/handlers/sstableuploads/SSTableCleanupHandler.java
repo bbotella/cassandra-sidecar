@@ -34,6 +34,12 @@ import org.apache.cassandra.sidecar.handlers.AbstractHandler;
 import org.apache.cassandra.sidecar.handlers.AccessProtected;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.SSTableUploadsPathBuilder;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -72,6 +78,21 @@ public class SSTableCleanupHandler extends AbstractHandler<String> implements Ac
      * @param context the context for the handler
      */
     @Override
+    @Operation(summary = "Clean Up SSTable Upload Session",
+               description = "Deletes the staging directory and all its contents for a given SSTable upload session.")
+    @Parameter(name = "uploadId",
+               in = ParameterIn.PATH,
+               description = "Identifier for the upload session to clean up.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Upload session cleaned up successfully.")
+    @APIResponse(responseCode = "400",
+                 description = "Bad request (e.g., invalid uploadId format, though typically caught by routing).")
+    @APIResponse(responseCode = "404",
+                 description = "Upload session directory not found for the given uploadId.")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error during cleanup process.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

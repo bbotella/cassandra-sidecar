@@ -29,9 +29,18 @@ import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
 import org.apache.cassandra.sidecar.common.request.Service;
+import org.apache.cassandra.sidecar.common.response.HealthCheckStatus;
 import org.apache.cassandra.sidecar.db.ConfigAccessor;
 import org.apache.cassandra.sidecar.db.ConfigAccessorFactory;
 import org.apache.cassandra.sidecar.handlers.AccessProtected;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+
 
 import static org.apache.cassandra.sidecar.modules.HealthCheckModule.OK_STATUS;
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
@@ -54,6 +63,23 @@ public class DeleteServiceConfigHandler implements Handler<RoutingContext>, Acce
     }
 
     @Override
+    @Operation(summary = "Delete Service Configuration",
+               description = "Deletes all configurations for a specific service (e.g., 'cdc', 'kafka').")
+    @Parameter(name = "service",
+               in = ParameterIn.PATH,
+               description = "The name of the service for which to delete configurations (e.g., 'cdc', 'kafka').",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully deleted service configuration.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = HealthCheckStatus.class)))
+    @APIResponse(responseCode = "400",
+                 description = "Bad request, e.g., invalid service name.")
+    @APIResponse(responseCode = "404",
+                 description = "No configuration found for the specified service.")
+    @APIResponse(responseCode = "500",
+                 description = "Failed to delete service configuration.")
     public void handle(RoutingContext context)
     {
         String serviceName = context.pathParam(ConfigPayloadParams.SERVICE);

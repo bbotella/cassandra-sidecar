@@ -38,6 +38,12 @@ import org.apache.cassandra.sidecar.handlers.AccessProtected;
 import org.apache.cassandra.sidecar.handlers.data.SnapshotRequestParam;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
@@ -73,6 +79,29 @@ public class ClearSnapshotHandler extends AbstractHandler<SnapshotRequestParam> 
      * @param requestParams parameters obtained from the request
      */
     @Override
+    @Operation(summary = "Clear Snapshot",
+               description = "Deletes an existing snapshot for the specified table.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Name of the table.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "snapshot",
+               in = ParameterIn.PATH,
+               description = "Name of the snapshot to delete.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Snapshot cleared successfully.")
+    @APIResponse(responseCode = "404",
+                 description = "Not found (e.g., snapshot, table, or keyspace does not exist).")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error during snapshot clearing.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

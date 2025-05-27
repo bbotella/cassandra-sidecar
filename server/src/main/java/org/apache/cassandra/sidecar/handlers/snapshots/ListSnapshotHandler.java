@@ -49,9 +49,17 @@ import org.apache.cassandra.sidecar.snapshots.SnapshotPathBuilder;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.RequestUtils;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
+// ListSnapshotFilesResponse is already imported
 
 /**
  * The <b>GET</b> verb will produce a list of paths of all the snapshot files of a given
@@ -120,6 +128,36 @@ public class ListSnapshotHandler extends AbstractHandler<SnapshotRequestParam> i
      * @param request       parameters obtained from the request
      */
     @Override
+    @Operation(summary = "List Snapshot Files",
+               description = "Lists all files belonging to a specific snapshot. Allows optionally including secondary index files.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Name of the table.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "snapshot",
+               in = ParameterIn.PATH,
+               description = "Name of the snapshot.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "includeSecondaryIndexFiles",
+               in = ParameterIn.QUERY,
+               description = "Whether to include secondary index files in the listing. Defaults to false.",
+               required = false,
+               schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "false"))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved snapshot file list.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ListSnapshotFilesResponse.class)))
+    @APIResponse(responseCode = "404",
+                 description = "Not found (e.g., snapshot, table, or keyspace does not exist, or snapshot directory is empty).")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error during file listing.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

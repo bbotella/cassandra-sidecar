@@ -53,9 +53,18 @@ import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.MetadataUtils;
 import org.apache.cassandra.sidecar.utils.SSTableUploader;
 import org.apache.cassandra.sidecar.utils.SSTableUploadsPathBuilder;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
+// SSTableUploadResponse is already imported
 import static org.apache.cassandra.sidecar.utils.MetricUtils.parseSSTableComponent;
 
 /**
@@ -112,6 +121,43 @@ public class SSTableUploadHandler extends AbstractHandler<SSTableUploadRequestPa
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Upload SSTable Component",
+               description = "Uploads a component of an SSTable (e.g., Data.db, Index.db) for a specific table and upload session. The file is streamed in the request body.")
+    @Parameter(name = "uploadId",
+               in = ParameterIn.PATH,
+               description = "Identifier for the upload session.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Target keyspace for the SSTable.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Target table for the SSTable.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "component",
+               in = ParameterIn.PATH,
+               description = "Name of the SSTable component file.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @RequestBody(description = "Binary content of the SSTable component file.",
+                 required = true,
+                 content = @Content(mediaType = "application/octet-stream"))
+    @APIResponse(responseCode = "200",
+                 description = "SSTable component uploaded successfully.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = SSTableUploadResponse.class)))
+    @APIResponse(responseCode = "400",
+                 description = "Bad request (e.g., invalid keyspace/table, component name).")
+    @APIResponse(responseCode = "413",
+                 description = "Request entity too large (if applicable).")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error during upload.")
+    @APIResponse(responseCode = "507",
+                 description = "Insufficient storage to complete the upload.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

@@ -31,9 +31,14 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
 import org.apache.cassandra.sidecar.common.request.Service;
 import org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload;
+// AllServicesConfigPayload is already imported
 import org.apache.cassandra.sidecar.db.ConfigAccessor;
 import org.apache.cassandra.sidecar.db.ConfigAccessorFactory;
 import org.apache.cassandra.sidecar.handlers.AccessProtected;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /**
  * Provides REST endpoint for getting all the configs in "configs" table in sidecar internal keyspace.
@@ -56,6 +61,14 @@ public class AllServiceConfigHandler implements Handler<RoutingContext>, AccessP
     }
 
     @Override
+    @Operation(summary = "Get All Service Configurations",
+               description = "Retrieves the configurations for all available services stored in the Sidecar's internal configuration table.")
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved all service configurations.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = AllServicesConfigPayload.class)))
+    @APIResponse(responseCode = "500",
+                 description = "Failed to retrieve service configurations.")
     public void handle(RoutingContext context)
     {
         List<AllServicesConfigPayload.Service> services = new ArrayList<>();

@@ -39,8 +39,16 @@ import org.apache.cassandra.sidecar.handlers.AccessProtected;
 import org.apache.cassandra.sidecar.restore.RestoreJobConsistencyChecker;
 import org.apache.cassandra.sidecar.restore.RestoreJobProgress;
 import org.apache.cassandra.sidecar.routes.RoutingContextUtils;
+import org.apache.cassandra.sidecar.common.response.data.RestoreJobProgressResponsePayload;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.routes.RoutingContextUtils.SC_RESTORE_JOB;
@@ -95,6 +103,38 @@ public class RestoreJobProgressHandler extends AbstractHandler<RestoreJobProgres
     }
 
     @Override
+    @Operation(summary = "Get Restore Job Progress",
+               description = "Retrieves the progress of a specific restore job. The level of detail in the response depends on the 'fetch-policy' query parameter.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Table name for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "jobId",
+               in = ParameterIn.PATH,
+               description = "UUID of the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING, format = "uuid"))
+    @Parameter(name = "fetch-policy",
+               in = ParameterIn.QUERY,
+               description = "Policy to determine which restore ranges to include in the response. 'FIRST_FAILED' (default): includes only the first failed range encountered. 'ALL_FAILED_AND_PENDING': includes all ranges that are either failed or pending. 'ALL': includes all ranges regardless of status.",
+               required = false,
+               schema = @Schema(type = SchemaType.STRING, enumeration = {"FIRST_FAILED", "ALL_FAILED_AND_PENDING", "ALL"}, defaultValue = "FIRST_FAILED"))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully retrieved restore job progress.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = RestoreJobProgressResponsePayload.class)))
+    @APIResponse(responseCode = "400",
+                 description = "Bad request (e.g., invalid fetch policy, job not sidecar-managed, or sliceCount not set).")
+    @APIResponse(responseCode = "404",
+                 description = "Restore job not found (or table/keyspace not found by previous handlers).")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error retrieving job progress.")
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

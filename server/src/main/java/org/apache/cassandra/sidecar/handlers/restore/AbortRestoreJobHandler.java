@@ -40,9 +40,18 @@ import org.apache.cassandra.sidecar.metrics.server.RestoreMetrics;
 import org.apache.cassandra.sidecar.routes.RoutingContextUtils;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.routes.RoutingContextUtils.SC_RESTORE_JOB;
+// AbortRestoreJobRequestPayload is already imported
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
 
 /**
@@ -76,6 +85,35 @@ public class AbortRestoreJobHandler extends AbstractHandler<AbortRestoreJobReque
     }
 
     @Override
+    @Operation(summary = "Abort Restore Job",
+               description = "Aborts an ongoing restore job. An optional reason can be provided in the request body.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Table name for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "jobId",
+               in = ParameterIn.PATH,
+               description = "UUID of the restore job to abort.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING, format = "uuid"))
+    @RequestBody(description = "Optional reason for aborting the job. Payload can be `{\"reason\": \"your reason\"}` or empty/null.",
+                 required = false,
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = AbortRestoreJobRequestPayload.class)))
+    @APIResponse(responseCode = "200",
+                 description = "Restore job aborted successfully.")
+    @APIResponse(responseCode = "404",
+                 description = "Restore job not found (or table/keyspace not found by previous handlers).")
+    @APIResponse(responseCode = "409",
+                 description = "Conflict, e.g., job is already in a final state.")
+    @APIResponse(responseCode = "500",
+                 description = "Failed to abort restore job due to an internal error.")
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

@@ -48,9 +48,18 @@ import org.apache.cassandra.sidecar.restore.RestoreJobUtil;
 import org.apache.cassandra.sidecar.routes.RoutingContextUtils;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.routes.RoutingContextUtils.SC_QUALIFIED_TABLE_NAME;
+// CreateSliceRequestPayload is already imported
 import static org.apache.cassandra.sidecar.routes.RoutingContextUtils.SC_RESTORE_JOB;
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
 
@@ -82,6 +91,43 @@ public class CreateRestoreSliceHandler extends AbstractHandler<CreateSliceReques
     }
 
     @Override
+    @Operation(summary = "Create or Poll Restore Slice",
+               description = "Creates a new restore slice for a given job, or polls the status if the slice/range is already being processed (primarily for Spark managed jobs). A slice represents a part of the data to be restored, typically a token range from an SSTable backup.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Table name for the restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "jobId",
+               in = ParameterIn.PATH,
+               description = "UUID of the parent restore job.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING, format = "uuid"))
+    @RequestBody(description = "Details for the restore slice, including slice ID, storage location (bucket/key), checksum, token range, and optional size information.",
+                 required = true,
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = CreateSliceRequestPayload.class)))
+    @APIResponse(responseCode = "201",
+                 description = "Restore slice created successfully (for Sidecar managed jobs, or first time for Spark).")
+    @APIResponse(responseCode = "200",
+                 description = "Restore slice processing has already completed (when polling for Spark managed jobs).")
+    @APIResponse(responseCode = "202",
+                 description = "Restore slice is pending/being processed (when polling for Spark managed jobs).")
+    @APIResponse(responseCode = "400",
+                 description = "Bad request (e.g., invalid payload, table not found).")
+    @APIResponse(responseCode = "404",
+                 description = "Restore job not found (if validation is performed before this handler).")
+    @APIResponse(responseCode = "409",
+                 description = "Conflict, e.g., job is already in a final state.")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error during slice creation or processing.")
+    @APIResponse(responseCode = "550",
+                 description = "Restore slice processing failed due to a fatal error (custom status code).")
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
                                   @NotNull String host,

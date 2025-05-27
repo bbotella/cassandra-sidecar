@@ -41,8 +41,16 @@ import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.handlers.AbstractHandler;
 import org.apache.cassandra.sidecar.handlers.AccessProtected;
 import org.apache.cassandra.sidecar.handlers.data.SnapshotRequestParam;
+import org.apache.cassandra.sidecar.common.response.SimpleStatusResponse;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
@@ -79,6 +87,40 @@ public class CreateSnapshotHandler extends AbstractHandler<SnapshotRequestParam>
      * @param requestParams parameters obtained from the request
      */
     @Override
+    @Operation(summary = "Create Snapshot",
+               description = "Creates a new snapshot for the specified table. An optional Time-To-Live (TTL) can be specified for the snapshot.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Name of the table.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "snapshot",
+               in = ParameterIn.PATH,
+               description = "Name of the snapshot to create.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "ttl",
+               in = ParameterIn.QUERY,
+               description = "Time-To-Live for the snapshot (e.g., '1d', '2h', '30m'). If not provided, the snapshot will have no TTL.",
+               required = false,
+               schema = @Schema(type = SchemaType.STRING))
+    @APIResponse(responseCode = "200",
+                 description = "Snapshot created successfully.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = SimpleStatusResponse.class)))
+    @APIResponse(responseCode = "400",
+                 description = "Bad request (e.g., invalid snapshot name, invalid TTL format, or other invalid parameters).")
+    @APIResponse(responseCode = "404",
+                 description = "Keyspace or table not found.")
+    @APIResponse(responseCode = "409",
+                 description = "Snapshot with the given name already exists.")
+    @APIResponse(responseCode = "503",
+                 description = "Service unavailable (e.g., node is bootstrapping).")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

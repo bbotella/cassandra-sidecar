@@ -44,6 +44,13 @@ import org.apache.cassandra.sidecar.handlers.data.StreamSSTableComponentRequestP
 import org.apache.cassandra.sidecar.snapshots.SnapshotPathBuilder;
 import org.apache.cassandra.sidecar.utils.CassandraInputValidator;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.Parameter;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.acl.authorization.ResourceScopes.TABLE_SCOPE;
@@ -78,6 +85,52 @@ public class StreamSSTableComponentHandler extends AbstractHandler<StreamSSTable
     }
 
     @Override
+    @Operation(summary = "Stream SSTable Component File",
+               description = "Streams a specific component file of an SSTable from a snapshot. Supports specifying a data directory index and handles variations for secondary index components. Supports partial content streaming via the HTTP Range header.")
+    @Parameter(name = "keyspace",
+               in = ParameterIn.PATH,
+               description = "Keyspace of the table.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "table",
+               in = ParameterIn.PATH,
+               description = "Table name (may include tableId suffix, e.g., 'mytable-aabbccdd').",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "snapshot",
+               in = ParameterIn.PATH,
+               description = "Name of the snapshot.",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "component",
+               in = ParameterIn.PATH,
+               description = "Name of the SSTable component file (e.g., 'Data.db', 'Index.db').",
+               required = true,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "index",
+               in = ParameterIn.PATH,
+               description = "Name of the secondary index (only for secondary index components).",
+               required = false,
+               schema = @Schema(type = SchemaType.STRING))
+    @Parameter(name = "dataDirectoryIndex",
+               in = ParameterIn.QUERY,
+               description = "Index of the Cassandra data directory where the component resides. Defaults to 0 if not specified.",
+               required = false,
+               schema = @Schema(type = SchemaType.INTEGER, defaultValue = "0"))
+    @APIResponse(responseCode = "200",
+                 description = "Successfully streamed the entire SSTable component.",
+                 content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(type = SchemaType.STRING, format = "binary")))
+    @APIResponse(responseCode = "206",
+                 description = "Successfully streamed a partial SSTable component based on the Range header.",
+                 content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(type = SchemaType.STRING, format = "binary")))
+    @APIResponse(responseCode = "400",
+                 description = "Bad request (e.g., invalid dataDirectoryIndex).")
+    @APIResponse(responseCode = "404",
+                 description = "Not found (e.g., keyspace, table, snapshot, or component does not exist).")
+    @APIResponse(responseCode = "500",
+                 description = "Internal server error during file resolution or streaming setup.")
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
                                @NotNull String host,

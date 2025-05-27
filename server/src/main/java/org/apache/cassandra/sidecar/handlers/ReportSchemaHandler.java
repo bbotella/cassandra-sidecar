@@ -29,13 +29,16 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
+import org.apache.cassandra.sidecar.common.response.SimpleStatusResponse;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.datahub.SchemaReporter;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import static org.apache.cassandra.sidecar.modules.HealthCheckModule.OK_STATUS;
 
 /**
  * An implementation of {@link AbstractHandler} used to trigger an immediate,
@@ -89,6 +92,14 @@ public class ReportSchemaHandler extends AbstractHandler<Void> implements Access
      * {@inheritDoc}
      */
     @Override
+    @Operation(summary = "Trigger DataHub Schema Report",
+               description = "Triggers an immediate, synchronous conversion and reporting of the current Cassandra schema to DataHub.")
+    @APIResponse(responseCode = "200",
+                 description = "Schema reporting triggered successfully.",
+                 content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = SimpleStatusResponse.class)))
+    @APIResponse(responseCode = "500",
+                 description = "Failed to trigger schema reporting due to an internal error.")
     protected void handleInternal(@NotNull RoutingContext context,
                                   @NotNull HttpServerRequest http,
                                   @NotNull String host,
@@ -99,7 +110,7 @@ public class ReportSchemaHandler extends AbstractHandler<Void> implements Access
 
         executorPools.service()
                      .runBlocking(() -> schemaReporter.processRequested(metadata))
-                     .onSuccess(ignored -> context.json(OK_STATUS))
+                     .onSuccess(ignored -> context.json(new SimpleStatusResponse("OK")))
                      .onFailure(throwable -> processFailure(throwable, context, host, address, request));
     }
 }
