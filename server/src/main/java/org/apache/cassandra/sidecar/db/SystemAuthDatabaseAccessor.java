@@ -20,12 +20,16 @@ package org.apache.cassandra.sidecar.db;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -129,14 +133,22 @@ public class SystemAuthDatabaseAccessor extends DatabaseAccessor<SystemAuthSchem
      * Queries Cassandra for superuser status of a given role.
      *
      * @param role role in Cassandra
-     * @return {@code true} if given role is a superuser, {@code false} otherwise
+     * @return {@code true} if the supplied role or any other role granted to it (directly or indirectly) has superuser
+     * status., {@code false} otherwise
+     * Note: {@code false} response does not indicate whether the role exists or not
      */
     public boolean isSuperUser(String role)
     {
-        BoundStatement statement = tableSchema.roleSuperuserStatus().bind(role);
+        Statement statement = new SimpleStatement(String.format(tableSchema.unpreparedListRoles(), role));
         ResultSet result = execute(statement);
-        Row row = result.one();
-        return row != null && row.getBool("is_superuser");
+        for (Row row : result)
+        {
+            if (row.getBool("super"))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -146,11 +158,25 @@ public class SystemAuthDatabaseAccessor extends DatabaseAccessor<SystemAuthSchem
     {
         BoundStatement statement = tableSchema.allRoles().bind();
         ResultSet result = execute(statement);
-        Map<String, Boolean> roles = new HashMap<>();
-        for (Row row : result)
+        List<Row> rows = result.all();
+        Map<String, Boolean> roleToSuperUser = rows.stream()
+                                                   .collect(Collectors.toMap(row -> row.getString("role"),
+                                                                             row -> row.getBool("is_superuser")));
+        for (Row row : rows)
         {
-            roles.put(row.getString("role"), row.getBool("is_superuser"));
+            if (roleToSuperUser.get(row.getString("role")))
+            {
+                // already has superuser status, skip
+                continue;
+            }
+
+            // check if superuser status has been granted indirectly to this user
+            List<String> memberOf = row.getList("member_of", String.class);
+            if (memberOf.stream().anyMatch(roleToSuperUser::get))
+            {
+                roleToSuperUser.put(row.getString("role"), true);
+            }
         }
-        return roles;
+        return roleToSuperUser;
     }
 }
