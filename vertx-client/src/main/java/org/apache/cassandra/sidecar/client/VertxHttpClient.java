@@ -57,6 +57,9 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.apache.cassandra.sidecar.common.request.Request;
 import org.apache.cassandra.sidecar.common.request.UploadableRequest;
 
+import static org.apache.cassandra.sidecar.common.http.SidecarHttpHeaderNames.AUTH_ROLE;
+import static org.apache.cassandra.sidecar.common.utils.StringUtils.isNullOrEmpty;
+
 /**
  * An {@link HttpClient} implementation that uses vertx's WebClient internally
  */
@@ -262,6 +265,8 @@ public class VertxHttpClient implements HttpClient
 
     protected HttpRequest<Buffer> applyHeaders(HttpRequest<Buffer> vertxRequest, Map<String, String> headers)
     {
+        vertxRequest = applyAuthHeader(vertxRequest);
+
         if (headers == null || headers.isEmpty())
             return vertxRequest;
 
@@ -270,6 +275,17 @@ public class VertxHttpClient implements HttpClient
             vertxRequest = vertxRequest.putHeader(header.getKey(), header.getValue());
         }
         return vertxRequest;
+    }
+
+    protected HttpRequest<Buffer> applyAuthHeader(HttpRequest<Buffer> vertxRequest)
+    {
+        String cassandraRole = config().cassandraRole();
+        if (isNullOrEmpty(cassandraRole))
+        {
+            return vertxRequest;
+        }
+
+        return vertxRequest.putHeader(AUTH_ROLE, cassandraRole);
     }
 
     protected Map<String, List<String>> mapHeaders(MultiMap headers)

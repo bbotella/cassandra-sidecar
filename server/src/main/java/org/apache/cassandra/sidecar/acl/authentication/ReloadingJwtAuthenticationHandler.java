@@ -43,6 +43,8 @@ import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.SERVICE_UNAVAILABLE;
 import static io.netty.handler.codec.http.HttpResponseStatus.UNAUTHORIZED;
+import static org.apache.cassandra.sidecar.common.http.SidecarHttpHeaderNames.AUTH_ROLE;
+import static org.apache.cassandra.sidecar.common.utils.StringUtils.isNotEmpty;
 import static org.apache.cassandra.sidecar.utils.AuthUtils.CASSANDRA_ROLES_ATTRIBUTE_NAME;
 import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpException;
 
@@ -105,10 +107,17 @@ extends AuthenticationHandlerImpl<ReloadingJwtAuthenticationHandler.NoOpAuthenti
             }
 
             List<String> roles = extractCassandraRoles(decodedToken);
-            if (!roles.isEmpty())
+            String roleIntended = context.request().getHeader(AUTH_ROLE);
+
+            if (isNotEmpty(roleIntended) && !roles.contains(roleIntended))
             {
-                user.attributes().put(CASSANDRA_ROLES_ATTRIBUTE_NAME, roles);
+                String errMsg = String.format("User not authorized for role %s", roleIntended);
+                handler.handle(Future.failedFuture(wrapHttpException(UNAUTHORIZED, errMsg)));
+                return;
             }
+
+            List<String> rolesToAdd = isNotEmpty(roleIntended) ? List.of(roleIntended) : roles;
+            user.attributes().put(CASSANDRA_ROLES_ATTRIBUTE_NAME, rolesToAdd);
             handler.handle(Future.succeededFuture(user));
         });
     }
