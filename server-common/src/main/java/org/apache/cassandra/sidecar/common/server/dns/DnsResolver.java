@@ -18,7 +18,6 @@
 
 package org.apache.cassandra.sidecar.common.server.dns;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
@@ -26,21 +25,6 @@ import java.net.UnknownHostException;
  */
 public interface DnsResolver
 {
-    DnsResolver DEFAULT = new DnsResolver()
-    {
-        @Override
-        public String resolve(String hostname) throws UnknownHostException
-        {
-            return InetAddress.getByName(hostname).getHostAddress();
-        }
-
-        @Override
-        public String reverseResolve(String address) throws UnknownHostException
-        {
-            return InetAddress.getByName(address).getHostName();
-        }
-    };
-
     /**
      * Resolves the IP address of the hostname
      *

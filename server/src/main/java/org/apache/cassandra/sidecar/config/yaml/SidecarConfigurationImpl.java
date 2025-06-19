@@ -38,6 +38,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.cassandra.sidecar.common.DataObjectBuilder;
+import org.apache.cassandra.sidecar.common.server.dns.DnsResolver;
+import org.apache.cassandra.sidecar.common.server.dns.DnsResolvers;
 import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 import org.apache.cassandra.sidecar.config.AccessControlConfiguration;
 import org.apache.cassandra.sidecar.config.CassandraInputValidationConfiguration;
@@ -383,6 +385,9 @@ public class SidecarConfigurationImpl implements SidecarConfiguration
 
                      module.addAbstractTypeMapping(configurationInterface, clazz);
                  });
+
+        // Manually add type mapping for DnsResolver
+        module.addAbstractTypeMapping(DnsResolver.class, DnsResolvers.class);
 
         Set<Class> unimplemented = Sets.difference(declared, implemented);
         if (!unimplemented.isEmpty())

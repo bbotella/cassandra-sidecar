@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.cassandra.sidecar.common.DataObjectBuilder;
+import org.apache.cassandra.sidecar.common.server.dns.DnsResolver;
+import org.apache.cassandra.sidecar.common.server.dns.DnsResolvers;
 import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 import org.apache.cassandra.sidecar.common.server.utils.MinuteBoundConfiguration;
 import org.apache.cassandra.sidecar.config.CdcConfiguration;
@@ -81,6 +83,7 @@ public class ServiceConfigurationImpl implements ServiceConfiguration
     private static final String SCHEMA = "schema";
     private static final String CDC = "cdc";
     private static final String COORDINATION = "coordination";
+    public static final String DNS_RESOLVER_PROPERTY = "dns_resolver";
     protected static final Map<String, WorkerPoolConfiguration> DEFAULT_WORKER_POOLS_CONFIGURATION
     = Collections.unmodifiableMap(new HashMap<String, WorkerPoolConfiguration>()
     {{
@@ -149,6 +152,9 @@ public class ServiceConfigurationImpl implements ServiceConfiguration
     @JsonProperty(value = COORDINATION)
     protected final CoordinationConfiguration coordinationConfiguration;
 
+    @JsonProperty(value = DNS_RESOLVER_PROPERTY)
+    protected final DnsResolver dnsResolver;
+
     /**
      * Constructs a new {@link ServiceConfigurationImpl} with the default values
      */
@@ -184,6 +190,7 @@ public class ServiceConfigurationImpl implements ServiceConfiguration
         schemaKeyspaceConfiguration = builder.schemaKeyspaceConfiguration;
         cdcConfiguration = builder.cdcConfiguration;
         coordinationConfiguration = builder.coordinationConfiguration;
+        dnsResolver = builder.dnsResolver;
     }
 
     /**
@@ -449,6 +456,13 @@ public class ServiceConfigurationImpl implements ServiceConfiguration
         return coordinationConfiguration;
     }
 
+    @Override
+    @JsonProperty(value = DNS_RESOLVER_PROPERTY)
+    public DnsResolver dnsResolver()
+    {
+        return dnsResolver;
+    }
+
     public static Builder builder()
     {
         return new Builder();
@@ -480,6 +494,7 @@ public class ServiceConfigurationImpl implements ServiceConfiguration
         protected SchemaKeyspaceConfiguration schemaKeyspaceConfiguration = new SchemaKeyspaceConfigurationImpl();
         protected CdcConfiguration cdcConfiguration = new CdcConfigurationImpl();
         protected CoordinationConfiguration coordinationConfiguration = new CoordinationConfigurationImpl();
+        protected DnsResolver dnsResolver = DnsResolvers.DEFAULT;
 
         private Builder()
         {
