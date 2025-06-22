@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.cassandra.sidecar.modules.multibindings;
 
 import io.vertx.core.http.HttpMethod;
@@ -56,7 +55,7 @@ public interface VertxRouteMapKeys
     interface CassandraGossipInfoRouteKey extends RouteClassKey
     {
         HttpMethod HTTP_METHOD = HttpMethod.GET;
-        String ROUTE_URI = ApiEndpointsV1.GOSSIP_INFO_ROUTE;
+        String ROUTE_URI = ApiEndpointsV1.GOSSIP_ROUTE;
     }
     interface CassandraHealthRouteKey extends RouteClassKey
     {
@@ -242,6 +241,16 @@ public interface VertxRouteMapKeys
     {
         HttpMethod HTTP_METHOD = HttpMethod.GET;
         String ROUTE_URI = ApiEndpointsV1.TIME_SKEW_ROUTE;
+    }
+    interface UpdateNodeGossipStateRouteKey extends RouteClassKey
+    {
+        HttpMethod HTTP_METHOD = HttpMethod.PUT;
+        String    ROUTE_URI   = ApiEndpointsV1.GOSSIP_ROUTE;
+    }
+    interface UpdateNodeNativeStateRouteKey extends RouteClassKey
+    {
+        HttpMethod HTTP_METHOD = HttpMethod.PUT;
+        String    ROUTE_URI   = ApiEndpointsV1.CASSANDRA_NATIVE_ROUTE;
     }
     interface UpdateRestoreJobRouteKey extends RouteClassKey
     {

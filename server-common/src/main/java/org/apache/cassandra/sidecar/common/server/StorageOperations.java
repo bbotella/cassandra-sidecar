@@ -129,4 +129,24 @@ public interface StorageOperations
      * @return the name of the cluster
      */
     String clusterName();
+
+    /**
+     * Triggers stop native transport of the Cassandra node
+     */
+    void stopNativeTransport();
+
+    /**
+     * Triggers start native transport of the Cassandra node
+     */
+    void startNativeTransport();
+
+    /**
+     * Triggers stop gossip of the Cassandra node
+     */
+    void stopGossiping();
+
+    /**
+     * Triggers start gossip of the Cassandra node
+     */
+    void startGossiping();
 }

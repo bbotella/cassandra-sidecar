@@ -177,4 +177,28 @@ public class GossipDependentStorageJmxOperations implements StorageJmxOperations
     {
         return delegate.getClusterName();
     }
+
+    @Override
+    public void stopNativeTransport()
+    {
+        delegate.stopNativeTransport();
+    }
+
+    @Override
+    public void startNativeTransport()
+    {
+        delegate.startNativeTransport();
+    }
+
+    @Override
+    public void stopGossiping()
+    {
+        delegate.stopGossiping();
+    }
+
+    @Override
+    public void startGossiping()
+    {
+        delegate.startGossiping();
+    }
 }
