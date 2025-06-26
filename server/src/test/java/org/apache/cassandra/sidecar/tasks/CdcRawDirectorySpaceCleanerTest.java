@@ -142,7 +142,8 @@ public class CdcRawDirectorySpaceCleanerTest
         Uninterruptibles.sleepUninterruptibly(10, TimeUnit.MILLISECONDS);
         writeCdcSegment(cdcDir, TEST_INTACT_SEGMENT_FILE_NAME, RandomUtils.nextInt(128, 256), false, false, true);
 
-        when(instanceMetadata.dataDirs()).thenReturn(List.of(cdcDir.getParent()));
+        when(instanceMetadata.dataDirs()).thenReturn(List.of(cdcDir.getParent() + "/data"));
+        when(instanceMetadata.cdcDir()).thenReturn(cdcDir.getParent() + "/cdc_raw");
         return new InstancesMetadataImpl(instanceMetadata, DnsResolvers.DEFAULT);
     }
 

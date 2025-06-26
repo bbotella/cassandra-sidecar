@@ -182,10 +182,10 @@ public class CdcRawDirectorySpaceCleaner implements PeriodicTask
     {
         for (InstanceMetadata instanceMetadata : instancesMetadata.instances())
         {
-            List<String> dataDirectories = instanceMetadata.dataDirs();
-            dataDirectories.stream()
-                           .map(dir -> new File(dir, CDC_DIR_NAME))
-                           .forEach(this::cleanUpCdcRawDirectory);
+            if (instanceMetadata.cdcDir() != null)
+            {
+                cleanUpCdcRawDirectory(new File(Optional.ofNullable(instanceMetadata.cdcDir()).get()));
+            }
         }
     }
 
