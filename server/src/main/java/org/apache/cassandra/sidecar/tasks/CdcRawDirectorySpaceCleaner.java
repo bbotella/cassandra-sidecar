@@ -191,7 +191,7 @@ public class CdcRawDirectorySpaceCleaner implements PeriodicTask
                 }
                 catch (Exception e)
                 {
-                    LOGGER.warn("Unable to clean up CDC directory {}", cdcDir, e);
+                    LOGGER.warn("Unable to clean up CDC directory {} for instance {}", cdcDir, instanceMetadata, e);
                 }
             }
             else
