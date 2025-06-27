@@ -196,7 +196,7 @@ public class CdcRawDirectorySpaceCleaner implements PeriodicTask
             }
             else
             {
-                LOGGER.warn("CDC directory is not configured. Skipping clean up");
+                LOGGER.warn("CDC directory is not configured for instance {}. Skipping clean up", instanceMetadata);
             }
         }
     }
