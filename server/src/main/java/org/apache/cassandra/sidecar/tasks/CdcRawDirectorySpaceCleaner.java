@@ -193,7 +193,8 @@ public class CdcRawDirectorySpaceCleaner implements PeriodicTask
                     LOGGER.warn("Couldn't clean up CDC dir", e);
                 }
             }
-            else {
+            else
+            {
                 LOGGER.warn("Couldn't find CDC dir to clean up");
             }
         }
