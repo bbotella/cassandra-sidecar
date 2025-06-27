@@ -148,14 +148,14 @@ public final class ApiEndpointsV1
 
     public static final String LIVE_MIGRATION_FILES_API = LIVE_MIGRATION_API_PREFIX + "/files";
 
-    public static final String LIVE_MIGRATION_CDC_RAW_DIR_PATH = LIVE_MIGRATION_FILES_API + "/cdc_raw";
-    public static final String LIVE_MIGRATION_COMMITLOG_DIR_PATH = LIVE_MIGRATION_FILES_API + "/commitlog";
-    public static final String LIVE_MIGRATION_DATA_FILE_DIR_PATH = LIVE_MIGRATION_FILES_API + "/data";
-    public static final String LIVE_MIGRATION_HINTS_DIR_PATH = LIVE_MIGRATION_FILES_API + "/hints";
-    public static final String LIVE_MIGRATION_LOCAL_SYSTEM_DATA_FILE_DIR_PATH = LIVE_MIGRATION_FILES_API
-                                                                                + "/local_system_data";
-    public static final String LIVE_MIGRATION_SAVED_CACHES_DIR_PATH = LIVE_MIGRATION_FILES_API + "/saved_caches";
-
+    public static final String DIR_TYPE_PARAM = "dirType";
+    public static final String DIR_INDEX_PARAM = "dirIndex";
+    // API endpoint allows files transfer of specific directories handled by Cassandra during live migration operation.
+    // dirType path parameter    : The type of directory (data, commitlog, etc.)
+    // dirIndex path parameter   : The index of the directory
+    // The remaining path ('/*') : Represents the relative path within the specified directory
+    public static final String LIVE_MIGRATION_FILE_TRANSFER_API = LIVE_MIGRATION_FILES_API + "/:" + DIR_TYPE_PARAM
+                                                                  + "/:" + DIR_INDEX_PARAM + "/*";
 
     private ApiEndpointsV1()
     {

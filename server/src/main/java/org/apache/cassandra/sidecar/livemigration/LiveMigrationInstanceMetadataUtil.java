@@ -31,14 +31,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
+import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
 import org.jetbrains.annotations.NotNull;
 
-import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_CDC_RAW_DIR_PATH;
-import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_COMMITLOG_DIR_PATH;
-import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_DATA_FILE_DIR_PATH;
-import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_HINTS_DIR_PATH;
-import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_LOCAL_SYSTEM_DATA_FILE_DIR_PATH;
-import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_SAVED_CACHES_DIR_PATH;
+import static org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationDirType.CDC_RAW_DIR;
+import static org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationDirType.COMMIT_LOG_DIR;
+import static org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationDirType.DATA_FIlE_DIR;
+import static org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationDirType.HINTS_DIR;
+import static org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationDirType.LOCAL_SYSTEM_DATA_FILE_DIR;
+import static org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationDirType.SAVED_CACHES_DIR;
 import static org.apache.cassandra.sidecar.livemigration.LiveMigrationPlaceholderUtil.CDC_RAW_DIR_PLACEHOLDER;
 import static org.apache.cassandra.sidecar.livemigration.LiveMigrationPlaceholderUtil.COMMITLOG_DIR_PLACEHOLDER;
 import static org.apache.cassandra.sidecar.livemigration.LiveMigrationPlaceholderUtil.DATA_FILE_DIR_PLACEHOLDER;
@@ -54,6 +55,13 @@ import static org.apache.cassandra.sidecar.livemigration.LiveMigrationPlaceholde
 public class LiveMigrationInstanceMetadataUtil
 {
 
+    public static final String LIVE_MIGRATION_CDC_RAW_DIR_PATH = ApiEndpointsV1.LIVE_MIGRATION_FILES_API + "/" + CDC_RAW_DIR.dirType;
+    public static final String LIVE_MIGRATION_COMMITLOG_DIR_PATH = ApiEndpointsV1.LIVE_MIGRATION_FILES_API + "/" + COMMIT_LOG_DIR.dirType;
+    public static final String LIVE_MIGRATION_DATA_FILE_DIR_PATH = ApiEndpointsV1.LIVE_MIGRATION_FILES_API + "/" + DATA_FIlE_DIR.dirType;
+    public static final String LIVE_MIGRATION_HINTS_DIR_PATH = ApiEndpointsV1.LIVE_MIGRATION_FILES_API + "/" + HINTS_DIR.dirType;
+    public static final String LIVE_MIGRATION_LOCAL_SYSTEM_DATA_FILE_DIR_PATH = ApiEndpointsV1.LIVE_MIGRATION_FILES_API
+                                                                                + "/" + LOCAL_SYSTEM_DATA_FILE_DIR.dirType;
+    public static final String LIVE_MIGRATION_SAVED_CACHES_DIR_PATH = ApiEndpointsV1.LIVE_MIGRATION_FILES_API + "/" + SAVED_CACHES_DIR.dirType;
     private static final Logger LOGGER = LoggerFactory.getLogger(LiveMigrationInstanceMetadataUtil.class);
 
     /**
@@ -143,6 +151,44 @@ public class LiveMigrationInstanceMetadataUtil
 
         return Collections.unmodifiableMap(placeholderMap);
     }
+
+    /**
+     * Returns a map of placeholder and its directories based on given {@link InstanceMetadata}.
+     */
+    public static Map<String, Set<String>> placeholderDirsMap(InstanceMetadata instanceMetadata)
+    {
+        Map<String, Set<String>> placeholderDirsMap = new HashMap<>();
+
+        placeholderDirsMap.put(HINTS_DIR_PLACEHOLDER, Collections.singleton(instanceMetadata.hintsDir()));
+        placeholderDirsMap.put(COMMITLOG_DIR_PLACEHOLDER, Collections.singleton(instanceMetadata.commitlogDir()));
+
+        if (instanceMetadata.savedCachesDir() != null)
+        {
+            placeholderDirsMap.put(SAVED_CACHES_DIR_PLACEHOLDER, Collections.singleton(instanceMetadata.savedCachesDir()));
+        }
+
+        if (instanceMetadata.cdcDir() != null)
+        {
+            placeholderDirsMap.put(CDC_RAW_DIR_PLACEHOLDER, Collections.singleton(instanceMetadata.cdcDir()));
+        }
+
+        if (instanceMetadata.localSystemDataFileDir() != null)
+        {
+            placeholderDirsMap.put(LOCAL_SYSTEM_DATA_FILE_DIR_PLACEHOLDER,
+                                  Collections.singleton(instanceMetadata.localSystemDataFileDir()));
+        }
+
+        placeholderDirsMap.put(DATA_FILE_DIR_PLACEHOLDER, Set.copyOf(instanceMetadata.dataDirs()));
+
+        List<String> dataDirs = instanceMetadata.dataDirs();
+        for (int i = 0; i < dataDirs.size(); i++)
+        {
+            placeholderDirsMap.put(DATA_FILE_DIR_PLACEHOLDER + "_" + i, Collections.singleton(dataDirs.get(i)));
+        }
+
+        return placeholderDirsMap;
+    }
+
 
     /**
      * Converts given live migration file download URL to local path.
