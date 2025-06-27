@@ -182,20 +182,21 @@ public class CdcRawDirectorySpaceCleaner implements PeriodicTask
     {
         for (InstanceMetadata instanceMetadata : instancesMetadata.instances())
         {
-            if (instanceMetadata.cdcDir() != null)
+            String cdcDir = instanceMetadata.cdcDir();
+            if (cdcDir != null)
             {
                 try
                 {
-                    cleanUpCdcRawDirectory(new File(Optional.ofNullable(instanceMetadata.cdcDir()).get()));
+                    cleanUpCdcRawDirectory(new File(cdcDir));
                 }
                 catch (Exception e)
                 {
-                    LOGGER.warn("Couldn't clean up CDC dir", e);
+                    LOGGER.warn("Unable to clean up CDC directory {}", cdcDir, e);
                 }
             }
             else
             {
-                LOGGER.warn("Couldn't find CDC dir to clean up");
+                LOGGER.warn("CDC directory is not configured. Skipping clean up");
             }
         }
     }
