@@ -63,17 +63,18 @@ public class MutualTlsAuthenticationHandler extends AuthenticationHandlerImpl<Mu
     {
         if (!ctx.request().isSSL())
         {
-            ctx.response().setStatusCode(HttpResponseStatus.BAD_REQUEST.code()).end();
+            // We fail the handler instead of throwing an exception. Directly throwing exception
+            // stops chain authentication
+            handler.handle(Future.failedFuture(wrapHttpException(HttpResponseStatus.BAD_REQUEST,
+                                                                 "SSL connection expected for mTLS auth")));
             return;
         }
 
         CertificateCredentials certificateCredentials = CertificateCredentials.fromHttpRequest(ctx.request());
         if (certificateCredentials == null)
         {
-            ctx.response()
-               .setStatusCode(UNAUTHORIZED.code())
-               .setStatusMessage("Could not extract certificates from request")
-               .end();
+            handler.handle(Future.failedFuture(wrapHttpException(UNAUTHORIZED,
+                                                                 "Could not extract certificates from request")));
             return;
         }
 
