@@ -120,8 +120,8 @@ public abstract class AbstractHandler<T> implements Handler<RoutingContext>
                                            T request);
 
     /**
-     * Returns the host from the path if the requests contains the {@code /instance/} path parameter,
-     * otherwise it returns the host parsed from the request.
+     * Returns the host from the query parameter when the request URI contains the {@code instanceId} parameter,
+     * otherwise returns the parsed host from the request.
      *
      * @param context the routing context
      * @return the host for the routing context
