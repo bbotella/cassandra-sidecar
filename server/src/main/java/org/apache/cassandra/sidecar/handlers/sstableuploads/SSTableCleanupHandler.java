@@ -24,6 +24,10 @@ import java.util.Set;
 
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -39,6 +43,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Manages cleaning up uploaded SSTables
  */
+@Tag(name = "SSTable Operations", description = "Operations for managing SSTable uploads and imports")
 public class SSTableCleanupHandler extends AbstractHandler<String> implements AccessProtected
 {
     private static final String UPLOAD_ID_PARAM = "uploadId";
@@ -71,6 +76,18 @@ public class SSTableCleanupHandler extends AbstractHandler<String> implements Ac
      *
      * @param context the context for the handler
      */
+    @Operation(summary = "Clean up uploaded SSTables", 
+               description = "Removes uploaded SSTable files from the staging directory")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                     description = "Upload directory cleaned up successfully"),
+        @ApiResponse(responseCode = "400", 
+                     description = "Invalid upload ID"),
+        @ApiResponse(responseCode = "404", 
+                     description = "Upload directory not found"),
+        @ApiResponse(responseCode = "500", 
+                     description = "Internal server error")
+    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

@@ -21,6 +21,12 @@ package org.apache.cassandra.sidecar.handlers;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.Json;
@@ -39,6 +45,7 @@ import static org.apache.cassandra.sidecar.modules.ApiModule.OK_STATUS;
 /**
  * Provides a simple REST endpoint to determine if a Cassandra node is available
  */
+@Tag(name = "Health", description = "Health check endpoints")
 @Singleton
 public class CassandraHealthHandler extends AbstractHandler<Void>
 {
@@ -66,6 +73,28 @@ public class CassandraHealthHandler extends AbstractHandler<Void>
      * @param remoteAddress the address where the request originates
      * @param request       the request object
      */
+    @Operation(
+        summary = "Check Cassandra service health",
+        description = "Returns the health status of Cassandra native protocol or JMX connection"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Service is healthy",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(example = "{\"status\": \"OK\"}")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "503", 
+            description = "Service is unavailable",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(example = "{\"status\": \"NOT_OK\"}")
+            )
+        )
+    })
     @Override
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,

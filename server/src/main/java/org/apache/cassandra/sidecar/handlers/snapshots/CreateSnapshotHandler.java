@@ -28,6 +28,14 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
@@ -50,6 +58,7 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * The <b>PUT</b> verb creates a new snapshot for the given keyspace and table
  */
+@Tag(name = "Snapshots", description = "Snapshot management operations")
 @Singleton
 public class CreateSnapshotHandler extends AbstractHandler<SnapshotRequestParam> implements AccessProtected
 {
@@ -78,6 +87,20 @@ public class CreateSnapshotHandler extends AbstractHandler<SnapshotRequestParam>
      * @param remoteAddress the remote address that originated the request
      * @param requestParams parameters obtained from the request
      */
+    @Operation(
+        summary = "Create snapshot",
+        description = "Creates a new snapshot for the specified keyspace and table"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Snapshot created successfully",
+            content = @Content(schema = @Schema(example = "{\"result\": \"Success\"}"))),
+        @ApiResponse(responseCode = "400", description = "Bad request - invalid parameters"),
+        @ApiResponse(responseCode = "404", description = "Keyspace or table not found"),
+        @ApiResponse(responseCode = "409", description = "Snapshot already exists"),
+        @ApiResponse(responseCode = "503", description = "Service unavailable - node is bootstrapping")
+    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

@@ -26,6 +26,12 @@ import com.datastax.driver.core.KeyspaceMetadata;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.file.FileSystem;
@@ -62,6 +68,7 @@ import static org.apache.cassandra.sidecar.utils.MetricUtils.parseSSTableCompone
  * Handler for managing uploaded SSTable components
  */
 @Singleton
+@Tag(name = "SSTable Operations", description = "Operations for managing SSTable uploads and imports")
 public class SSTableUploadHandler extends AbstractHandler<SSTableUploadRequestParam> implements AccessProtected
 {
     private final FileSystem fs;
@@ -111,6 +118,22 @@ public class SSTableUploadHandler extends AbstractHandler<SSTableUploadRequestPa
     /**
      * {@inheritDoc}
      */
+    @Operation(summary = "Upload SSTable component", 
+               description = "Uploads an SSTable component file to the staging area for later import")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                     description = "SSTable component uploaded successfully",
+                     content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SSTableUploadResponse.class))),
+        @ApiResponse(responseCode = "400", 
+                     description = "Invalid request parameters or component data"),
+        @ApiResponse(responseCode = "429", 
+                     description = "Concurrent upload limit exceeded"),
+        @ApiResponse(responseCode = "507", 
+                     description = "Insufficient storage space available"),
+        @ApiResponse(responseCode = "500", 
+                     description = "Internal server error")
+    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

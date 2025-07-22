@@ -24,6 +24,12 @@ import java.util.Set;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
@@ -51,6 +57,7 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * Imports SSTables, that have been previously uploaded, into Cassandra
  */
+@Tag(name = "SSTable Operations", description = "Operations for managing SSTable uploads and imports")
 public class SSTableImportHandler extends AbstractHandler<SSTableImportRequestParam> implements AccessProtected
 {
     private final SSTableImporter importer;
@@ -96,6 +103,22 @@ public class SSTableImportHandler extends AbstractHandler<SSTableImportRequestPa
      *
      * @param context the context for the handler
      */
+    @Operation(summary = "Import uploaded SSTables", 
+               description = "Imports SSTables that have been previously uploaded into the specified Cassandra table")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                     description = "SSTables imported successfully",
+                     content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SSTableImportResponse.class))),
+        @ApiResponse(responseCode = "202", 
+                     description = "Import request accepted and is being processed"),
+        @ApiResponse(responseCode = "400", 
+                     description = "Invalid request parameters"),
+        @ApiResponse(responseCode = "404", 
+                     description = "Upload directory not found"),
+        @ApiResponse(responseCode = "500", 
+                     description = "Internal server error")
+    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
