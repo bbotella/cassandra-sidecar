@@ -24,6 +24,10 @@ import java.util.Set;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.Json;
 import io.vertx.core.net.SocketAddress;
@@ -49,6 +53,7 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
  * Provides a REST API for aborting existing restore job maintained by Sidecar. Triggers abort status on the
  * {@link org.apache.cassandra.sidecar.db.RestoreJob}
  */
+@Tag(name = "Restore", description = "Data restore operations")
 @Singleton
 public class AbortRestoreJobHandler extends AbstractHandler<AbortRestoreJobRequestPayload> implements AccessProtected
 {
@@ -75,6 +80,18 @@ public class AbortRestoreJobHandler extends AbstractHandler<AbortRestoreJobReque
         return Collections.singleton(BasicPermissions.DELETE_RESTORE_JOB.toAuthorization());
     }
 
+    @Operation(summary = "Abort restore job", 
+               description = "Aborts an existing restore job and sets it to aborted status")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                     description = "Restore job aborted successfully"),
+        @ApiResponse(responseCode = "409", 
+                     description = "Job is already in final state"),
+        @ApiResponse(responseCode = "404", 
+                     description = "Restore job not found"),
+        @ApiResponse(responseCode = "500", 
+                     description = "Internal server error")
+    })
     @Override
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,
