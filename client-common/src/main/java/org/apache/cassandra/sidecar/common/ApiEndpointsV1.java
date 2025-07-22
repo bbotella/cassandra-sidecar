@@ -157,6 +157,10 @@ public final class ApiEndpointsV1
     public static final String LIVE_MIGRATION_FILE_TRANSFER_API = LIVE_MIGRATION_FILES_API + "/:" + DIR_TYPE_PARAM
                                                                   + "/:" + DIR_INDEX_PARAM + "/*";
 
+    public static final String OPENAPI_ROUTE = API_V1 + "/openapi.json";
+    public static final String SWAGGER_UI_ROUTE = API_V1 + "/docs";
+    public static final String WEBJARS_ROUTE = "/webjars/*";
+
     private ApiEndpointsV1()
     {
         throw new IllegalStateException(getClass() + " is a constants container and shall not be instantiated");

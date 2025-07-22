@@ -54,7 +54,11 @@ public class HealthCheckModule extends AbstractModule
     VertxRoute sidecarHealthRoute(RouteBuilder.Factory factory)
     {
         return factory.builderForUnauthorizedRoute()
-                      .handler(context -> context.json(ApiModule.OK_STATUS))
+                      .handler(context -> {
+                          // @Operation(summary = "Check Sidecar health", description = "Returns the health status of the Sidecar application")
+                          // @ApiResponse(responseCode = "200", description = "Sidecar is healthy")
+                          context.json(ApiModule.OK_STATUS);
+                      })
                       .build();
     }
 
