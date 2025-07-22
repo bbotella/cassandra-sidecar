@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -66,6 +67,7 @@ import static org.apache.cassandra.sidecar.livemigration.LiveMigrationPlaceholde
  * using "/.." in the path to access files. This handler does not serve files which are excluded in
  * Live Migration configuration.
  */
+@Tag(name = "Live Migration", description = "Live migration operations")
 public class LiveMigrationFileStreamHandler extends AbstractHandler<Void> implements AccessProtected
 {
 
