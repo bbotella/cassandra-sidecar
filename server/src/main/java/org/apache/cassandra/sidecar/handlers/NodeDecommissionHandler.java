@@ -24,6 +24,12 @@ import java.util.Set;
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -47,6 +53,7 @@ import static org.apache.cassandra.sidecar.utils.RequestUtils.parseBooleanQueryP
 /**
  * Provides REST API for asynchronously decommissioning the corresponding Cassandra node
  */
+@Tag(name = "Node Operations", description = "Node management operations")
 public class NodeDecommissionHandler extends AbstractHandler<Boolean> implements AccessProtected
 {
     private final OperationalJobManager jobManager;
