@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -134,23 +135,23 @@ public class OpenApiDocumentationGenerator
         // Generate JSON file
         String jsonSpec = Json.pretty(openApi);
         Path jsonFile = outputPath.resolve("openapi.json");
-        Files.write(jsonFile, jsonSpec.getBytes());
-        System.out.println("Generated: " + jsonFile.toAbsolutePath());
+        Files.write(jsonFile, jsonSpec.getBytes(StandardCharsets.UTF_8));
+        System.out.printf("Generated: %s%n", jsonFile.toAbsolutePath());
         
         // Generate YAML file
         String yamlSpec = Yaml.pretty(openApi);
         Path yamlFile = outputPath.resolve("openapi.yaml");
-        Files.write(yamlFile, yamlSpec.getBytes());
-        System.out.println("Generated: " + yamlFile.toAbsolutePath());
+        Files.write(yamlFile, yamlSpec.getBytes(StandardCharsets.UTF_8));
+        System.out.printf("Generated: %s%n", yamlFile.toAbsolutePath());
         
         // Generate HTML file with embedded specification
         String htmlContent = String.format(HTML_TEMPLATE, jsonSpec);
         Path htmlFile = outputPath.resolve("api-docs.html");
-        Files.write(htmlFile, htmlContent.getBytes());
-        System.out.println("Generated: " + htmlFile.toAbsolutePath());
+        Files.write(htmlFile, htmlContent.getBytes(StandardCharsets.UTF_8));
+        System.out.printf("Generated: %s%n", htmlFile.toAbsolutePath());
         
-        System.out.println("OpenAPI documentation generated successfully!");
-        System.out.println("Open " + htmlFile.toAbsolutePath() + " in your browser to view the documentation.");
+        System.out.printf("OpenAPI documentation generated successfully!%n");
+        System.out.printf("Open %s in your browser to view the documentation.%n", htmlFile.toAbsolutePath());
     }
     
     /**
