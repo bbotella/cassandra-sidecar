@@ -25,6 +25,10 @@ import java.nio.file.NoSuchFileException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
@@ -44,6 +48,7 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * Handler for sending out files.
  */
+@Tag(name = "Streaming", description = "File streaming operations")
 @Singleton
 public class FileStreamHandler extends AbstractHandler<String>
 {
@@ -59,6 +64,20 @@ public class FileStreamHandler extends AbstractHandler<String>
         this.fileStreamer = fileStreamer;
     }
 
+    @Operation(summary = "Stream file", 
+               description = "Streams a file from the server to the client with support for range requests")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                     description = "File streamed successfully"),
+        @ApiResponse(responseCode = "206", 
+                     description = "Partial content delivered successfully"),
+        @ApiResponse(responseCode = "404", 
+                     description = "File not found"),
+        @ApiResponse(responseCode = "416", 
+                     description = "Range not satisfiable - file is empty"),
+        @ApiResponse(responseCode = "500", 
+                     description = "Internal server error")
+    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,
