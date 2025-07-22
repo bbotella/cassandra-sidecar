@@ -24,6 +24,10 @@ import java.util.stream.Collectors;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -37,6 +41,7 @@ import org.apache.cassandra.sidecar.handlers.AccessProtected;
 /**
  * Provides REST endpoint for updating CDC/Kafka configs.
  */
+@Tag(name = "CDC", description = "Change Data Capture operations")
 @Singleton
 public class UpdateServiceConfigHandler implements Handler<RoutingContext>, AccessProtected
 {
@@ -56,6 +61,16 @@ public class UpdateServiceConfigHandler implements Handler<RoutingContext>, Acce
         return Collections.singleton(BasicPermissions.CDC.toAuthorization());
     }
 
+    @Operation(summary = "Update service configuration", 
+               description = "Updates CDC/Kafka service configuration")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                     description = "Configuration updated successfully"),
+        @ApiResponse(responseCode = "400", 
+                     description = "Invalid configuration payload"),
+        @ApiResponse(responseCode = "500", 
+                     description = "Internal server error")
+    })
     @Override
     public void handle(RoutingContext context)
     {

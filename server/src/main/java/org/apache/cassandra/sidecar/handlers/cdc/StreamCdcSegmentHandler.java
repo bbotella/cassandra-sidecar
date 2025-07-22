@@ -30,6 +30,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
@@ -59,6 +63,7 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * Provides REST endpoint for streaming cdc commit logs.
  */
+@Tag(name = "CDC", description = "Change Data Capture operations")
 @Singleton
 public class StreamCdcSegmentHandler extends AbstractHandler<String> implements AccessProtected
 {
