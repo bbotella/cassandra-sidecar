@@ -22,6 +22,10 @@ import java.util.Set;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
@@ -33,6 +37,7 @@ import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 /**
  * The {@link SchemaHandler} class handles schema requests
  */
+@Tag(name = "Schema", description = "Schema information endpoints")
 @Singleton
 public class SchemaHandler extends KeyspaceSchemaHandler
 {
@@ -61,6 +66,14 @@ public class SchemaHandler extends KeyspaceSchemaHandler
      * @param context the request context
      * @return {@code null} to signify no keyspace for the request
      */
+    @Operation(
+        summary = "Get all keyspaces schema",
+        description = "Returns schema information for all keyspaces in the cluster"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Schema information retrieved successfully"),
+        @ApiResponse(responseCode = "503", description = "Service unavailable")
+    })
     @Override
     protected Name extractParamsOrThrow(RoutingContext context)
     {
