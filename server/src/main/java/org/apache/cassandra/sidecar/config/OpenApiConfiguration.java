@@ -18,39 +18,48 @@
 
 package org.apache.cassandra.sidecar.config;
 
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.servers.Server;
-
 /**
- * Configuration for OpenAPI documentation generation
+ * Configuration for OpenAPI documentation
  */
-public class OpenApiConfiguration
+public interface OpenApiConfiguration
 {
-    private static final String API_TITLE = "Cassandra Sidecar API";
-    private static final String API_DESCRIPTION = "REST API for managing Apache Cassandra operations";
-    private static final String API_VERSION = "1.0.0";
-    private static final String LICENSE_NAME = "Apache License 2.0";
-    private static final String LICENSE_URL = "https://www.apache.org/licenses/LICENSE-2.0";
+    /**
+     * @return whether OpenAPI documentation is enabled
+     */
+    boolean enabled();
 
     /**
-     * Creates OpenAPI configuration with basic information
-     *
-     * @return configured OpenAPI instance
+     * @return the title for the API documentation
      */
-    public static OpenAPI createOpenApiConfig()
-    {
-        return new OpenAPI()
-               .info(new Info()
-                     .title(API_TITLE)
-                     .description(API_DESCRIPTION)
-                     .version(API_VERSION)
-                     .license(new License()
-                              .name(LICENSE_NAME)
-                              .url(LICENSE_URL)))
-               .addServersItem(new Server()
-                               .url("http://localhost:9043/api/v1")
-                               .description("Development server"));
-    }
+    String title();
+
+    /**
+     * @return the description for the API documentation
+     */
+    String description();
+
+    /**
+     * @return the version of the API
+     */
+    String version();
+
+    /**
+     * @return the license name
+     */
+    String licenseName();
+
+    /**
+     * @return the license URL
+     */
+    String licenseUrl();
+
+    /**
+     * @return the server URL for the API
+     */
+    String serverUrl();
+
+    /**
+     * @return the server description
+     */
+    String serverDescription();
 }

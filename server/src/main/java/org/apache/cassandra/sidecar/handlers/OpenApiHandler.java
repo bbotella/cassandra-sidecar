@@ -31,6 +31,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.config.OpenApiConfiguration;
+import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 
 /**
  * Handler that serves the OpenAPI specification
@@ -39,9 +40,12 @@ import org.apache.cassandra.sidecar.config.OpenApiConfiguration;
 @Singleton
 public class OpenApiHandler implements Handler<RoutingContext>
 {
+    private final OpenApiConfiguration openApiConfig;
+
     @Inject
-    public OpenApiHandler()
+    public OpenApiHandler(SidecarConfiguration sidecarConfiguration)
     {
+        this.openApiConfig = sidecarConfiguration.openApiConfiguration();
     }
 
     @Operation(
@@ -61,11 +65,41 @@ public class OpenApiHandler implements Handler<RoutingContext>
     @Override
     public void handle(RoutingContext context)
     {
-        OpenAPI openAPI = OpenApiConfiguration.createOpenApiConfig();
+        OpenAPI openAPI = createOpenApiFromConfig(openApiConfig);
         String openApiJson = Json.pretty(openAPI);
         
         context.response()
                .putHeader("Content-Type", "application/json")
                .end(openApiJson);
+    }
+    
+    /**
+     * Creates an OpenAPI configuration from the given configuration
+     */
+    private static OpenAPI createOpenApiFromConfig(OpenApiConfiguration config)
+    {
+        OpenAPI openApi = new OpenAPI();
+        
+        // Set basic info
+        io.swagger.v3.oas.models.info.Info info = new io.swagger.v3.oas.models.info.Info();
+        info.setTitle(config.title());
+        info.setDescription(config.description());
+        info.setVersion(config.version());
+        
+        // Set license info
+        io.swagger.v3.oas.models.info.License license = new io.swagger.v3.oas.models.info.License();
+        license.setName(config.licenseName());
+        license.setUrl(config.licenseUrl());
+        info.setLicense(license);
+        
+        openApi.setInfo(info);
+        
+        // Set server info
+        io.swagger.v3.oas.models.servers.Server server = new io.swagger.v3.oas.models.servers.Server();
+        server.setUrl(config.serverUrl());
+        server.setDescription(config.serverDescription());
+        openApi.setServers(java.util.Collections.singletonList(server));
+        
+        return openApi;
     }
 }

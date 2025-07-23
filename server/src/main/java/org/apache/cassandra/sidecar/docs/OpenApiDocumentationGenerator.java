@@ -47,6 +47,7 @@ import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.cassandra.sidecar.config.OpenApiConfiguration;
+import org.apache.cassandra.sidecar.config.yaml.OpenApiConfigurationImpl;
 
 /**
  * Utility class for generating OpenAPI documentation files
@@ -126,7 +127,8 @@ public class OpenApiDocumentationGenerator
         Files.createDirectories(outputPath);
         
         // Generate OpenAPI specification
-        var openApi = OpenApiConfiguration.createOpenApiConfig();
+        OpenApiConfiguration config = new OpenApiConfigurationImpl();
+        var openApi = createOpenApiFromConfig(config);
         
         // Scan for annotated handler classes
         openApi = scanForAnnotations(openApi);
@@ -151,6 +153,36 @@ public class OpenApiDocumentationGenerator
         
         System.out.printf("OpenAPI documentation generated successfully!%n");
         System.out.printf("Open %s in your browser to view the documentation.%n", htmlFile.toAbsolutePath());
+    }
+    
+    /**
+     * Creates an OpenAPI configuration from the given configuration
+     */
+    private static OpenAPI createOpenApiFromConfig(OpenApiConfiguration config)
+    {
+        OpenAPI openApi = new OpenAPI();
+        
+        // Set basic info
+        io.swagger.v3.oas.models.info.Info info = new io.swagger.v3.oas.models.info.Info();
+        info.setTitle(config.title());
+        info.setDescription(config.description());
+        info.setVersion(config.version());
+        
+        // Set license info
+        io.swagger.v3.oas.models.info.License license = new io.swagger.v3.oas.models.info.License();
+        license.setName(config.licenseName());
+        license.setUrl(config.licenseUrl());
+        info.setLicense(license);
+        
+        openApi.setInfo(info);
+        
+        // Set server info
+        io.swagger.v3.oas.models.servers.Server server = new io.swagger.v3.oas.models.servers.Server();
+        server.setUrl(config.serverUrl());
+        server.setDescription(config.serverDescription());
+        openApi.setServers(Collections.singletonList(server));
+        
+        return openApi;
     }
     
     /**

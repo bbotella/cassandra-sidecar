@@ -109,4 +109,9 @@ public interface SidecarConfiguration
      * @return the configuration for live migration
      */
     LiveMigrationConfiguration liveMigrationConfiguration();
+
+    /**
+     * @return the configuration for OpenAPI documentation
+     */
+    OpenApiConfiguration openApiConfiguration();
 }
