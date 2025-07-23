@@ -85,7 +85,8 @@ public class CreateRestoreJobHandler extends AbstractHandler<CreateRestoreJobReq
         @ApiResponse(responseCode = "200", 
                      description = "Restore job created successfully",
                      content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.data.CreateRestoreJobResponsePayload.class))),
+                                      schema = @Schema(implementation = 
+                                        org.apache.cassandra.sidecar.common.response.data.CreateRestoreJobResponsePayload.class))),
         @ApiResponse(responseCode = "400", 
                      description = "Invalid request payload"),
         @ApiResponse(responseCode = "409", 
@@ -135,8 +136,7 @@ public class CreateRestoreJobHandler extends AbstractHandler<CreateRestoreJobReq
         }
     }
 
-    private Future<CreateRestoreJobRequestPayload> validatePayload(CreateRestoreJobRequestPayload
-                                                                   createRestoreJobRequestPayload)
+    private Future<CreateRestoreJobRequestPayload> validatePayload(CreateRestoreJobRequestPayload createRestoreJobRequestPayload)
     {
         UUID jobId = createRestoreJobRequestPayload.jobId();
         if (jobId == null)

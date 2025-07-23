@@ -24,11 +24,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;

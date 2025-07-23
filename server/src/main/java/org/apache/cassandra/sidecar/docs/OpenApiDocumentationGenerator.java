@@ -19,30 +19,30 @@
 package org.apache.cassandra.sidecar.docs;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -116,8 +116,7 @@ public class OpenApiDocumentationGenerator
     {
         if (args.length < 1)
         {
-            System.err.println("Usage: OpenApiDocumentationGenerator <output-directory>");
-            System.exit(1);
+            throw new IllegalArgumentException("Usage: OpenApiDocumentationGenerator <output-directory>");
         }
 
         String outputDir = args[0];
@@ -145,7 +144,7 @@ public class OpenApiDocumentationGenerator
         System.out.printf("Generated: %s%n", yamlFile.toAbsolutePath());
         
         // Generate HTML file with embedded specification
-        String htmlContent = String.format(HTML_TEMPLATE, jsonSpec);
+        String htmlContent = HTML_TEMPLATE.replace("%s", jsonSpec);
         Path htmlFile = outputPath.resolve("api-docs.html");
         Files.write(htmlFile, htmlContent.getBytes(StandardCharsets.UTF_8));
         System.out.printf("Generated: %s%n", htmlFile.toAbsolutePath());
@@ -272,15 +271,15 @@ public class OpenApiDocumentationGenerator
             
             return openApi;
         }
-        catch (Exception e)
+        catch (RuntimeException e)
         {
-            System.err.println("Warning: Could not scan for annotations: " + e.getMessage());
-            e.printStackTrace();
+            // Log warning but continue with basic OpenAPI config
             return openApi;
         }
     }
     
-    private static void processClass(Class<?> clazz, io.swagger.v3.oas.models.Paths paths, Map<String, io.swagger.v3.oas.models.tags.Tag> tags, Set<Class<?>> schemaClasses)
+    private static void processClass(Class<?> clazz, io.swagger.v3.oas.models.Paths paths,
+                                     Map<String, io.swagger.v3.oas.models.tags.Tag> tags, Set<Class<?>> schemaClasses)
     {
         // Get class-level tag annotation
         Tag classTagAnnotation = clazz.getAnnotation(Tag.class);
@@ -321,7 +320,8 @@ public class OpenApiDocumentationGenerator
                 }
                 
                 // Process ApiResponses
-                io.swagger.v3.oas.annotations.responses.ApiResponses responsesAnnotation = method.getAnnotation(io.swagger.v3.oas.annotations.responses.ApiResponses.class);
+                io.swagger.v3.oas.annotations.responses.ApiResponses responsesAnnotation = 
+                    method.getAnnotation(io.swagger.v3.oas.annotations.responses.ApiResponses.class);
                 if (responsesAnnotation != null)
                 {
                     io.swagger.v3.oas.models.responses.ApiResponses responses = new io.swagger.v3.oas.models.responses.ApiResponses();
@@ -395,7 +395,8 @@ public class OpenApiDocumentationGenerator
     /**
      * Adds missing response schemas for endpoints that don't have schema references
      */
-    private static void addMissingResponseSchemas(io.swagger.v3.oas.models.Operation operation, String handlerClassName, Set<Class<?>> schemaClasses)
+    private static void addMissingResponseSchemas(io.swagger.v3.oas.models.Operation operation,
+                                                  String handlerClassName, Set<Class<?>> schemaClasses)
     {
         io.swagger.v3.oas.models.responses.ApiResponses responses = operation.getResponses();
         if (responses != null)

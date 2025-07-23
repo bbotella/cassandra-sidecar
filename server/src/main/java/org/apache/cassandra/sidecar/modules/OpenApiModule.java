@@ -19,7 +19,6 @@
 package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
 import com.google.inject.multibindings.ProvidesIntoMap;
 import org.apache.cassandra.sidecar.handlers.OpenApiHandler;
 import org.apache.cassandra.sidecar.handlers.SwaggerUIHandler;
