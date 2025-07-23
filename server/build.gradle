@@ -243,6 +243,9 @@ jib {
     to {
         image = "cassandra-sidecar:${project.version}"
     }
+    container {
+        mainClass = 'org.apache.cassandra.sidecar.CassandraSidecarDaemon'
+    }
 }
 
 spotbugsTest.enabled = false
