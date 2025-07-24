@@ -97,7 +97,7 @@ public class LiveMigrationModule extends AbstractModule
             description = "Instance files listed successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"files\": [{\"filename\": \"mc-1-big-Data.db\", \"size\": 1048576, \"lastModified\": \"2024-01-01T10:00:00Z\"}]}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.InstanceFilesListResponse.class)
             )
         ),
         @ApiResponse(

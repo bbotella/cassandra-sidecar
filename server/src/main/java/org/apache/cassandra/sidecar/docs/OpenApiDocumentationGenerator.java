@@ -882,6 +882,20 @@ public class OpenApiDocumentationGenerator
                 createJobExample.put("status", "CREATED");
                 return createJobExample;
                 
+            case "UpdateRestoreJobResponsePayload":
+                Map<String, Object> updateJobExample = new HashMap<>();
+                updateJobExample.put("jobId", "123e4567-e89b-12d3-a456-426614174000");
+                updateJobExample.put("status", "UPDATED");
+                updateJobExample.put("message", "Job configuration updated");
+                return updateJobExample;
+                
+            case "CreateRestoreSliceResponsePayload":
+                Map<String, Object> createSliceExample = new HashMap<>();
+                createSliceExample.put("sliceId", "slice-789");
+                createSliceExample.put("jobId", "123e4567-e89b-12d3-a456-426614174000");
+                createSliceExample.put("status", "CREATED");
+                return createSliceExample;
+                
             case "SSTableImportResponse":
                 Map<String, Object> importExample = new HashMap<>();
                 importExample.put("success", true);
@@ -1178,6 +1192,34 @@ public class OpenApiDocumentationGenerator
         }
         schemas.put("SSTableImportResponse", sstableImportSchema);
         
+        // Snapshot listing response
+        Schema<Object> listSnapshotSchema = new Schema<>();
+        listSnapshotSchema.setType("object");
+        Map<String, Schema> listSnapshotProps = new HashMap<>();
+        Schema<?> snapshotFilesArraySchema = new Schema<>();
+        snapshotFilesArraySchema.setType("array");
+        Schema<?> snapshotFileSchema = new Schema<>();
+        snapshotFileSchema.setType("object");
+        Map<String, Schema> snapshotFileProps = new HashMap<>();
+        snapshotFileProps.put("size", createLongSchema());
+        snapshotFileProps.put("host", createStringSchema());
+        snapshotFileProps.put("port", createIntSchema());
+        snapshotFileProps.put("dataDirIndex", createIntSchema());
+        snapshotFileProps.put("snapshotName", createStringSchema());
+        snapshotFileProps.put("keySpaceName", createStringSchema());
+        snapshotFileProps.put("tableName", createStringSchema());
+        snapshotFileProps.put("fileName", createStringSchema());
+        snapshotFileSchema.setProperties(snapshotFileProps);
+        snapshotFilesArraySchema.setItems(snapshotFileSchema);
+        listSnapshotProps.put("snapshotFilesInfo", snapshotFilesArraySchema);
+        listSnapshotSchema.setProperties(listSnapshotProps);
+        Object listSnapshotExample = generateExampleForClass(createDummyClass("ListSnapshotFilesResponse"));
+        if (listSnapshotExample != null)
+        {
+            listSnapshotSchema.setExample(listSnapshotExample);
+        }
+        schemas.put("ListSnapshotFilesResponse", listSnapshotSchema);
+        
         // Stream Stats response
         Schema<Object> streamStatsSchema = new Schema<>();
         streamStatsSchema.setType("object");
@@ -1261,6 +1303,35 @@ public class OpenApiDocumentationGenerator
             restoreJobSummarySchema.setExample(summaryExample);
         }
         schemas.put("RestoreJobSummaryResponsePayload", restoreJobSummarySchema);
+        
+        // Additional restore job response schemas
+        Schema<Object> updateRestoreJobSchema = new Schema<>();
+        updateRestoreJobSchema.setType("object");
+        Map<String, Schema> updateJobProps = new HashMap<>();
+        updateJobProps.put("jobId", createUuidSchema());
+        updateJobProps.put("status", createStringSchema());
+        updateJobProps.put("message", createStringSchema());
+        updateRestoreJobSchema.setProperties(updateJobProps);
+        Object updateJobExample = generateExampleForClass(createDummyClass("UpdateRestoreJobResponsePayload"));
+        if (updateJobExample != null)
+        {
+            updateRestoreJobSchema.setExample(updateJobExample);
+        }
+        schemas.put("UpdateRestoreJobResponsePayload", updateRestoreJobSchema);
+        
+        Schema<Object> createRestoreSliceSchema = new Schema<>();
+        createRestoreSliceSchema.setType("object");
+        Map<String, Schema> createSliceProps = new HashMap<>();
+        createSliceProps.put("sliceId", createStringSchema());
+        createSliceProps.put("jobId", createUuidSchema());
+        createSliceProps.put("status", createStringSchema());
+        createRestoreSliceSchema.setProperties(createSliceProps);
+        Object createSliceExample = generateExampleForClass(createDummyClass("CreateRestoreSliceResponsePayload"));
+        if (createSliceExample != null)
+        {
+            createRestoreSliceSchema.setExample(createSliceExample);
+        }
+        schemas.put("CreateRestoreSliceResponsePayload", createRestoreSliceSchema);
         
         // Service configuration responses
         Schema<Object> serviceConfigListSchema = new Schema<>();

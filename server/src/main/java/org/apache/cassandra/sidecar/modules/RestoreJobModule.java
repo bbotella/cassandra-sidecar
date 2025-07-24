@@ -118,7 +118,7 @@ public class RestoreJobModule extends AbstractModule
             description = "Restore job created successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"CREATED\"}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.data.CreateRestoreJobResponsePayload.class)
             )
         )
     })
@@ -148,7 +148,7 @@ public class RestoreJobModule extends AbstractModule
             description = "Restore slice created successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"sliceId\": \"slice-789\", \"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"CREATED\"}")
+                schema = @Schema(ref = "#/components/schemas/CreateRestoreSliceResponsePayload")
             )
         )
     })
@@ -180,7 +180,7 @@ public class RestoreJobModule extends AbstractModule
             description = "Restore job summary retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"jobs\": [{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"COMPLETED\", \"createdAt\": \"2024-01-01T10:00:00Z\", \"completedAt\": \"2024-01-01T11:30:00Z\"}]}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.data.RestoreJobSummaryResponsePayload.class)
             )
         )
     })
@@ -209,7 +209,7 @@ public class RestoreJobModule extends AbstractModule
             description = "Restore job updated successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"UPDATED\", \"message\": \"Job configuration updated\"}")
+                schema = @Schema(ref = "#/components/schemas/UpdateRestoreJobResponsePayload")
             )
         )
     })
@@ -239,7 +239,7 @@ public class RestoreJobModule extends AbstractModule
             description = "Restore job aborted successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"ABORTED\", \"message\": \"Restore job aborted successfully\"}")
+                schema = @Schema(ref = "#/components/schemas/AbortRestoreJobResponse")
             )
         )
     })
@@ -270,7 +270,7 @@ public class RestoreJobModule extends AbstractModule
             description = "Restore job progress retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"progressPercentage\": 75.5, \"status\": \"IN_PROGRESS\", \"message\": \"Restoring data files...\", \"startTime\": \"2024-01-01T10:00:00Z\", \"elapsedTime\": \"PT45M30S\"}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.data.RestoreJobProgressResponsePayload.class)
             )
         )
     })

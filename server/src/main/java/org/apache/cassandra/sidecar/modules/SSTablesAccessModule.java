@@ -115,8 +115,7 @@ public class SSTablesAccessModule extends AbstractModule
             description = "Snapshot created successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"result\": \"Success\", \"snapshotName\": \"backup_20240101\"," +
-                                          " \"keyspace\": \"test_keyspace\", \"table\": \"test_table\"}")
+                schema = @Schema(ref = "#/components/schemas/CreateSnapshotResponse")
             )
         )
     })
@@ -139,10 +138,7 @@ public class SSTablesAccessModule extends AbstractModule
             description = "Snapshot files listed successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"snapshotFilesInfo\": [{\"size\": 1048576, \"host\": \"127.0.0.1\"," +
-                                          " \"port\": 9042, \"dataDirIndex\": 0, \"snapshotName\": \"backup_20240101\"," +
-                                          " \"keySpaceName\": \"test_keyspace\", \"tableName\": \"test_table\"," +
-                                          " \"fileName\": \"mc-1-big-Data.db\"}]}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.ListSnapshotFilesResponse.class)
             )
         )
     })
@@ -174,7 +170,7 @@ public class SSTablesAccessModule extends AbstractModule
             description = "Snapshot cleared successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"result\": \"Success\", \"message\": \"Snapshot cleared successfully\"}")
+                schema = @Schema(type = "object", example = "{\"result\": \"Success\", \"message\": \"Snapshot cleared successfully\"}")
             )
         )
     })
@@ -204,7 +200,8 @@ public class SSTablesAccessModule extends AbstractModule
             description = "SSTable uploaded successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"uploadId\": \"upload-789012\", \"uploadSizeBytes\": 2097152, \"serviceTimeMillis\": 1500}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SSTableUploadResponse.class, 
+                    example = "{\"uploadId\": \"upload-789012\", \"uploadSizeBytes\": 2097152, \"serviceTimeMillis\": 1500}")
             )
         )
     })
@@ -227,8 +224,7 @@ public class SSTablesAccessModule extends AbstractModule
             description = "SSTable imported successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"success\": true, \"uploadId\": \"upload-123456\"," +
-                                          " \"keyspace\": \"test_keyspace\", \"tableName\": \"test_table\"}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SSTableImportResponse.class)
             )
         )
     })
@@ -251,7 +247,7 @@ public class SSTablesAccessModule extends AbstractModule
             description = "SSTable cleanup completed successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"result\": \"Success\", \"cleanedFiles\": 5, \"freedSpace\": \"10MB\"}")
+                schema = @Schema(type = "object", example = "{\"result\": \"Success\", \"cleanedFiles\": 5, \"freedSpace\": \"10MB\"}")
             )
         )
     })

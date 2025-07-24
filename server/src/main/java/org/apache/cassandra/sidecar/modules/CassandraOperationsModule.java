@@ -87,8 +87,7 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Node decommission status retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"jobId\": \"decommission-456\", \"operation\": \"DECOMMISSION\"," +
-                                          " \"status\": \"STARTED\", \"message\": \"Node decommission initiated\"}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.OperationalJobResponse.class)
             )
         )
     })
@@ -111,9 +110,7 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Stream statistics retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"operationMode\": \"JOINING\", \"streamsProgressStats\":" +
-                                          " {\"totalFilesToReceive\": 10, \"totalFilesReceived\": 7," +
-                                          " \"totalBytesToReceive\": 104857600, \"totalBytesReceived\": 73400320}}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.StreamStatsResponse.class)
             )
         )
     })
@@ -149,7 +146,8 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Schema information retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"keyspace\": \"test_keyspace\", \"schema\": \"CREATE KEYSPACE test_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};\"}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SchemaResponse.class, 
+                    example = "{\"keyspace\": \"test_ks\", \"schema\": \"CREATE KEYSPACE test_ks...\"}")    
             )
         )
     })
@@ -181,7 +179,8 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Keyspace schema retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"keyspace\": \"test_keyspace\", \"schema\": \"CREATE KEYSPACE test_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};\"}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SchemaResponse.class, 
+                    example = "{\"keyspace\": \"test_ks\", \"schema\": \"CREATE KEYSPACE test_ks...\"}")    
             )
         )
     })
@@ -213,7 +212,8 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Ring information retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(type = "array", example = "[{\"datacenter\": \"datacenter1\", \"address\": \"127.0.0.1\", \"port\": 7000, \"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1024.5 MB\", \"owns\": \"33.33%\", \"token\": \"1234567890123456789\", \"fqdn\": \"node1.cluster.local\", \"hostId\": \"550e8400-e29b-41d4-a716-446655440000\"}]")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.RingResponse.class, type = "array", 
+                    example = "[{\"datacenter\": \"dc1\", \"address\": \"127.0.0.1\", \"port\": 7000, \"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1GB\", \"owns\": \"33%\", \"token\": \"12345\", \"fqdn\": \"node1\", \"hostId\": \"550e8400-e29b\"}]")
             )
         )
     })
@@ -236,7 +236,8 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Keyspace ring information retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(type = "array", example = "[{\"datacenter\": \"datacenter1\", \"address\": \"127.0.0.1\", \"port\": 7000, \"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1024.5 MB\", \"owns\": \"33.33%\", \"token\": \"1234567890123456789\", \"fqdn\": \"node1.cluster.local\", \"hostId\": \"550e8400-e29b-41d4-a716-446655440000\"}]")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.RingResponse.class, type = "array", 
+                    example = "[{\"datacenter\": \"dc1\", \"address\": \"127.0.0.1\", \"port\": 7000, \"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1GB\", \"owns\": \"33%\", \"token\": \"12345\", \"fqdn\": \"node1\", \"hostId\": \"550e8400-e29b\"}]")
             )
         )
     })
@@ -267,7 +268,8 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Gossip information retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"/127.0.0.1:7000\": {\"generation\": \"1641024000\", \"heartbeat\": \"12345\", \"dc\": \"datacenter1\", \"rack\": \"rack1\", \"releaseVersion\": \"4.1.0\", \"schema\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"load\": \"1024.5 MB\", \"hostId\": \"550e8400-e29b-41d4-a716-446655440000\"}}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.GossipInfoResponse.class, 
+                    example = "{\"/127.0.0.1:7000\": {\"generation\": \"1641024000\", \"heartbeat\": \"12345\", \"dc\": \"dc1\", \"rack\": \"rack1\", \"releaseVersion\": \"4.1.0\", \"schema\": \"uuid-12345\", \"load\": \"1GB\", \"hostId\": \"550e8400-e29b\"}}")
             )
         )
     })

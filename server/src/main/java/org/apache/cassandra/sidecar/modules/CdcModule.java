@@ -103,8 +103,7 @@ public class CdcModule extends AbstractModule
             description = "CDC segments listed successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"segments\": [{\"filename\": \"CommitLog-7-1641024000000.log\"," +
-                                          " \"size\": 67108864, \"createdDate\": \"2024-01-01T10:00:00Z\"}]}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.ListCdcSegmentsResponse.class)
             )
         )
     })
@@ -153,8 +152,8 @@ public class CdcModule extends AbstractModule
             description = "Service configurations retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"configurations\": [{\"key\": \"cdc.enabled\", \"value\": \"true\"}," +
-                                          " {\"key\": \"cdc.retention_hours\", \"value\": \"24\"}]}")
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload.class,
+                    example = "{\"services\": [{\"service\": \"cdc\", \"config\": {\"retention_hours\": \"24\", \"max_size_mb\": \"1000\"}}]}")
             )
         )
     })
@@ -177,7 +176,8 @@ public class CdcModule extends AbstractModule
             description = "Service configuration updated successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"message\": \"Service configuration updated successfully\", \"timestamp\": \"2024-01-01T10:00:00Z\"}")
+                schema = @Schema(type = "object", 
+                    example = "{\"message\": \"Service configuration updated successfully\", \"timestamp\": \"2024-01-01T10:00:00Z\"}")
             )
         )
     })
@@ -200,7 +200,8 @@ public class CdcModule extends AbstractModule
             description = "Service configuration deleted successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(example = "{\"message\": \"Configuration deleted successfully\", \"deletedKey\": \"cdc.retention_hours\"}")
+                schema = @Schema(type = "object", 
+                    example = "{\"message\": \"Configuration deleted successfully\", \"deletedKey\": \"cdc.retention_hours\"}")
             )
         ),
         @ApiResponse(
