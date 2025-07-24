@@ -25,12 +25,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.DecodeException;
@@ -57,7 +51,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * Provides REST API for creating a new restore job for restoring data into Cassandra through Sidecar
  */
-@Tag(name = "Restore", description = "Data restore operations")
 @Singleton
 public class CreateRestoreJobHandler extends AbstractHandler<CreateRestoreJobRequestPayload> implements AccessProtected
 {
@@ -79,21 +72,6 @@ public class CreateRestoreJobHandler extends AbstractHandler<CreateRestoreJobReq
         return Collections.singleton(BasicPermissions.CREATE_RESTORE_JOB.toAuthorization());
     }
 
-    @Operation(summary = "Create restore job", 
-               description = "Creates a new restore job for restoring data into Cassandra")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Restore job created successfully",
-                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = 
-                                        org.apache.cassandra.sidecar.common.response.data.CreateRestoreJobResponsePayload.class))),
-        @ApiResponse(responseCode = "400", 
-                     description = "Invalid request payload"),
-        @ApiResponse(responseCode = "409", 
-                     description = "Job ID already exists"),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,

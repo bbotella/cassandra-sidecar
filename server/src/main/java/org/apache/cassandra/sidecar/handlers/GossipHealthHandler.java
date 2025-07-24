@@ -19,12 +19,6 @@
 package org.apache.cassandra.sidecar.handlers;
 
 import com.google.inject.Inject;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
@@ -39,7 +33,6 @@ import static org.apache.cassandra.sidecar.modules.ApiModule.OK_STATUS;
 /**
  * Handler to retrieve gossip health
  */
-@Tag(name = "Health", description = "Health check endpoints")
 public class GossipHealthHandler extends AbstractHandler<Void>
 {
     /**
@@ -56,20 +49,6 @@ public class GossipHealthHandler extends AbstractHandler<Void>
     /**
      * {@inheritDoc}
      */
-    @Operation(
-        summary = "Check gossip protocol health",
-        description = "Returns the health status of Cassandra gossip protocol"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200", 
-            description = "Gossip health status retrieved",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(example = "{\"status\": \"OK\"}")
-            )
-        )
-    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

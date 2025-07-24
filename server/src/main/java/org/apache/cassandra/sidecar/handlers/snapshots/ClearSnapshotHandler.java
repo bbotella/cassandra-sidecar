@@ -26,10 +26,6 @@ import java.util.Set;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -49,7 +45,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * The <b>DELETE</b> verb deletes an existing snapshot for the given keyspace and table.
  */
-@Tag(name = "Snapshots", description = "Snapshot management operations")
 @Singleton
 public class ClearSnapshotHandler extends AbstractHandler<SnapshotRequestParam> implements AccessProtected
 {
@@ -77,16 +72,6 @@ public class ClearSnapshotHandler extends AbstractHandler<SnapshotRequestParam> 
      * @param remoteAddress the remote address that originated the request
      * @param requestParams parameters obtained from the request
      */
-    @Operation(summary = "Delete snapshot", 
-               description = "Deletes an existing snapshot for the specified keyspace and table")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Snapshot deleted successfully"),
-        @ApiResponse(responseCode = "404", 
-                     description = "Snapshot not found"),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

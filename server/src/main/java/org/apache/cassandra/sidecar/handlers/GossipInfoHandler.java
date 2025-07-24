@@ -22,12 +22,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import com.google.inject.Inject;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -44,7 +38,6 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Handler for retrieving gossip info
  */
-@Tag(name = "Node Operations", description = "Node management operations")
 public class GossipInfoHandler extends AbstractHandler<Void> implements AccessProtected
 {
     /**
@@ -68,16 +61,6 @@ public class GossipInfoHandler extends AbstractHandler<Void> implements AccessPr
     /**
      * {@inheritDoc}
      */
-    @Operation(summary = "Get gossip info", 
-               description = "Returns gossip information about cluster nodes")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Gossip information retrieved successfully",
-                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.GossipInfoResponse.class))),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

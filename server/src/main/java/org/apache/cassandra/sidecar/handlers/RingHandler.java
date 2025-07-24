@@ -23,10 +23,6 @@ import java.util.Set;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.ext.auth.authorization.Authorization;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.acl.authorization.BasicPermissions;
@@ -38,7 +34,6 @@ import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 /**
  * A handler that provides ring information for a specific keyspace for the Cassandra cluster
  */
-@Tag(name = "Ring", description = "Cassandra cluster ring information")
 @Singleton
 public class RingHandler extends KeyspaceRingHandler
 {
@@ -60,14 +55,6 @@ public class RingHandler extends KeyspaceRingHandler
      * @param context the request context
      * @return {@code null} to signify no keyspace for the request
      */
-    @Operation(
-        summary = "Get cluster ring information",
-        description = "Returns ring information for the entire Cassandra cluster"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Ring information retrieved successfully"),
-        @ApiResponse(responseCode = "503", description = "Service unavailable")
-    })
     @Override
     protected Name extractParamsOrThrow(RoutingContext context)
     {

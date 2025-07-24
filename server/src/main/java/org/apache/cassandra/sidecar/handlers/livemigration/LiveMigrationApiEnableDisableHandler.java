@@ -20,7 +20,6 @@ package org.apache.cassandra.sidecar.handlers.livemigration;
 
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
@@ -33,7 +32,6 @@ import static org.apache.cassandra.sidecar.handlers.AbstractHandler.extractHostA
  * Handler for enabling or disabling live-migration APIs. It helps to enable Live Migration APIs for
  * either source/destination specified in {@link LiveMigrationConfiguration#migrationMap()}.
  */
-@Tag(name = "Live Migration", description = "Live migration operations")
 public class LiveMigrationApiEnableDisableHandler
 {
     final LiveMigrationMap liveMigrationMap;

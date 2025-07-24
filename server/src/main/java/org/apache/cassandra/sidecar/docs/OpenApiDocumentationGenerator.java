@@ -186,7 +186,7 @@ public class OpenApiDocumentationGenerator
     }
     
     /**
-     * Scans for OpenAPI annotations in handler classes
+     * Scans for OpenAPI annotations in module classes
      * 
      * @param openApi base OpenAPI configuration
      * @return OpenAPI with discovered endpoints
@@ -195,63 +195,38 @@ public class OpenApiDocumentationGenerator
     {
         try
         {
-            // List of handler classes to scan
-            Set<Class<?>> handlerClasses = Set.of(
-                // Health handlers
-                org.apache.cassandra.sidecar.handlers.CassandraHealthHandler.class,
+            // List of module classes to scan for route definitions
+            Set<Class<?>> moduleClasses = Set.of(
+                // Health check module
+                org.apache.cassandra.sidecar.modules.HealthCheckModule.class,
                 
-                // SSTable upload handlers
-                org.apache.cassandra.sidecar.handlers.sstableuploads.SSTableImportHandler.class,
-                org.apache.cassandra.sidecar.handlers.sstableuploads.SSTableUploadHandler.class,
-                org.apache.cassandra.sidecar.handlers.sstableuploads.SSTableCleanupHandler.class,
+                // Cassandra operations module  
+                org.apache.cassandra.sidecar.modules.CassandraOperationsModule.class,
                 
-                // Snapshot handlers
-                org.apache.cassandra.sidecar.handlers.snapshots.CreateSnapshotHandler.class,
-                org.apache.cassandra.sidecar.handlers.snapshots.ListSnapshotHandler.class,
-                org.apache.cassandra.sidecar.handlers.snapshots.ClearSnapshotHandler.class,
+                // SSTable access module
+                org.apache.cassandra.sidecar.modules.SSTablesAccessModule.class,
                 
-                // Schema handlers
-                org.apache.cassandra.sidecar.handlers.SchemaHandler.class,
-                org.apache.cassandra.sidecar.handlers.KeyspaceSchemaHandler.class,
-                org.apache.cassandra.sidecar.handlers.ReportSchemaHandler.class,
+                // Restore jobs module
+                org.apache.cassandra.sidecar.modules.RestoreJobModule.class,
                 
-                // Streaming handlers
-                org.apache.cassandra.sidecar.handlers.FileStreamHandler.class,
-                org.apache.cassandra.sidecar.handlers.StreamSSTableComponentHandler.class,
-                org.apache.cassandra.sidecar.handlers.StreamStatsHandler.class,
+                // CDC module
+                org.apache.cassandra.sidecar.modules.CdcModule.class,
                 
-                // Restore handlers
-                org.apache.cassandra.sidecar.handlers.restore.CreateRestoreJobHandler.class,
-                org.apache.cassandra.sidecar.handlers.restore.RestoreJobProgressHandler.class,
-                org.apache.cassandra.sidecar.handlers.restore.AbortRestoreJobHandler.class,
-                org.apache.cassandra.sidecar.handlers.restore.UpdateRestoreJobHandler.class,
-                org.apache.cassandra.sidecar.handlers.restore.RestoreJobSummaryHandler.class,
+                // Live migration module  
+                org.apache.cassandra.sidecar.modules.LiveMigrationModule.class,
                 
-                // CDC handlers
-                org.apache.cassandra.sidecar.handlers.cdc.ListCdcDirHandler.class,
-                org.apache.cassandra.sidecar.handlers.cdc.StreamCdcSegmentHandler.class,
-                org.apache.cassandra.sidecar.handlers.cdc.UpdateServiceConfigHandler.class,
-                
-                // Node operation handlers
-                org.apache.cassandra.sidecar.handlers.NodeDecommissionHandler.class,
-                org.apache.cassandra.sidecar.handlers.GossipInfoHandler.class,
-                org.apache.cassandra.sidecar.handlers.KeyspaceRingHandler.class,
-                org.apache.cassandra.sidecar.handlers.RingHandler.class,
-                
-                // Live migration handlers
-                org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationListInstanceFilesHandler.class,
-                org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationFileStreamHandler.class,
-                org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationApiEnableDisableHandler.class
+                // OpenAPI module
+                org.apache.cassandra.sidecar.modules.OpenApiModule.class
             );
             
-            // Scan each class for annotations and build OpenAPI paths
+            // Scan each module class for annotations and build OpenAPI paths
             io.swagger.v3.oas.models.Paths paths = new io.swagger.v3.oas.models.Paths();
             Map<String, io.swagger.v3.oas.models.tags.Tag> tags = new HashMap<>();
             Set<Class<?>> schemaClasses = new HashSet<>();
             
-            for (Class<?> clazz : handlerClasses)
+            for (Class<?> clazz : moduleClasses)
             {
-                processClass(clazz, paths, tags, schemaClasses);
+                processModuleClass(clazz, paths, tags, schemaClasses);
             }
             
             // Set paths and tags to the OpenAPI object
@@ -308,6 +283,230 @@ public class OpenApiDocumentationGenerator
             // Log warning but continue with basic OpenAPI config
             return openApi;
         }
+    }
+    
+    private static void processModuleClass(Class<?> clazz, io.swagger.v3.oas.models.Paths paths,
+                                           Map<String, io.swagger.v3.oas.models.tags.Tag> tags, Set<Class<?>> schemaClasses)
+    {
+        // Scan methods for route provider methods with OpenAPI annotations
+        for (Method method : clazz.getDeclaredMethods())
+        {
+            // Check if this is a route provider method (has @ProvidesIntoMap annotation)
+            if (method.isAnnotationPresent(com.google.inject.multibindings.ProvidesIntoMap.class))
+            {
+                // Process OpenAPI annotations on the route provider method
+                processRouteProviderMethod(method, paths, tags, schemaClasses);
+            }
+        }
+    }
+    
+    private static void processRouteProviderMethod(Method method, io.swagger.v3.oas.models.Paths paths,
+                                                   Map<String, io.swagger.v3.oas.models.tags.Tag> tags, Set<Class<?>> schemaClasses)
+    {
+        // Get class-level tag annotation
+        Tag classTagAnnotation = method.getAnnotation(Tag.class);
+        if (classTagAnnotation != null)
+        {
+            io.swagger.v3.oas.models.tags.Tag tag = new io.swagger.v3.oas.models.tags.Tag();
+            tag.setName(classTagAnnotation.name());
+            tag.setDescription(classTagAnnotation.description());
+            tags.put(classTagAnnotation.name(), tag);
+        }
+        
+        // Get Operation annotation
+        Operation operationAnnotation = method.getAnnotation(Operation.class);
+        if (operationAnnotation != null)
+        {
+            // Extract route key information to determine the actual HTTP path and method
+            String pathName = extractPathFromRouteKey(method);
+            String httpMethod = extractHttpMethodFromRouteKey(method);
+            
+            if (pathName != null && httpMethod != null)
+            {
+                PathItem pathItem = paths.get(pathName);
+                if (pathItem == null)
+                {
+                    pathItem = new PathItem();
+                    paths.addPathItem(pathName, pathItem);
+                }
+                
+                // Create operation
+                io.swagger.v3.oas.models.Operation operation = new io.swagger.v3.oas.models.Operation();
+                operation.setSummary(operationAnnotation.summary());
+                operation.setDescription(operationAnnotation.description());
+                
+                // Add tag if present
+                if (classTagAnnotation != null)
+                {
+                    operation.addTagsItem(classTagAnnotation.name());
+                }
+                
+                // Process ApiResponses
+                io.swagger.v3.oas.annotations.responses.ApiResponses responsesAnnotation = 
+                    method.getAnnotation(io.swagger.v3.oas.annotations.responses.ApiResponses.class);
+                if (responsesAnnotation != null)
+                {
+                    io.swagger.v3.oas.models.responses.ApiResponses responses = new io.swagger.v3.oas.models.responses.ApiResponses();
+                    for (io.swagger.v3.oas.annotations.responses.ApiResponse responseAnnotation : responsesAnnotation.value())
+                    {
+                        io.swagger.v3.oas.models.responses.ApiResponse response = new io.swagger.v3.oas.models.responses.ApiResponse();
+                        response.setDescription(responseAnnotation.description());
+                        
+                        // Add content if specified
+                        if (responseAnnotation.content().length > 0)
+                        {
+                            Content content = new Content();
+                            for (io.swagger.v3.oas.annotations.media.Content contentAnnotation : responseAnnotation.content())
+                            {
+                                MediaType mediaType = new MediaType();
+                                
+                                // Process schema if present
+                                io.swagger.v3.oas.annotations.media.Schema schemaAnnotation = contentAnnotation.schema();
+                                if (schemaAnnotation != null)
+                                {
+                                    Schema<?> schema = new Schema<>();
+                                    
+                                    // Set schema implementation class if specified
+                                    if (schemaAnnotation.implementation() != Void.class)
+                                    {
+                                        schema.set$ref("#/components/schemas/" + schemaAnnotation.implementation().getSimpleName());
+                                        // Add the class to the set for schema generation
+                                        schemaClasses.add(schemaAnnotation.implementation());
+                                    }
+                                    
+                                    // Set schema example if provided
+                                    if (!schemaAnnotation.example().isEmpty())
+                                    {
+                                        schema.setExample(schemaAnnotation.example());
+                                    }
+                                    
+                                    // Set schema description if provided
+                                    if (!schemaAnnotation.description().isEmpty())
+                                    {
+                                        schema.setDescription(schemaAnnotation.description());
+                                    }
+                                    
+                                    // Set schema type if provided
+                                    if (!schemaAnnotation.type().isEmpty())
+                                    {
+                                        schema.setType(schemaAnnotation.type());
+                                    }
+                                    
+                                    mediaType.setSchema(schema);
+                                }
+                                
+                                content.addMediaType(contentAnnotation.mediaType(), mediaType);
+                            }
+                            response.setContent(content);
+                        }
+                        
+                        responses.addApiResponse(responseAnnotation.responseCode(), response);
+                    }
+                    operation.setResponses(responses);
+                }
+                
+                // Add operation to path item based on HTTP method
+                switch (httpMethod.toUpperCase())
+                {
+                    case "GET":
+                        pathItem.setGet(operation);
+                        break;
+                    case "POST":
+                        pathItem.setPost(operation);
+                        break;
+                    case "PUT":
+                        pathItem.setPut(operation);
+                        break;
+                    case "DELETE":
+                        pathItem.setDelete(operation);
+                        break;
+                    case "PATCH":
+                        pathItem.setPatch(operation);
+                        break;
+                    case "HEAD":
+                        pathItem.setHead(operation);
+                        break;
+                    case "OPTIONS":
+                        pathItem.setOptions(operation);
+                        break;
+                    default:
+                        // Default to GET if unknown
+                        pathItem.setGet(operation);
+                        break;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Extracts the HTTP path from the route key annotation
+     */
+    private static String extractPathFromRouteKey(Method method)
+    {
+        try
+        {
+            // Get the KeyClassMapKey annotation
+            org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey keyAnnotation = 
+                method.getAnnotation(org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey.class);
+            
+            if (keyAnnotation != null)
+            {
+                Class<?> keyClass = keyAnnotation.value();
+                // Get the ROUTE_URI field from the route key class
+                try
+                {
+                    java.lang.reflect.Field routeUriField = keyClass.getDeclaredField("ROUTE_URI");
+                    routeUriField.setAccessible(true);
+                    return (String) routeUriField.get(null);
+                }
+                catch (IllegalAccessException | NoSuchFieldException e)
+                {
+                    // If we can't get the route, return a fallback
+                    return "/api/v1/" + method.getName().replace("Route", "").toLowerCase();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // Ignore and return fallback
+        }
+        return null;
+    }
+    
+    /**
+     * Extracts the HTTP method from the route key annotation
+     */
+    private static String extractHttpMethodFromRouteKey(Method method)
+    {
+        try
+        {
+            // Get the KeyClassMapKey annotation
+            org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey keyAnnotation = 
+                method.getAnnotation(org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey.class);
+            
+            if (keyAnnotation != null)
+            {
+                Class<?> keyClass = keyAnnotation.value();
+                // Get the HTTP_METHOD field from the route key class
+                try
+                {
+                    java.lang.reflect.Field httpMethodField = keyClass.getDeclaredField("HTTP_METHOD");
+                    httpMethodField.setAccessible(true);
+                    Object httpMethodValue = httpMethodField.get(null);
+                    return httpMethodValue.toString();
+                }
+                catch (IllegalAccessException | NoSuchFieldException e)
+                {
+                    // Default to GET if we can't determine the method
+                    return "GET";
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // Ignore and return fallback
+        }
+        return "GET";
     }
     
     private static void processClass(Class<?> clazz, io.swagger.v3.oas.models.Paths paths,
@@ -877,7 +1076,11 @@ public class OpenApiDocumentationGenerator
         ringEntryProps.put("hostId", createStringSchema());
         ringEntrySchema.setProperties(ringEntryProps);
         ringResponseSchema.setItems(ringEntrySchema);
-        ringResponseSchema.setExample(generateExampleForClass(createDummyClass("RingResponse")));
+        Object ringExample = generateExampleForClass(createDummyClass("RingResponse"));
+        if (ringExample != null)
+        {
+            ringResponseSchema.setExample(ringExample);
+        }
         schemas.put("RingResponse", ringResponseSchema);
         
         // Simple success response schemas
@@ -899,7 +1102,11 @@ public class OpenApiDocumentationGenerator
         progressProps.put("startTime", createStringSchema());
         progressProps.put("elapsedTime", createStringSchema());
         restoreProgressSchema.setProperties(progressProps);
-        restoreProgressSchema.setExample(generateExampleForClass(createDummyClass("RestoreJobProgressResponsePayload")));
+        Object progressExample = generateExampleForClass(createDummyClass("RestoreJobProgressResponsePayload"));
+        if (progressExample != null)
+        {
+            restoreProgressSchema.setExample(progressExample);
+        }
         schemas.put("RestoreJobProgressResponsePayload", restoreProgressSchema);
         
         // CDC responses
@@ -918,7 +1125,11 @@ public class OpenApiDocumentationGenerator
         Map<String, Schema> cdcProps = new HashMap<>();
         cdcProps.put("segments", segmentArraySchema);
         cdcSegmentsSchema.setProperties(cdcProps);
-        cdcSegmentsSchema.setExample(generateExampleForClass(createDummyClass("ListCdcSegmentsResponse")));
+        Object cdcExample = generateExampleForClass(createDummyClass("ListCdcSegmentsResponse"));
+        if (cdcExample != null)
+        {
+            cdcSegmentsSchema.setExample(cdcExample);
+        }
         schemas.put("ListCdcSegmentsResponse", cdcSegmentsSchema);
         
         // Operation response
@@ -930,8 +1141,166 @@ public class OpenApiDocumentationGenerator
         operationProps.put("status", createStringSchema());
         operationProps.put("message", createStringSchema());
         operationResponseSchema.setProperties(operationProps);
-        operationResponseSchema.setExample(generateExampleForClass(createDummyClass("OperationalJobResponse")));
-        schemas.put("OperationalJobResponse", operationResponseSchema);
+        Object operationExample = generateExampleForClass(createDummyClass("OperationalJobResponse"));
+        if (operationExample != null)
+        {
+            operationResponseSchema.setExample(operationExample);
+        }
+        // Add more response schemas for endpoints using inline examples
+        
+        // SSTable Upload/Import responses
+        Schema<Object> sstableUploadSchema = new Schema<>();
+        sstableUploadSchema.setType("object");
+        Map<String, Schema> uploadProps = new HashMap<>();
+        uploadProps.put("uploadId", createStringSchema());
+        uploadProps.put("uploadSizeBytes", createLongSchema());
+        uploadProps.put("serviceTimeMillis", createLongSchema());
+        sstableUploadSchema.setProperties(uploadProps);
+        Object uploadExample = generateExampleForClass(createDummyClass("SSTableUploadResponse"));
+        if (uploadExample != null)
+        {
+            sstableUploadSchema.setExample(uploadExample);
+        }
+        schemas.put("SSTableUploadResponse", sstableUploadSchema);
+        
+        Schema<Object> sstableImportSchema = new Schema<>();
+        sstableImportSchema.setType("object");
+        Map<String, Schema> importProps = new HashMap<>();
+        importProps.put("success", createBooleanSchema());
+        importProps.put("uploadId", createStringSchema());
+        importProps.put("keyspace", createStringSchema());
+        importProps.put("tableName", createStringSchema());
+        sstableImportSchema.setProperties(importProps);
+        Object importExample = generateExampleForClass(createDummyClass("SSTableImportResponse"));
+        if (importExample != null)
+        {
+            sstableImportSchema.setExample(importExample);
+        }
+        schemas.put("SSTableImportResponse", sstableImportSchema);
+        
+        // Stream Stats response
+        Schema<Object> streamStatsSchema = new Schema<>();
+        streamStatsSchema.setType("object");
+        Map<String, Schema> streamProps = new HashMap<>();
+        streamProps.put("operationMode", createStringSchema());
+        Schema<?> streamsProgressSchema = new Schema<>();
+        streamsProgressSchema.setType("object");
+        Map<String, Schema> progressStatsProps = new HashMap<>();
+        progressStatsProps.put("totalFilesToReceive", createLongSchema());
+        progressStatsProps.put("totalFilesReceived", createLongSchema());
+        progressStatsProps.put("totalBytesToReceive", createLongSchema());
+        progressStatsProps.put("totalBytesReceived", createLongSchema());
+        streamsProgressSchema.setProperties(progressStatsProps);
+        streamProps.put("streamsProgressStats", streamsProgressSchema);
+        streamStatsSchema.setProperties(streamProps);
+        Object streamExample = generateExampleForClass(createDummyClass("StreamStatsResponse"));
+        if (streamExample != null)
+        {
+            streamStatsSchema.setExample(streamExample);
+        }
+        schemas.put("StreamStatsResponse", streamStatsSchema);
+        
+        // Schema response
+        Schema<Object> schemaResponseSchema = new Schema<>();
+        schemaResponseSchema.setType("object");
+        Map<String, Schema> schemaProps = new HashMap<>();
+        schemaProps.put("keyspace", createStringSchema());
+        schemaProps.put("schema", createStringSchema());
+        schemaResponseSchema.setProperties(schemaProps);
+        Object schemaExample = generateExampleForClass(createDummyClass("SchemaResponse"));
+        if (schemaExample != null)
+        {
+            schemaResponseSchema.setExample(schemaExample);
+        }
+        schemas.put("SchemaResponse", schemaResponseSchema);
+        
+        // Gossip Info response
+        Schema<Object> gossipInfoSchema = new Schema<>();
+        gossipInfoSchema.setType("object");
+        gossipInfoSchema.setAdditionalProperties(new Schema<Object>().type("object"));
+        Object gossipExample = generateExampleForClass(createDummyClass("GossipInfoResponse"));
+        if (gossipExample != null)
+        {
+            gossipInfoSchema.setExample(gossipExample);
+        }
+        schemas.put("GossipInfoResponse", gossipInfoSchema);
+        
+        // Restore Job responses
+        Schema<Object> createRestoreJobSchema = new Schema<>();
+        createRestoreJobSchema.setType("object");
+        Map<String, Schema> createJobProps = new HashMap<>();
+        createJobProps.put("jobId", createUuidSchema());
+        createJobProps.put("status", createStringSchema());
+        createRestoreJobSchema.setProperties(createJobProps);
+        Object createJobExample = generateExampleForClass(createDummyClass("CreateRestoreJobResponsePayload"));
+        if (createJobExample != null)
+        {
+            createRestoreJobSchema.setExample(createJobExample);
+        }
+        schemas.put("CreateRestoreJobResponsePayload", createRestoreJobSchema);
+        
+        Schema<Object> restoreJobSummarySchema = new Schema<>();
+        restoreJobSummarySchema.setType("object");
+        Map<String, Schema> summaryProps = new HashMap<>();
+        Schema<?> jobsArraySchema = new Schema<>();
+        jobsArraySchema.setType("array");
+        Schema<?> jobSchema = new Schema<>();
+        jobSchema.setType("object");
+        Map<String, Schema> jobProps = new HashMap<>();
+        jobProps.put("jobId", createUuidSchema());
+        jobProps.put("status", createStringSchema());
+        jobProps.put("createdAt", createStringSchema());
+        jobProps.put("completedAt", createStringSchema());
+        jobSchema.setProperties(jobProps);
+        jobsArraySchema.setItems(jobSchema);
+        summaryProps.put("jobs", jobsArraySchema);
+        restoreJobSummarySchema.setProperties(summaryProps);
+        Object summaryExample = generateExampleForClass(createDummyClass("RestoreJobSummaryResponsePayload"));
+        if (summaryExample != null)
+        {
+            restoreJobSummarySchema.setExample(summaryExample);
+        }
+        schemas.put("RestoreJobSummaryResponsePayload", restoreJobSummarySchema);
+        
+        // Service configuration responses
+        Schema<Object> serviceConfigListSchema = new Schema<>();
+        serviceConfigListSchema.setType("object");
+        Map<String, Schema> configListProps = new HashMap<>();
+        Schema<?> configurationsArraySchema = new Schema<>();
+        configurationsArraySchema.setType("array");
+        Schema<?> configSchema = new Schema<>();
+        configSchema.setType("object");
+        Map<String, Schema> configProps = new HashMap<>();
+        configProps.put("key", createStringSchema());
+        configProps.put("value", createStringSchema());
+        configSchema.setProperties(configProps);
+        configurationsArraySchema.setItems(configSchema);
+        configListProps.put("configurations", configurationsArraySchema);
+        serviceConfigListSchema.setProperties(configListProps);
+        schemas.put("ServiceConfigListResponse", serviceConfigListSchema);
+        
+        // Live migration responses  
+        Schema<Object> instanceFilesSchema = new Schema<>();
+        instanceFilesSchema.setType("object");
+        Map<String, Schema> filesProps = new HashMap<>();
+        Schema<?> filesArraySchema = new Schema<>();
+        filesArraySchema.setType("array");
+        Schema<?> fileSchema = new Schema<>();
+        fileSchema.setType("object");
+        Map<String, Schema> fileProps = new HashMap<>();
+        fileProps.put("filename", createStringSchema());
+        fileProps.put("size", createLongSchema());
+        fileProps.put("lastModified", createStringSchema());
+        fileSchema.setProperties(fileProps);
+        filesArraySchema.setItems(fileSchema);
+        filesProps.put("files", filesArraySchema);
+        instanceFilesSchema.setProperties(filesProps);
+        Object filesExample = generateExampleForClass(createDummyClass("InstanceFilesListResponse"));
+        if (filesExample != null)
+        {
+            instanceFilesSchema.setExample(filesExample);
+        }
+        schemas.put("InstanceFilesListResponse", instanceFilesSchema);
     }
     
     private static Schema<?> createStringSchema()
@@ -965,6 +1334,13 @@ public class OpenApiDocumentationGenerator
         return schema;
     }
     
+    private static Schema<?> createBooleanSchema()
+    {
+        Schema<?> schema = new Schema<>();
+        schema.setType("boolean");
+        return schema;
+    }
+    
     private static Schema<?> createUuidSchema()
     {
         Schema<?> schema = new Schema<>();
@@ -981,7 +1357,11 @@ public class OpenApiDocumentationGenerator
         props.put("result", createStringSchema());
         props.put("message", createStringSchema());
         schema.setProperties(props);
-        schema.setExample(generateExampleForClass(createDummyClass(className)));
+        Object example = generateExampleForClass(createDummyClass(className));
+        if (example != null)
+        {
+            schema.setExample(example);
+        }
         return schema;
     }
     

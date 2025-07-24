@@ -30,12 +30,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
@@ -74,7 +68,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
  * lists all SSTable component files, including secondary index files, for the
  * <i>"testSnapshot"</i> snapshot for the <i>"ks"</i> keyspace and the <i>"tbl"</i> table
  */
-@Tag(name = "Snapshots", description = "Snapshot management operations")
 @Singleton
 public class ListSnapshotHandler extends AbstractHandler<SnapshotRequestParam> implements AccessProtected
 {
@@ -126,18 +119,6 @@ public class ListSnapshotHandler extends AbstractHandler<SnapshotRequestParam> i
      * @param remoteAddress the remote address that originated the request
      * @param request       parameters obtained from the request
      */
-    @Operation(summary = "List snapshot files", 
-               description = "Lists all files in a snapshot with optional secondary index files")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Snapshot files listed successfully",
-                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.ListSnapshotFilesResponse.class))),
-        @ApiResponse(responseCode = "404", 
-                     description = "Snapshot not found"),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

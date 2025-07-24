@@ -26,10 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -47,7 +43,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * A handler that provides ring information for a specific keyspace for the Cassandra cluster
  */
-@Tag(name = "Ring", description = "Cassandra cluster ring information")
 @Singleton
 public class KeyspaceRingHandler extends AbstractHandler<Name> implements AccessProtected
 {
@@ -71,16 +66,6 @@ public class KeyspaceRingHandler extends AbstractHandler<Name> implements Access
     /**
      * {@inheritDoc}
      */
-    @Operation(summary = "Get keyspace ring info", 
-               description = "Returns ring information for a specific keyspace")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Ring information retrieved successfully"),
-        @ApiResponse(responseCode = "400", 
-                     description = "Invalid keyspace name"),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

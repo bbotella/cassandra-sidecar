@@ -20,6 +20,12 @@ package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
@@ -49,19 +55,51 @@ public class HealthCheckModule extends AbstractModule
         return new HealthCheckPeriodicTask(configuration, instancesMetadata, executorPools, metrics);
     }
 
+    @Tag(name = "Health", description = "Health check endpoints")
+    @Operation(
+        summary = "Check Sidecar health", 
+        description = "Returns the health status of the Sidecar application"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Sidecar is healthy",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = java.util.Map.class)
+            )
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.SidecarHealthRouteKey.class)
     VertxRoute sidecarHealthRoute(RouteBuilder.Factory factory)
     {
         return factory.builderForUnauthorizedRoute()
                       .handler(context -> {
-                          // @Operation(summary = "Check Sidecar health", description = "Returns the health status of the Sidecar application")
-                          // @ApiResponse(responseCode = "200", description = "Sidecar is healthy")
                           context.json(ApiModule.OK_STATUS);
                       })
                       .build();
     }
 
+    @Tag(name = "Health", description = "Health check endpoints")
+    @Operation(
+        summary = "Check Cassandra health (deprecated)", 
+        description = "Returns the health status of the Cassandra cluster. This endpoint is deprecated."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Cassandra is healthy",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = java.util.Map.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "503", 
+            description = "Cassandra is unhealthy"
+        )
+    })
     @Deprecated
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraHealthRouteKey.class)
@@ -74,6 +112,25 @@ public class HealthCheckModule extends AbstractModule
                       .build();
     }
 
+    @Tag(name = "Health", description = "Health check endpoints")
+    @Operation(
+        summary = "Check Cassandra native protocol health", 
+        description = "Returns the health status of Cassandra's native protocol connection"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Cassandra native protocol is healthy",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = java.util.Map.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "503", 
+            description = "Cassandra native protocol is unhealthy"
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraNativeHealthRouteKey.class)
     VertxRoute cassandraNativeHealthRoute(RouteBuilder.Factory factory,
@@ -84,6 +141,25 @@ public class HealthCheckModule extends AbstractModule
                       .build();
     }
 
+    @Tag(name = "Health", description = "Health check endpoints")
+    @Operation(
+        summary = "Check Cassandra JMX health", 
+        description = "Returns the health status of Cassandra's JMX connection"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Cassandra JMX is healthy",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = java.util.Map.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "503", 
+            description = "Cassandra JMX is unhealthy"
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraJmxHealthRouteKey.class)
     VertxRoute cassandraJmxHealthRoute(RouteBuilder.Factory factory,
@@ -94,6 +170,25 @@ public class HealthCheckModule extends AbstractModule
                       .build();
     }
 
+    @Tag(name = "Health", description = "Health check endpoints")
+    @Operation(
+        summary = "Check Cassandra gossip health", 
+        description = "Returns the health status of Cassandra's gossip protocol"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Cassandra gossip is healthy",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = java.util.Map.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "503", 
+            description = "Cassandra gossip is unhealthy"
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraGossipHealthRouteKey.class)
     VertxRoute cassandraGossipHealthRoute(RouteBuilder.Factory factory,

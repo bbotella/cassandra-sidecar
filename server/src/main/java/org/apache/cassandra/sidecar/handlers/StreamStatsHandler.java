@@ -22,12 +22,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import com.google.inject.Inject;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -43,7 +37,6 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Handler for retrieving node streams stats
  */
-@Tag(name = "Streaming", description = "File streaming operations")
 public class StreamStatsHandler extends AbstractHandler<Void> implements AccessProtected
 {
     /**
@@ -68,16 +61,6 @@ public class StreamStatsHandler extends AbstractHandler<Void> implements AccessP
     /**
      * {@inheritDoc}
      */
-    @Operation(summary = "Get stream statistics", 
-               description = "Returns current streaming statistics for the node")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Stream statistics retrieved successfully",
-                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.StreamStatsResponse.class))),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

@@ -25,10 +25,6 @@ import java.util.Set;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -54,7 +50,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
  * Provides a REST API for querying the progress of a {@link RestoreJob}
  * The response content can vary based on the {@link RestoreJobProgressFetchPolicy}
  */
-@Tag(name = "Restore", description = "Data restore operations")
 @Singleton
 public class RestoreJobProgressHandler extends AbstractHandler<RestoreJobProgressFetchPolicy> implements AccessProtected
 {
@@ -99,18 +94,6 @@ public class RestoreJobProgressHandler extends AbstractHandler<RestoreJobProgres
         return RestoreJobProgressFetchPolicy.fromString(fetchPolicyValues.get(0));
     }
 
-    @Operation(summary = "Get restore job progress", 
-               description = "Returns progress information for a restore job")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Restore job progress retrieved successfully"),
-        @ApiResponse(responseCode = "400", 
-                     description = "Invalid restore job or fetch policy"),
-        @ApiResponse(responseCode = "404", 
-                     description = "Restore job not found"),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     protected void handleInternal(RoutingContext context,
                                   HttpServerRequest httpRequest,

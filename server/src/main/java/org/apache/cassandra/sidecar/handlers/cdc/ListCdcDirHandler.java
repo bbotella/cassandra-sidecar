@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -65,7 +64,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * Provides REST endpoint for listing commit logs in CDC directory.
  */
-@Tag(name = "CDC", description = "Change Data Capture operations")
 @Singleton
 public class ListCdcDirHandler extends AbstractHandler<Void> implements AccessProtected
 {

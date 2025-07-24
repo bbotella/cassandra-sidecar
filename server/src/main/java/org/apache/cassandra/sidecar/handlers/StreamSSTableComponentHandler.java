@@ -27,10 +27,6 @@ import javax.management.InstanceNotFoundException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
@@ -57,7 +53,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
  * This handler validates that the component exists in the cluster and sets up the context
  * for the {@link FileStreamHandler} to stream the component back to the client
  */
-@Tag(name = "Streaming", description = "File streaming operations")
 @Singleton
 public class StreamSSTableComponentHandler extends AbstractHandler<StreamSSTableComponentRequestParam> implements AccessProtected
 {
@@ -82,18 +77,6 @@ public class StreamSSTableComponentHandler extends AbstractHandler<StreamSSTable
         return Set.of(stream, select);
     }
 
-    @Operation(summary = "Stream SSTable component", 
-               description = "Validates and streams an SSTable component file from a snapshot")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "SSTable component streamed successfully"),
-        @ApiResponse(responseCode = "400", 
-                     description = "Invalid data directory index"),
-        @ApiResponse(responseCode = "404", 
-                     description = "Component file or keyspace/table not found"),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

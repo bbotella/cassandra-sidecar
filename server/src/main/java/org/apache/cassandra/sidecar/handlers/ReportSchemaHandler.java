@@ -24,10 +24,6 @@ import java.util.Set;
 import com.datastax.driver.core.Metadata;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.auth.authorization.Authorization;
@@ -45,7 +41,6 @@ import static org.apache.cassandra.sidecar.modules.ApiModule.OK_STATUS;
  * An implementation of {@link AbstractHandler} used to trigger an immediate,
  * synchronous conversion and report of the current schema
  */
-@Tag(name = "Schema", description = "Schema information endpoints")
 @Singleton
 public class ReportSchemaHandler extends AbstractHandler<Void> implements AccessProtected
 {
@@ -93,14 +88,6 @@ public class ReportSchemaHandler extends AbstractHandler<Void> implements Access
     /**
      * {@inheritDoc}
      */
-    @Operation(summary = "Report schema", 
-               description = "Triggers immediate synchronous conversion and report of the current schema")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Schema reported successfully"),
-        @ApiResponse(responseCode = "500", 
-                     description = "Internal server error")
-    })
     @Override
     protected void handleInternal(@NotNull RoutingContext context,
                                   @NotNull HttpServerRequest http,

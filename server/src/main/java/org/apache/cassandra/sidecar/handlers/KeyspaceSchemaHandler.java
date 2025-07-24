@@ -25,12 +25,6 @@ import com.datastax.driver.core.Metadata;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
@@ -50,7 +44,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 /**
  * The {@link KeyspaceSchemaHandler} class handles keyspace schema requests
  */
-@Tag(name = "Schema", description = "Schema information endpoints")
 @Singleton
 public class KeyspaceSchemaHandler extends AbstractHandler<Name> implements AccessProtected
 {
@@ -78,18 +71,6 @@ public class KeyspaceSchemaHandler extends AbstractHandler<Name> implements Acce
     /**
      * {@inheritDoc}
      */
-    @Operation(summary = "Get keyspace schema", 
-               description = "Returns schema information for a specific keyspace")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                     description = "Schema information retrieved successfully",
-                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SchemaResponse.class))),
-        @ApiResponse(responseCode = "404", 
-                     description = "Keyspace not found"),
-        @ApiResponse(responseCode = "503", 
-                     description = "Service unavailable")
-    })
     @Override
     public void handleInternal(RoutingContext context,
                                HttpServerRequest httpRequest,

@@ -23,6 +23,12 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.ProvidesIntoMap;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
 import org.apache.cassandra.sidecar.cluster.locator.CachedLocalTokenRanges;
 import org.apache.cassandra.sidecar.cluster.locator.LocalTokenRangesProvider;
@@ -101,6 +107,21 @@ public class RestoreJobModule extends AbstractModule
                                        configuration.restoreJobConfiguration().restoreJobTablesTtl());
     }
 
+    @Tag(name = "Restore Jobs", description = "Restore job management operations")
+    @Operation(
+        summary = "Create restore job",
+        description = "Creates a new restore job for importing data from backup sources"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Restore job created successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"CREATED\"}")
+            )
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CreateRestoreJobRouteKey.class)
     VertxRoute createRestoreJobsRoute(RouteBuilder.Factory factory,
@@ -116,6 +137,21 @@ public class RestoreJobModule extends AbstractModule
                       .build();
     }
 
+    @Tag(name = "Restore Jobs", description = "Restore job management operations")
+    @Operation(
+        summary = "Create restore slice",
+        description = "Creates a restore slice for a specific portion of data in a restore job"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Restore slice created successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(example = "{\"sliceId\": \"slice-789\", \"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"CREATED\"}")
+            )
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CreateRestoreSliceRouteKey.class)
     VertxRoute createRestoreJobSlicesRoute(RouteBuilder.Factory factory,
@@ -133,6 +169,21 @@ public class RestoreJobModule extends AbstractModule
                       .build();
     }
 
+    @Tag(name = "Restore Jobs", description = "Restore job management operations")
+    @Operation(
+        summary = "Get restore job summary",
+        description = "Returns a summary of all restore jobs for a keyspace and table"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Restore job summary retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(example = "{\"jobs\": [{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"COMPLETED\", \"createdAt\": \"2024-01-01T10:00:00Z\", \"completedAt\": \"2024-01-01T11:30:00Z\"}]}")
+            )
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.GetRestoreJobSummaryRouteKey.class)
     VertxRoute restoreJobSummaryRoute(RouteBuilder.Factory factory,
@@ -147,6 +198,21 @@ public class RestoreJobModule extends AbstractModule
                       .build();
     }
 
+    @Tag(name = "Restore Jobs", description = "Restore job management operations")
+    @Operation(
+        summary = "Update restore job",
+        description = "Updates the status or configuration of an existing restore job"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Restore job updated successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"UPDATED\", \"message\": \"Job configuration updated\"}")
+            )
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.UpdateRestoreJobRouteKey.class)
     VertxRoute updateRestoreJobRoute(RouteBuilder.Factory factory,
@@ -162,6 +228,21 @@ public class RestoreJobModule extends AbstractModule
                       .build();
     }
 
+    @Tag(name = "Restore Jobs", description = "Restore job management operations")
+    @Operation(
+        summary = "Abort restore job",
+        description = "Aborts an active restore job and stops all associated operations"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Restore job aborted successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"ABORTED\", \"message\": \"Restore job aborted successfully\"}")
+            )
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.AbortRestoreJobRouteKey.class)
     VertxRoute abortRestoreJobRoute(RouteBuilder.Factory factory,
@@ -178,6 +259,21 @@ public class RestoreJobModule extends AbstractModule
                       .build();
     }
 
+    @Tag(name = "Restore Jobs", description = "Restore job management operations")
+    @Operation(
+        summary = "Get restore job progress",
+        description = "Returns the current progress and status of a restore job"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Restore job progress retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"progressPercentage\": 75.5, \"status\": \"IN_PROGRESS\", \"message\": \"Restoring data files...\", \"startTime\": \"2024-01-01T10:00:00Z\", \"elapsedTime\": \"PT45M30S\"}")
+            )
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.GetRestoreJobProgressRouteKey.class)
     VertxRoute restoreJobProgressRoute(RouteBuilder.Factory factory,
