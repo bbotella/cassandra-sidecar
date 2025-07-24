@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.management.openmbean.CompositeData;
 
 import org.slf4j.Logger;
@@ -36,7 +35,6 @@ import org.apache.cassandra.sidecar.adapters.base.data.StreamState;
 import org.apache.cassandra.sidecar.adapters.base.db.ConnectedClientStats;
 import org.apache.cassandra.sidecar.adapters.base.db.ConnectedClientStatsDatabaseAccessor;
 import org.apache.cassandra.sidecar.adapters.base.db.ConnectedClientStatsSummary;
-import org.apache.cassandra.sidecar.adapters.base.db.schema.ConnectedClientsSchema;
 import org.apache.cassandra.sidecar.adapters.base.jmx.MetricsJmxOperations;
 import org.apache.cassandra.sidecar.adapters.base.jmx.StreamManagerJmxOperations;
 import org.apache.cassandra.sidecar.common.response.ConnectedClientStatsResponse;
@@ -44,9 +42,11 @@ import org.apache.cassandra.sidecar.common.response.TableStatsResponse;
 import org.apache.cassandra.sidecar.common.response.data.ClientConnectionEntry;
 import org.apache.cassandra.sidecar.common.response.data.StreamsProgressStats;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
+import org.apache.cassandra.sidecar.common.server.ICassandraAdapter;
 import org.apache.cassandra.sidecar.common.server.JmxClient;
 import org.apache.cassandra.sidecar.common.server.MetricsOperations;
 import org.apache.cassandra.sidecar.common.server.data.QualifiedTableName;
+import org.apache.cassandra.sidecar.db.schema.TableSchemaFetcher;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.sidecar.adapters.base.jmx.MetricsJmxOperations.METRICS_OBJ_TYPE_KEYSPACE_TABLE_FORMAT;
@@ -61,14 +61,13 @@ public class CassandraMetricsOperations implements MetricsOperations
     private final ConnectedClientStatsDatabaseAccessor dbAccessor;
     protected final JmxClient jmxClient;
 
-
     /**
      * Creates a new instance with the provided {@link CQLSessionProvider}
      */
-    public CassandraMetricsOperations(JmxClient jmxClient, CQLSessionProvider session)
+    public CassandraMetricsOperations(JmxClient jmxClient, TableSchemaFetcher tableSchemaFetcher, ICassandraAdapter cassandraAdapter)
     {
         this.jmxClient = jmxClient;
-        this.dbAccessor = new ConnectedClientStatsDatabaseAccessor(session, new ConnectedClientsSchema());
+        this.dbAccessor = new ConnectedClientStatsDatabaseAccessor(tableSchemaFetcher, cassandraAdapter);
     }
 
     /**

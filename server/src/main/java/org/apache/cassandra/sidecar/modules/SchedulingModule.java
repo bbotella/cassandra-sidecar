@@ -58,14 +58,14 @@ public class SchedulingModule extends AbstractModule
     {
         PeriodicTaskExecutor periodicTaskExecutor = new PeriodicTaskExecutor(executorPools, clusterLease);
         resolver.resolve().values().forEach(pt -> {
-            LOGGER.debug("Deploying periodic task: {}", pt.getClass().getCanonicalName());
+            LOGGER.info("Deploying periodic task: {}", pt.identifier());
             try
             {
                 pt.deploy(vertx, periodicTaskExecutor);
             }
             catch (Throwable cause)
             {
-                throw new RuntimeException("Failed to deploy periodic task: " + pt.getClass().getCanonicalName(), cause);
+                throw new RuntimeException("Failed to deploy periodic task: " + pt.identifier(), cause);
             }
         });
         return periodicTaskExecutor;
