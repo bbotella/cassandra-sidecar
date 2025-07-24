@@ -1097,6 +1097,36 @@ public class OpenApiDocumentationGenerator
         }
         schemas.put("RingResponse", ringResponseSchema);
         
+        // Gossip info response schema
+        Schema<Object> gossipResponseSchema = new Schema<>();
+        gossipResponseSchema.setType("object");
+        gossipResponseSchema.setAdditionalProperties(true);
+        Schema<?> gossipEntrySchema = new Schema<>();
+        gossipEntrySchema.setType("object");
+        Map<String, Schema> gossipEntryProps = new HashMap<>();
+        gossipEntryProps.put("generation", createStringSchema());
+        gossipEntryProps.put("heartbeat", createStringSchema());
+        gossipEntryProps.put("status", createStringSchema());
+        gossipEntryProps.put("load", createStringSchema());
+        gossipEntryProps.put("schema", createStringSchema());
+        gossipEntryProps.put("datacenter", createStringSchema());
+        gossipEntryProps.put("rack", createStringSchema());
+        gossipEntryProps.put("releaseVersion", createStringSchema());
+        gossipEntryProps.put("hostId", createStringSchema());
+        gossipEntryProps.put("tokens", createStringSchema());
+        gossipEntryProps.put("rpcReady", createBooleanSchema());
+        gossipEntryProps.put("internalAddressAndPort", createStringSchema());
+        gossipEntryProps.put("nativeAddressAndPort", createStringSchema());
+        gossipEntryProps.put("statusWithPort", createStringSchema());
+        gossipEntrySchema.setProperties(gossipEntryProps);
+        gossipResponseSchema.setAdditionalProperties(gossipEntrySchema);
+        Object gossipResponseExample = generateExampleForClass(createDummyClass("GossipInfoResponse"));
+        if (gossipResponseExample != null)
+        {
+            gossipResponseSchema.setExample(gossipResponseExample);
+        }
+        schemas.put("GossipInfoResponse", gossipResponseSchema);
+        
         // Simple success response schemas
         schemas.put("CreateSnapshotResponse", createSuccessResponseSchema("CreateSnapshotResponse"));
         schemas.put("ClearSnapshotResponse", createSuccessResponseSchema("ClearSnapshotResponse"));
@@ -1256,16 +1286,8 @@ public class OpenApiDocumentationGenerator
         }
         schemas.put("SchemaResponse", schemaResponseSchema);
         
-        // Gossip Info response
-        Schema<Object> gossipInfoSchema = new Schema<>();
-        gossipInfoSchema.setType("object");
-        gossipInfoSchema.setAdditionalProperties(new Schema<Object>().type("object"));
-        Object gossipExample = generateExampleForClass(createDummyClass("GossipInfoResponse"));
-        if (gossipExample != null)
-        {
-            gossipInfoSchema.setExample(gossipExample);
-        }
-        schemas.put("GossipInfoResponse", gossipInfoSchema);
+        // Additional GossipInfoResponse schema (already defined above but keeping for completeness)
+        // Note: GossipInfoResponse schema was already defined earlier in this method
         
         // Restore Job responses
         Schema<Object> createRestoreJobSchema = new Schema<>();

@@ -212,8 +212,10 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Ring information retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.RingResponse.class, type = "array", 
-                    example = "[{\"datacenter\": \"dc1\", \"address\": \"127.0.0.1\", \"port\": 7000, \"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1GB\", \"owns\": \"33%\", \"token\": \"12345\", \"fqdn\": \"node1\", \"hostId\": \"550e8400-e29b\"}]")
+                schema = @Schema(ref = "#/components/schemas/RingResponse", 
+                    example = "[{\"datacenter\": \"dc1\", \"address\": \"127.0.0.1\", \"port\": 7000, " +
+                              "\"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1GB\", " +
+                              "\"owns\": \"33%\", \"token\": \"12345\", \"fqdn\": \"node1\", \"hostId\": \"550e8400-e29b\"}]")
             )
         )
     })
@@ -236,8 +238,10 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Keyspace ring information retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.RingResponse.class, type = "array", 
-                    example = "[{\"datacenter\": \"dc1\", \"address\": \"127.0.0.1\", \"port\": 7000, \"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1GB\", \"owns\": \"33%\", \"token\": \"12345\", \"fqdn\": \"node1\", \"hostId\": \"550e8400-e29b\"}]")
+                schema = @Schema(ref = "#/components/schemas/RingResponse", 
+                    example = "[{\"datacenter\": \"dc1\", \"address\": \"127.0.0.1\", \"port\": 7000, " +
+                              "\"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1GB\", " +
+                              "\"owns\": \"33%\", \"token\": \"12345\", \"fqdn\": \"node1\", \"hostId\": \"550e8400-e29b\"}]")
             )
         )
     })
@@ -249,6 +253,26 @@ public class CassandraOperationsModule extends AbstractModule
         return factory.buildRouteWithHandler(keyspaceRingHandler);
     }
 
+    @Tag(name = "Ring", description = "Cassandra cluster ring information")
+    @Operation(
+        summary = "Get token range replica map",
+        description = "Returns token range replica mapping information for a specific keyspace"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Token range replica map retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.TokenRangeReplicasResponse.class,
+                    example = "{\"writeReplicas\": [{\"start\": \"0\", \"end\": \"1000\", " +
+                              "\"replicasByDatacenter\": {\"dc1\": [\"127.0.0.1\"]}}], \"readReplicas\": [{\"start\": \"0\", " +
+                              "\"end\": \"1000\", \"replicasByDatacenter\": {\"dc1\": [\"127.0.0.1\"]}}], " +
+                              "\"replicaMetadata\": {\"127.0.0.1\": {\"state\": \"NORMAL\", \"status\": \"UP\", " +
+                              "\"fqdn\": \"node1.local\", \"address\": \"127.0.0.1\", \"port\": 7000, \"datacenter\": \"dc1\"}}}")
+            )
+        )
+    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraTokenRangeReplicaMapRouteKey.class)
     VertxRoute cassandraTokenRangeReplicaMapRoute(RouteBuilder.Factory factory,
@@ -268,8 +292,10 @@ public class CassandraOperationsModule extends AbstractModule
             description = "Gossip information retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.GossipInfoResponse.class, 
-                    example = "{\"/127.0.0.1:7000\": {\"generation\": \"1641024000\", \"heartbeat\": \"12345\", \"dc\": \"dc1\", \"rack\": \"rack1\", \"releaseVersion\": \"4.1.0\", \"schema\": \"uuid-12345\", \"load\": \"1GB\", \"hostId\": \"550e8400-e29b\"}}")
+                schema = @Schema(ref = "#/components/schemas/GossipInfoResponse", 
+                    example = "{\"/127.0.0.1:7000\": {\"generation\": \"1641024000\", \"heartbeat\": \"12345\", " +
+                              "\"dc\": \"dc1\", \"rack\": \"rack1\", \"releaseVersion\": \"4.1.0\", \"schema\": \"uuid-12345\", " +
+                              "\"load\": \"1GB\", \"hostId\": \"550e8400-e29b\"}}")
             )
         )
     })
