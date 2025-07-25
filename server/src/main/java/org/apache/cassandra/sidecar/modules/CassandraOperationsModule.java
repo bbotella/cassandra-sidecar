@@ -20,12 +20,6 @@ package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.cassandra.sidecar.handlers.ConnectedClientStatsHandler;
 import org.apache.cassandra.sidecar.handlers.GossipInfoHandler;
 import org.apache.cassandra.sidecar.handlers.GossipUpdateHandler;
@@ -76,21 +70,6 @@ public class CassandraOperationsModule extends AbstractModule
         return factory.buildRouteWithHandler(listOperationalJobsHandler);
     }
 
-    @Tag(name = "Node Operations", description = "Node management operations")
-    @Operation(
-        summary = "Get node decommission status",
-        description = "Returns the decommission status of a Cassandra node"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Node decommission status retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.OperationalJobResponse.class)
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraNodeDecommissionRouteKey.class)
     VertxRoute cassandraNodeDecommissionRoute(RouteBuilder.Factory factory,
@@ -99,21 +78,6 @@ public class CassandraOperationsModule extends AbstractModule
         return factory.buildRouteWithHandler(nodeDecommissionHandler);
     }
 
-    @Tag(name = "Streaming", description = "File streaming operations")
-    @Operation(
-        summary = "Get stream statistics",
-        description = "Returns streaming statistics for the Cassandra node"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Stream statistics retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.StreamStatsResponse.class)
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraStreamStatsRouteKey.class)
     VertxRoute cassandraStreamStatsRoute(RouteBuilder.Factory factory,
@@ -135,22 +99,6 @@ public class CassandraOperationsModule extends AbstractModule
                       .build();
     }
 
-    @Tag(name = "Schema", description = "Schema information endpoints")
-    @Operation(
-        summary = "Get all keyspaces schema",
-        description = "Returns the schema information for all keyspaces in the Cassandra cluster"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Schema information retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SchemaResponse.class, 
-                    example = "{\"keyspace\": \"test_ks\", \"schema\": \"CREATE KEYSPACE test_ks...\"}")    
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.AllKeyspacesSchemaRouteKey.class)
     VertxRoute cassandraSchemaRoute(RouteBuilder.Factory factory,
@@ -168,22 +116,6 @@ public class CassandraOperationsModule extends AbstractModule
         return factory.buildRouteWithHandler(schemaHandler);
     }
 
-    @Tag(name = "Schema", description = "Schema information endpoints")
-    @Operation(
-        summary = "Get keyspace schema",
-        description = "Returns the schema information for a specific keyspace"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Keyspace schema retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SchemaResponse.class, 
-                    example = "{\"keyspace\": \"test_ks\", \"schema\": \"CREATE KEYSPACE test_ks...\"}")    
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.KeyspaceSchemaRouteKey.class)
     VertxRoute cassandraKeyspaceSchemaRoute(RouteBuilder.Factory factory,
@@ -201,24 +133,6 @@ public class CassandraOperationsModule extends AbstractModule
         return factory.buildRouteWithHandler(keyspaceSchemaHandler);
     }
 
-    @Tag(name = "Ring", description = "Cassandra cluster ring information")
-    @Operation(
-        summary = "Get cluster ring information",
-        description = "Returns information about the Cassandra cluster ring topology"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Ring information retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(ref = "#/components/schemas/RingResponse", 
-                    example = "[{\"datacenter\": \"dc1\", \"address\": \"127.0.0.1\", \"port\": 7000, " +
-                              "\"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1GB\", " +
-                              "\"owns\": \"33%\", \"token\": \"12345\", \"fqdn\": \"node1\", \"hostId\": \"550e8400-e29b\"}]")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraRingRouteKey.class)
     VertxRoute cassandraRingRoute(RouteBuilder.Factory factory,
@@ -227,24 +141,6 @@ public class CassandraOperationsModule extends AbstractModule
         return factory.buildRouteWithHandler(ringHandler);
     }
 
-    @Tag(name = "Ring", description = "Cassandra cluster ring information")
-    @Operation(
-        summary = "Get keyspace ring information",
-        description = "Returns ring information for a specific keyspace"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Keyspace ring information retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(ref = "#/components/schemas/RingResponse", 
-                    example = "[{\"datacenter\": \"dc1\", \"address\": \"127.0.0.1\", \"port\": 7000, " +
-                              "\"rack\": \"rack1\", \"status\": \"Up\", \"state\": \"Normal\", \"load\": \"1GB\", " +
-                              "\"owns\": \"33%\", \"token\": \"12345\", \"fqdn\": \"node1\", \"hostId\": \"550e8400-e29b\"}]")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraRingWithKeyspaceRouteKey.class)
     VertxRoute cassandraRingWithKeyspaceRoute(RouteBuilder.Factory factory,
@@ -253,26 +149,6 @@ public class CassandraOperationsModule extends AbstractModule
         return factory.buildRouteWithHandler(keyspaceRingHandler);
     }
 
-    @Tag(name = "Ring", description = "Cassandra cluster ring information")
-    @Operation(
-        summary = "Get token range replica map",
-        description = "Returns token range replica mapping information for a specific keyspace"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Token range replica map retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.TokenRangeReplicasResponse.class,
-                    example = "{\"writeReplicas\": [{\"start\": \"0\", \"end\": \"1000\", " +
-                              "\"replicasByDatacenter\": {\"dc1\": [\"127.0.0.1\"]}}], \"readReplicas\": [{\"start\": \"0\", " +
-                              "\"end\": \"1000\", \"replicasByDatacenter\": {\"dc1\": [\"127.0.0.1\"]}}], " +
-                              "\"replicaMetadata\": {\"127.0.0.1\": {\"state\": \"NORMAL\", \"status\": \"UP\", " +
-                              "\"fqdn\": \"node1.local\", \"address\": \"127.0.0.1\", \"port\": 7000, \"datacenter\": \"dc1\"}}}")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraTokenRangeReplicaMapRouteKey.class)
     VertxRoute cassandraTokenRangeReplicaMapRoute(RouteBuilder.Factory factory,
@@ -281,24 +157,6 @@ public class CassandraOperationsModule extends AbstractModule
         return factory.buildRouteWithHandler(tokenRangeReplicaMapHandler);
     }
 
-    @Tag(name = "Ring", description = "Cassandra cluster ring information")
-    @Operation(
-        summary = "Get gossip information",
-        description = "Returns gossip information about the Cassandra cluster"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Gossip information retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(ref = "#/components/schemas/GossipInfoResponse", 
-                    example = "{\"/127.0.0.1:7000\": {\"generation\": \"1641024000\", \"heartbeat\": \"12345\", " +
-                              "\"dc\": \"dc1\", \"rack\": \"rack1\", \"releaseVersion\": \"4.1.0\", \"schema\": \"uuid-12345\", " +
-                              "\"load\": \"1GB\", \"hostId\": \"550e8400-e29b\"}}")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CassandraGossipInfoRouteKey.class)
     VertxRoute cassandraGossipInfoRoute(RouteBuilder.Factory factory,

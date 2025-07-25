@@ -20,12 +20,6 @@ package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.cassandra.sidecar.handlers.FileStreamHandler;
 import org.apache.cassandra.sidecar.handlers.StreamSSTableComponentHandler;
 import org.apache.cassandra.sidecar.handlers.snapshots.ClearSnapshotHandler;
@@ -49,24 +43,6 @@ import org.apache.cassandra.sidecar.routes.VertxRoute;
  */
 public class SSTablesAccessModule extends AbstractModule
 {
-    @Tag(name = "Streaming", description = "File streaming operations")
-    @Operation(
-        summary = "Stream SSTable component",
-        description = "Streams SSTable component files from the Cassandra node"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "SSTable component streamed successfully",
-            content = @Content(
-                mediaType = "application/octet-stream"
-            )
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "SSTable component not found"
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.StreamSSTableComponentsRouteKey.class)
     VertxRoute streamSSTableComponentsRoute(RouteBuilder.Factory factory,
@@ -104,21 +80,6 @@ public class SSTablesAccessModule extends AbstractModule
                       .build();
     }
 
-    @Tag(name = "Snapshots", description = "Snapshot management operations")
-    @Operation(
-        summary = "Create snapshot",
-        description = "Creates a snapshot for the specified keyspace and table"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Snapshot created successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(ref = "#/components/schemas/CreateSnapshotResponse")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.CreateSnapshotRouteKey.class)
     VertxRoute createSnapshotRouteKey(RouteBuilder.Factory factory,
@@ -127,21 +88,6 @@ public class SSTablesAccessModule extends AbstractModule
         return factory.buildRouteWithHandler(createSnapshotHandler);
     }
 
-    @Tag(name = "Snapshots", description = "Snapshot management operations")
-    @Operation(
-        summary = "List snapshots",
-        description = "Lists snapshot files for the specified keyspace and table"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Snapshot files listed successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.ListSnapshotFilesResponse.class)
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.ListSnapshotRouteKey.class)
     VertxRoute listSnapshotRouteKey(RouteBuilder.Factory factory,
@@ -159,21 +105,6 @@ public class SSTablesAccessModule extends AbstractModule
         return factory.buildRouteWithHandler(listSnapshotHandler);
     }
 
-    @Tag(name = "Snapshots", description = "Snapshot management operations")
-    @Operation(
-        summary = "Clear snapshot",
-        description = "Clears/removes the specified snapshot"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Snapshot cleared successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(type = "object", example = "{\"result\": \"Success\", \"message\": \"Snapshot cleared successfully\"}")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.ClearSnapshotRouteKey.class)
     VertxRoute clearSnapshotRouteKey(RouteBuilder.Factory factory,
@@ -189,22 +120,6 @@ public class SSTablesAccessModule extends AbstractModule
                       .build();
     }
 
-    @Tag(name = "SSTable Operations", description = "Operations for managing SSTable uploads and imports")
-    @Operation(
-        summary = "Upload SSTable",
-        description = "Uploads SSTable files to the Cassandra node for staging"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "SSTable uploaded successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SSTableUploadResponse.class, 
-                    example = "{\"uploadId\": \"upload-789012\", \"uploadSizeBytes\": 2097152, \"serviceTimeMillis\": 1500}")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.SSTableUploadRouteKey.class)
     VertxRoute sstableUploadRoute(RouteBuilder.Factory factory,
@@ -213,21 +128,6 @@ public class SSTablesAccessModule extends AbstractModule
         return factory.buildRouteWithHandler(sstableUploadHandler);
     }
 
-    @Tag(name = "SSTable Operations", description = "Operations for managing SSTable uploads and imports")
-    @Operation(
-        summary = "Import SSTable",
-        description = "Imports uploaded SSTable files into Cassandra"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "SSTable imported successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.SSTableImportResponse.class)
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.SSTableImportRouteKey.class)
     VertxRoute sstableImportRoute(RouteBuilder.Factory factory,
@@ -236,21 +136,6 @@ public class SSTablesAccessModule extends AbstractModule
         return factory.buildRouteWithHandler(sstableImportHandler);
     }
 
-    @Tag(name = "SSTable Operations", description = "Operations for managing SSTable uploads and imports")
-    @Operation(
-        summary = "Cleanup SSTables",
-        description = "Cleans up uploaded SSTable staging files"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "SSTable cleanup completed successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(type = "object", example = "{\"result\": \"Success\", \"cleanedFiles\": 5, \"freedSpace\": \"10MB\"}")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.SSTableCleanupRouteKey.class)
     VertxRoute sstableCleanupRoute(RouteBuilder.Factory factory,

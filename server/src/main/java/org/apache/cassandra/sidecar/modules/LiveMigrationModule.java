@@ -20,12 +20,6 @@ package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.cassandra.sidecar.handlers.FileStreamHandler;
 import org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationApiEnableDisableHandler;
 import org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationFileStreamHandler;
@@ -50,28 +44,6 @@ public class LiveMigrationModule extends AbstractModule
     }
 
 
-    @Tag(name = "Live Migration", description = "Live migration operations for data transfer")
-    @Operation(
-        summary = "Download migration file",
-        description = "Downloads a file as part of live migration data transfer between nodes"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "File downloaded successfully",
-            content = @Content(
-                mediaType = "application/octet-stream"
-            )
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "File not found"
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Live migration not enabled or node not configured as source"
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.LiveMigrationFileStreamHandlerRouteKey.class)
     VertxRoute downloadFileRoute(RouteBuilder.Factory factory,
@@ -86,25 +58,6 @@ public class LiveMigrationModule extends AbstractModule
                       .build();
     }
 
-    @Tag(name = "Live Migration", description = "Live migration operations for data transfer")
-    @Operation(
-        summary = "List instance files",
-        description = "Lists files available on an instance for live migration purposes"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Instance files listed successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.InstanceFilesListResponse.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "403",
-            description = "Live migration not enabled or node not configured for migration"
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.LiveMigrationListInstanceFilesRouteKey.class)
     VertxRoute listInstanceFiles(RouteBuilder.Factory factory,

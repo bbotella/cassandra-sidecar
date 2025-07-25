@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -186,7 +187,7 @@ public class OpenApiDocumentationGenerator
     }
     
     /**
-     * Scans for OpenAPI annotations in module classes
+     * Scans for OpenAPI annotations in VertxRouteMapKeys using the embedded metadata
      * 
      * @param openApi base OpenAPI configuration
      * @return OpenAPI with discovered endpoints
@@ -195,39 +196,15 @@ public class OpenApiDocumentationGenerator
     {
         try
         {
-            // List of module classes to scan for route definitions
-            Set<Class<?>> moduleClasses = Set.of(
-                // Health check module
-                org.apache.cassandra.sidecar.modules.HealthCheckModule.class,
-                
-                // Cassandra operations module  
-                org.apache.cassandra.sidecar.modules.CassandraOperationsModule.class,
-                
-                // SSTable access module
-                org.apache.cassandra.sidecar.modules.SSTablesAccessModule.class,
-                
-                // Restore jobs module
-                org.apache.cassandra.sidecar.modules.RestoreJobModule.class,
-                
-                // CDC module
-                org.apache.cassandra.sidecar.modules.CdcModule.class,
-                
-                // Live migration module  
-                org.apache.cassandra.sidecar.modules.LiveMigrationModule.class,
-                
-                // OpenAPI module
-                org.apache.cassandra.sidecar.modules.OpenApiModule.class
-            );
+            // Use a configuration-based approach with VertxRouteMapKeys for route information
+            // and OpenAPI metadata stored in the generator
             
-            // Scan each module class for annotations and build OpenAPI paths
+            // Scan VertxRouteMapKeys interface for route definitions and build OpenAPI paths
             io.swagger.v3.oas.models.Paths paths = new io.swagger.v3.oas.models.Paths();
             Map<String, io.swagger.v3.oas.models.tags.Tag> tags = new HashMap<>();
             Set<Class<?>> schemaClasses = new HashSet<>();
             
-            for (Class<?> clazz : moduleClasses)
-            {
-                processModuleClass(clazz, paths, tags, schemaClasses);
-            }
+            processVertxRouteMapKeysInterface(org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys.class, paths, tags, schemaClasses);
             
             // Set paths and tags to the OpenAPI object
             openApi.setPaths(paths);
@@ -285,17 +262,143 @@ public class OpenApiDocumentationGenerator
         }
     }
     
-    private static void processModuleClass(Class<?> clazz, io.swagger.v3.oas.models.Paths paths,
-                                           Map<String, io.swagger.v3.oas.models.tags.Tag> tags, Set<Class<?>> schemaClasses)
+    private static void processVertxRouteMapKeysInterface(Class<?> vertxRouteMapKeysClass, io.swagger.v3.oas.models.Paths paths,
+                                                          Map<String, io.swagger.v3.oas.models.tags.Tag> tags, Set<Class<?>> schemaClasses)
     {
-        // Scan methods for route provider methods with OpenAPI annotations
-        for (Method method : clazz.getDeclaredMethods())
+        // Scan inner interfaces for route key definitions with OpenAPI annotations
+        for (Class<?> innerClass : vertxRouteMapKeysClass.getDeclaredClasses())
         {
-            // Check if this is a route provider method (has @ProvidesIntoMap annotation)
-            if (method.isAnnotationPresent(com.google.inject.multibindings.ProvidesIntoMap.class))
+            // Check if this is a route key interface (extends RouteClassKey) with OpenAPI annotations
+            if (innerClass.getSimpleName().endsWith("RouteKey") && innerClass.isInterface())
             {
-                // Process OpenAPI annotations on the route provider method
-                processRouteProviderMethod(method, paths, tags, schemaClasses);
+                org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint endpointAnnotation = 
+                    innerClass.getAnnotation(org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint.class);
+                
+                if (endpointAnnotation != null)
+                {
+                    // Process OpenAPI annotation for this route key interface
+                    processRouteKeyInterface(innerClass, endpointAnnotation, paths, tags, schemaClasses);
+                }
+            }
+        }
+    }
+    
+    private static void processRouteKeyInterface(Class<?> routeKeyInterface, 
+                                                 org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint endpointAnnotation, 
+                                                 io.swagger.v3.oas.models.Paths paths,
+                                                 Map<String, io.swagger.v3.oas.models.tags.Tag> tags, Set<Class<?>> schemaClasses)
+    {
+        // Create tag from annotation
+        if (endpointAnnotation.tag() != null && !endpointAnnotation.tag().isEmpty())
+        {
+            io.swagger.v3.oas.models.tags.Tag tag = new io.swagger.v3.oas.models.tags.Tag();
+            tag.setName(endpointAnnotation.tag());
+            tag.setDescription(endpointAnnotation.tagDescription());
+            tags.put(endpointAnnotation.tag(), tag);
+        }
+        
+        // Extract route key information to determine the actual HTTP path and method
+        String pathName = extractPathFromRouteKeyInterface(routeKeyInterface);
+        String httpMethod = extractHttpMethodFromRouteKeyInterface(routeKeyInterface);
+        
+        if (pathName != null && httpMethod != null)
+        {
+            PathItem pathItem = paths.get(pathName);
+            if (pathItem == null)
+            {
+                pathItem = new PathItem();
+                paths.addPathItem(pathName, pathItem);
+            }
+            
+            // Create operation
+            io.swagger.v3.oas.models.Operation operation = new io.swagger.v3.oas.models.Operation();
+            operation.setSummary(endpointAnnotation.summary());
+            operation.setDescription(endpointAnnotation.description());
+            
+            // Add tag if present
+            if (endpointAnnotation.tag() != null && !endpointAnnotation.tag().isEmpty())
+            {
+                operation.addTagsItem(endpointAnnotation.tag());
+            }
+            
+            // Process responses from annotation
+            org.apache.cassandra.sidecar.modules.multibindings.OpenApiResponse[] responses = endpointAnnotation.responses();
+            if (responses != null && responses.length > 0)
+            {
+                io.swagger.v3.oas.models.responses.ApiResponses apiResponses = new io.swagger.v3.oas.models.responses.ApiResponses();
+                
+                for (org.apache.cassandra.sidecar.modules.multibindings.OpenApiResponse responseAnnotation : responses)
+                {
+                    io.swagger.v3.oas.models.responses.ApiResponse response = new io.swagger.v3.oas.models.responses.ApiResponse();
+                    response.setDescription(responseAnnotation.description());
+                    
+                    if (responseAnnotation.mediaType() != null && !responseAnnotation.mediaType().isEmpty() && 
+                        (responseAnnotation.schemaClass() != Void.class || 
+                         (responseAnnotation.schemaRef() != null && !responseAnnotation.schemaRef().isEmpty()) || 
+                         (responseAnnotation.schemaType() != null && !responseAnnotation.schemaType().isEmpty())))
+                    {
+                        Content content = new Content();
+                        MediaType mediaType = new MediaType();
+                        
+                        Schema<?> schema = new Schema<>();
+                        if (responseAnnotation.schemaRef() != null && !responseAnnotation.schemaRef().isEmpty())
+                        {
+                            schema.set$ref(responseAnnotation.schemaRef());
+                        }
+                        else if (responseAnnotation.schemaClass() != Void.class)
+                        {
+                            schema.set$ref("#/components/schemas/" + responseAnnotation.schemaClass().getSimpleName());
+                            schemaClasses.add(responseAnnotation.schemaClass());
+                        }
+                        
+                        if (responseAnnotation.example() != null && !responseAnnotation.example().isEmpty())
+                        {
+                            schema.setExample(responseAnnotation.example());
+                        }
+                        
+                        if (responseAnnotation.schemaType() != null && !responseAnnotation.schemaType().isEmpty())
+                        {
+                            schema.setType(responseAnnotation.schemaType());
+                        }
+                        
+                        mediaType.setSchema(schema);
+                        content.addMediaType(responseAnnotation.mediaType(), mediaType);
+                        response.setContent(content);
+                    }
+                    
+                    apiResponses.addApiResponse(responseAnnotation.responseCode(), response);
+                }
+                operation.setResponses(apiResponses);
+            }
+            
+            // Add operation to path item based on HTTP method
+            switch (httpMethod.toUpperCase())
+            {
+                case "GET":
+                    pathItem.setGet(operation);
+                    break;
+                case "POST":
+                    pathItem.setPost(operation);
+                    break;
+                case "PUT":
+                    pathItem.setPut(operation);
+                    break;
+                case "DELETE":
+                    pathItem.setDelete(operation);
+                    break;
+                case "PATCH":
+                    pathItem.setPatch(operation);
+                    break;
+                case "HEAD":
+                    pathItem.setHead(operation);
+                    break;
+                case "OPTIONS":
+                    pathItem.setOptions(operation);
+                    break;
+                default:
+                    // Default to GET if unknown
+                    pathItem.setGet(operation);
+                    break;
             }
         }
     }
@@ -435,6 +538,42 @@ public class OpenApiDocumentationGenerator
                         break;
                 }
             }
+        }
+    }
+    
+    private static String extractPathFromRouteKeyInterface(Class<?> routeKeyInterface)
+    {
+        try
+        {
+            // Get the ROUTE_URI field from the route key interface
+            java.lang.reflect.Field routeUriField = routeKeyInterface.getDeclaredField("ROUTE_URI");
+            routeUriField.setAccessible(true);
+            return (String) routeUriField.get(null);
+        }
+        catch (IllegalAccessException | NoSuchFieldException e)
+        {
+            // If we can't get the route, return a fallback
+            return "/api/v1/" + routeKeyInterface.getSimpleName().replace("RouteKey", "").toLowerCase();
+        }
+    }
+    
+    /**
+     * Extracts the HTTP method from the route key interface
+     */
+    private static String extractHttpMethodFromRouteKeyInterface(Class<?> routeKeyInterface)
+    {
+        try
+        {
+            // Get the HTTP_METHOD field from the route key interface
+            java.lang.reflect.Field httpMethodField = routeKeyInterface.getDeclaredField("HTTP_METHOD");
+            httpMethodField.setAccessible(true);
+            Object httpMethodValue = httpMethodField.get(null);
+            return httpMethodValue.toString();
+        }
+        catch (IllegalAccessException | NoSuchFieldException e)
+        {
+            // Default to GET if we can't determine the method
+            return "GET";
         }
     }
     

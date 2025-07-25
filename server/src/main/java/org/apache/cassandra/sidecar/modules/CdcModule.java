@@ -22,12 +22,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.ProvidesIntoMap;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.cassandra.sidecar.cdc.CdcLogCache;
 import org.apache.cassandra.sidecar.client.SidecarInstancesProvider;
 import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
@@ -92,21 +86,6 @@ public class CdcModule extends AbstractModule
         return schema;
     }
 
-    @Tag(name = "CDC", description = "Change Data Capture operations")
-    @Operation(
-        summary = "List CDC segments",
-        description = "Lists CDC (Change Data Capture) segments available for streaming"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "CDC segments listed successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.response.ListCdcSegmentsResponse.class)
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.ListCdcSegmentsRouteKey.class)
     VertxRoute listCdcSegmentsRoute(RouteBuilder.Factory factory,
@@ -115,24 +94,6 @@ public class CdcModule extends AbstractModule
         return factory.buildRouteWithHandler(listCdcDirHandler);
     }
 
-    @Tag(name = "CDC", description = "Change Data Capture operations")
-    @Operation(
-        summary = "Stream CDC segment",
-        description = "Streams a specific CDC segment file for data consumption"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "CDC segment streaming started successfully",
-            content = @Content(
-                mediaType = "application/octet-stream"
-            )
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "CDC segment not found"
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.StreamCdcSegmentRouteKey.class)
     VertxRoute streamCdcSegmentRoute(RouteBuilder.Factory factory,
@@ -141,22 +102,6 @@ public class CdcModule extends AbstractModule
         return factory.buildRouteWithHandler(streamCdcSegmentHandler);
     }
 
-    @Tag(name = "Configuration", description = "Service configuration management")
-    @Operation(
-        summary = "Get all service configurations",
-        description = "Returns all service configuration settings"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Service configurations retrieved successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload.class,
-                    example = "{\"services\": [{\"service\": \"cdc\", \"config\": {\"retention_hours\": \"24\", \"max_size_mb\": \"1000\"}}]}")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.GetAllServiceConfigurationsRouteKey.class)
     VertxRoute getAllServiceConfigurationsRoute(RouteBuilder.Factory factory,
@@ -165,22 +110,6 @@ public class CdcModule extends AbstractModule
         return factory.buildRouteWithHandler(allServiceConfigHandler);
     }
 
-    @Tag(name = "Configuration", description = "Service configuration management")
-    @Operation(
-        summary = "Update service configuration",
-        description = "Updates service configuration settings"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Service configuration updated successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(type = "object", 
-                    example = "{\"message\": \"Service configuration updated successfully\", \"timestamp\": \"2024-01-01T10:00:00Z\"}")
-            )
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.UpdateServiceConfigurationRouteKey.class)
     VertxRoute updateServiceConfigurationRoute(RouteBuilder.Factory factory,
@@ -189,26 +118,6 @@ public class CdcModule extends AbstractModule
         return factory.builderForRoute().setBodyHandler(true).handler(updateServiceConfigHandler).build();
     }
 
-    @Tag(name = "Configuration", description = "Service configuration management")
-    @Operation(
-        summary = "Delete service configuration",
-        description = "Deletes a specific service configuration setting"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Service configuration deleted successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(type = "object", 
-                    example = "{\"message\": \"Configuration deleted successfully\", \"deletedKey\": \"cdc.retention_hours\"}")
-            )
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Configuration key not found"
-        )
-    })
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.DeleteServiceConfigurationRouteKey.class)
     VertxRoute deleteServiceConfigurationRoute(RouteBuilder.Factory factory,
