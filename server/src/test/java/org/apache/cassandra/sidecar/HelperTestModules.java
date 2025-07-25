@@ -94,8 +94,7 @@ public class HelperTestModules
             .thenAnswer(invocation -> instanceMetadataList.stream()
                                                           .filter(instanceMetadata -> invocation.getArgument(0).equals(instanceMetadata.id()))
                                                           .findFirst()
-                                                          .orElseThrow(() -> new NoSuchCassandraInstanceException(
-                                                                  "No Cassandra instance exists with given ID")));
+                                                          .orElseThrow(() -> new NoSuchCassandraInstanceException("No Cassandra instance exists with given ID")));
 
             bind(InstancesMetadata.class).toInstance(mockInstancesMetadata);
         }

@@ -160,10 +160,8 @@ public class SSTableImportHandler extends AbstractHandler<SSTableImportRequestPa
         {
             context.fail(cause);
         }
-        else
-        {
-            super.processFailure(cause, context, host, remoteAddress, request);
-        }
+
+        super.processFailure(cause, context, host, remoteAddress, request);
     }
 
     @Override
