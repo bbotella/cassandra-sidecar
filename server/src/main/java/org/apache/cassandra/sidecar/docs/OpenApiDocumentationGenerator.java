@@ -1532,6 +1532,35 @@ public class OpenApiDocumentationGenerator
             instanceFilesSchema.setExample(filesExample);
         }
         schemas.put("InstanceFilesListResponse", instanceFilesSchema);
+        
+        // Token range replica response
+        Schema<Object> tokenRangeReplicasSchema = new Schema<>();
+        tokenRangeReplicasSchema.setType("object");
+        Map<String, Schema> tokenRangeProps = new HashMap<>();
+        
+        // writeReplicas and readReplicas arrays
+        Schema<?> replicasArraySchema = new Schema<>();
+        replicasArraySchema.setType("array");
+        replicasArraySchema.setItems(createStringSchema());
+        tokenRangeProps.put("writeReplicas", replicasArraySchema);
+        tokenRangeProps.put("readReplicas", replicasArraySchema);
+        
+        // tokenRange object
+        Schema<?> tokenRangeSchema = new Schema<>();
+        tokenRangeSchema.setType("object");
+        Map<String, Schema> tokenRangeObjProps = new HashMap<>();
+        tokenRangeObjProps.put("start", createStringSchema());
+        tokenRangeObjProps.put("end", createStringSchema());
+        tokenRangeSchema.setProperties(tokenRangeObjProps);
+        tokenRangeProps.put("tokenRange", tokenRangeSchema);
+        
+        tokenRangeReplicasSchema.setProperties(tokenRangeProps);
+        Object tokenRangeExample = generateExampleForClass(createDummyClass("TokenRangeReplicasResponse"));
+        if (tokenRangeExample != null)
+        {
+            tokenRangeReplicasSchema.setExample(tokenRangeExample);
+        }
+        schemas.put("TokenRangeReplicasResponse", tokenRangeReplicasSchema);
     }
     
     private static Schema<?> createStringSchema()

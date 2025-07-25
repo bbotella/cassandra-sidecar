@@ -47,33 +47,31 @@ class OpenApiAnnotationValidationTest
     @Test
     void testCassandraOperationsModuleHasRequiredAnnotations()
     {
-        Class<?> moduleClass = CassandraOperationsModule.class;
-        Method[] methods = moduleClass.getDeclaredMethods();
+        // This test validates that the OpenAPI documentation system works correctly
+        // by checking that route key interfaces have proper @OpenApiEndpoint annotations
+        Class<?> vertxRouteMapKeysClass = org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys.class;
         
-        int annotatedMethods = 0;
-        for (Method method : methods)
+        int annotatedRouteKeys = 0;
+        for (Class<?> innerClass : vertxRouteMapKeysClass.getDeclaredClasses())
         {
-            if (method.isAnnotationPresent(ProvidesIntoMap.class))
+            if (innerClass.getSimpleName().endsWith("RouteKey") && innerClass.isInterface())
             {
-                boolean hasOpenApiAnnotations = method.isAnnotationPresent(Operation.class) ||
-                                                method.isAnnotationPresent(Tag.class) ||
-                                                method.isAnnotationPresent(ApiResponses.class);
+                org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint endpointAnnotation = 
+                    innerClass.getAnnotation(org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint.class);
                 
-                if (hasOpenApiAnnotations)
+                if (endpointAnnotation != null)
                 {
-                    annotatedMethods++;
+                    annotatedRouteKeys++;
                     
-                    // If it has Operation, it should also have ApiResponses
-                    if (method.isAnnotationPresent(Operation.class))
-                    {
-                        assertTrue(method.isAnnotationPresent(ApiResponses.class),
-                                   "Method " + method.getName() + " has @Operation but missing @ApiResponses");
-                    }
+                    // Validate that the annotation has required fields
+                    assertNotNull(endpointAnnotation.tag(), "Route key " + innerClass.getSimpleName() + " should have a tag");
+                    assertNotNull(endpointAnnotation.summary(), "Route key " + innerClass.getSimpleName() + " should have a summary");
+                    assertTrue(endpointAnnotation.responses().length > 0, "Route key " + innerClass.getSimpleName() + " should have responses");
                 }
             }
         }
         
-        assertThat(annotatedMethods).isGreaterThan(0);
+        assertThat(annotatedRouteKeys).isGreaterThan(0);
     }
 
     @Test
@@ -109,57 +107,77 @@ class OpenApiAnnotationValidationTest
     @Test
     void testRingApiHasProperSchemaReferences()
     {
-        Method[] methods = CassandraOperationsModule.class.getDeclaredMethods();
+        // This test validates that Ring and Gossip APIs have proper OpenAPI annotations
+        Class<?> vertxRouteMapKeysClass = org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys.class;
         
-        boolean foundRingMethod = false;
-        boolean foundGossipMethod = false;
+        boolean foundRingRouteKey = false;
+        boolean foundGossipRouteKey = false;
         
-        for (Method method : methods)
+        for (Class<?> innerClass : vertxRouteMapKeysClass.getDeclaredClasses())
         {
-            if (method.getName().contains("Ring") && method.isAnnotationPresent(ApiResponses.class))
+            if (innerClass.getSimpleName().endsWith("RouteKey") && innerClass.isInterface())
             {
-                foundRingMethod = true;
-                ApiResponses responses = method.getAnnotation(ApiResponses.class);
-                assertNotNull(responses, "Ring method should have ApiResponses annotation");
-                assertThat(responses.value()).isNotEmpty();
-            }
-            
-            if (method.getName().contains("Gossip") && method.isAnnotationPresent(ApiResponses.class))
-            {
-                foundGossipMethod = true;
-                ApiResponses responses = method.getAnnotation(ApiResponses.class);
-                assertNotNull(responses, "Gossip method should have ApiResponses annotation");
-                assertThat(responses.value()).isNotEmpty();
+                org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint endpointAnnotation = 
+                    innerClass.getAnnotation(org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint.class);
+                
+                if (endpointAnnotation != null)
+                {
+                    String className = innerClass.getSimpleName();
+                    
+                    if (className.contains("Ring"))
+                    {
+                        foundRingRouteKey = true;
+                        assertNotNull(endpointAnnotation.responses(), "Ring route key should have responses");
+                        assertThat(endpointAnnotation.responses()).isNotEmpty();
+                    }
+                    
+                    if (className.contains("Gossip"))
+                    {
+                        foundGossipRouteKey = true;
+                        assertNotNull(endpointAnnotation.responses(), "Gossip route key should have responses");
+                        assertThat(endpointAnnotation.responses()).isNotEmpty();
+                    }
+                }
             }
         }
         
-        assertTrue(foundRingMethod, "Should find at least one Ring method with ApiResponses");
-        assertTrue(foundGossipMethod, "Should find at least one Gossip method with ApiResponses");
+        assertTrue(foundRingRouteKey, "Should find at least one Ring route key with ApiResponses");
+        assertTrue(foundGossipRouteKey, "Should find at least one Gossip route key with ApiResponses");
     }
 
     @Test
     void testConfigurationApiHasProperAnnotations()
     {
-        Method[] methods = CdcModule.class.getDeclaredMethods();
+        // This test validates that configuration-related APIs have proper OpenAPI annotations
+        Class<?> vertxRouteMapKeysClass = org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys.class;
         
-        int configMethodsWithAnnotations = 0;
-        for (Method method : methods)
+        int configRouteKeysWithAnnotations = 0;
+        for (Class<?> innerClass : vertxRouteMapKeysClass.getDeclaredClasses())
         {
-            if (method.isAnnotationPresent(ProvidesIntoMap.class) && 
-                method.isAnnotationPresent(Operation.class))
+            if (innerClass.getSimpleName().endsWith("RouteKey") && innerClass.isInterface())
             {
-                Operation operation = method.getAnnotation(Operation.class);
-                if (operation.summary().toLowerCase().contains("config") ||
-                    operation.description().toLowerCase().contains("config"))
+                org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint endpointAnnotation = 
+                    innerClass.getAnnotation(org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint.class);
+                
+                if (endpointAnnotation != null)
                 {
-                    configMethodsWithAnnotations++;
-                    assertTrue(method.isAnnotationPresent(ApiResponses.class),
-                               "Configuration method " + method.getName() + " should have ApiResponses");
+                    String className = innerClass.getSimpleName();
+                    String summary = endpointAnnotation.summary().toLowerCase();
+                    String description = endpointAnnotation.description().toLowerCase();
+                    
+                    if (className.toLowerCase().contains("config") || 
+                        summary.contains("config") || 
+                        description.contains("config"))
+                    {
+                        configRouteKeysWithAnnotations++;
+                        assertTrue(endpointAnnotation.responses().length > 0,
+                                   "Configuration route key " + className + " should have responses");
+                    }
                 }
             }
         }
         
-        assertThat(configMethodsWithAnnotations).isGreaterThan(0);
+        assertThat(configRouteKeysWithAnnotations).isGreaterThan(0);
     }
 
     @Test
@@ -217,47 +235,119 @@ class OpenApiAnnotationValidationTest
 
     private void verifyModuleHasOpenApiAnnotations(Class<?> moduleClass, String moduleName)
     {
-        Method[] methods = moduleClass.getDeclaredMethods();
+        // This method validates that the OpenAPI documentation system includes route keys
+        // related to the given module by checking VertxRouteMapKeys annotations
+        Class<?> vertxRouteMapKeysClass = org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys.class;
         
-        int routeProviderMethods = 0;
-        int annotatedMethods = 0;
-        
-        for (Method method : methods)
+        int routeKeysWithAnnotations = 0;
+        for (Class<?> innerClass : vertxRouteMapKeysClass.getDeclaredClasses())
         {
-            if (method.isAnnotationPresent(ProvidesIntoMap.class))
+            if (innerClass.getSimpleName().endsWith("RouteKey") && innerClass.isInterface())
             {
-                routeProviderMethods++;
+                org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint endpointAnnotation = 
+                    innerClass.getAnnotation(org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint.class);
                 
-                boolean hasOpenApiAnnotations = method.isAnnotationPresent(Operation.class) ||
-                                                method.isAnnotationPresent(Tag.class) ||
-                                                method.isAnnotationPresent(ApiResponses.class);
-                
-                if (hasOpenApiAnnotations)
+                if (endpointAnnotation != null)
                 {
-                    annotatedMethods++;
+                    // Check if this route key might be related to the module
+                    String className = innerClass.getSimpleName();
+                    String tag = endpointAnnotation.tag();
+                    
+                    // Map module names to expected tags or route key patterns
+                    boolean isRelated = false;
+                    switch (moduleName)
+                    {
+                        case "RestoreJobModule":
+                            isRelated = tag.equals("Restore Jobs") || className.contains("Restore");
+                            break;
+                        case "SSTablesAccessModule":
+                            isRelated = tag.equals("SSTable Operations") || tag.equals("Snapshots") || 
+                                       className.contains("SSTable") || className.contains("Snapshot");
+                            break;
+                        case "CdcModule":
+                            isRelated = tag.equals("CDC") || className.contains("Cdc");
+                            break;
+                        case "LiveMigrationModule":
+                            isRelated = tag.equals("Live Migration") || className.contains("LiveMigration");
+                            break;
+                        case "HealthCheckModule":
+                            isRelated = tag.equals("Health") || className.contains("Health");
+                            break;
+                        default:
+                            isRelated = true; // For other modules, just count all annotations
+                    }
+                    
+                    if (isRelated)
+                    {
+                        routeKeysWithAnnotations++;
+                    }
                 }
             }
         }
         
-        assertThat(routeProviderMethods).isGreaterThan(0);
-        // Note: Not all route provider methods need OpenAPI annotations (some may be internal)
-        // but we should have at least some documented endpoints
-        assertTrue(annotatedMethods >= 0, 
-                   moduleName + " should have some OpenAPI annotated methods");
+        // We should have at least some documented endpoints related to each module
+        assertTrue(routeKeysWithAnnotations > 0, 
+                   moduleName + " should have some OpenAPI annotated route keys");
     }
 
     private void verifyTagConsistencyForModule(Class<?> moduleClass, Set<String> expectedTags)
     {
-        Method[] methods = moduleClass.getDeclaredMethods();
+        // This method validates that route keys use consistent tags as expected for each module
+        Class<?> vertxRouteMapKeysClass = org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys.class;
         
-        for (Method method : methods)
+        for (Class<?> innerClass : vertxRouteMapKeysClass.getDeclaredClasses())
         {
-            if (method.isAnnotationPresent(Tag.class))
+            if (innerClass.getSimpleName().endsWith("RouteKey") && innerClass.isInterface())
             {
-                Tag tag = method.getAnnotation(Tag.class);
-                assertTrue(expectedTags.contains(tag.name()),
-                           "Unexpected tag '" + tag.name() + "' in " + moduleClass.getSimpleName() + 
-                           ". Expected one of: " + expectedTags);
+                org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint endpointAnnotation = 
+                    innerClass.getAnnotation(org.apache.cassandra.sidecar.modules.multibindings.OpenApiEndpoint.class);
+                
+                if (endpointAnnotation != null)
+                {
+                    String tag = endpointAnnotation.tag();
+                    String className = innerClass.getSimpleName();
+                    
+                    // Check if this route key is related to the module being tested
+                    boolean isRelatedToModule = false;
+                    String moduleName = moduleClass.getSimpleName();
+                    
+                    switch (moduleName)
+                    {
+                        case "CassandraOperationsModule":
+                            isRelatedToModule = className.contains("Ring") || className.contains("Schema") || 
+                                               className.contains("Node") || className.contains("Operational") || 
+                                               className.contains("Connected") ||
+                                               className.equals("CassandraStreamStatsRouteKey") ||
+                                               className.equals("CassandraGossipInfoRouteKey") ||
+                                               className.equals("UpdateNodeGossipStateRouteKey");
+                            break;
+                        case "RestoreJobModule":
+                            isRelatedToModule = className.contains("Restore");
+                            break;
+                        case "SSTablesAccessModule":
+                            isRelatedToModule = className.contains("SSTable") || className.contains("Snapshot") || 
+                                               className.equals("StreamSSTableComponentsRouteKey") ||
+                                               className.equals("StreamSSTableComponentsWithSecondaryIndexRouteKey") ||
+                                               className.equals("DeprecatedStreamSSTableComponentsRouteKey");
+                            break;
+                        case "CdcModule":
+                            isRelatedToModule = className.contains("Cdc") || className.equals("StreamCdcSegmentRouteKey");
+                            break;
+                        case "LiveMigrationModule":
+                            isRelatedToModule = className.contains("LiveMigration");
+                            break;
+                        case "HealthCheckModule":
+                            isRelatedToModule = className.contains("Health") || className.equals("CassandraGossipHealthRouteKey");
+                            break;
+                    }
+                    
+                    if (isRelatedToModule)
+                    {
+                        assertTrue(expectedTags.contains(tag),
+                                   "Unexpected tag '" + tag + "' in route key " + className + 
+                                   " for " + moduleClass.getSimpleName() + ". Expected one of: " + expectedTags);
+                    }
+                }
             }
         }
     }
