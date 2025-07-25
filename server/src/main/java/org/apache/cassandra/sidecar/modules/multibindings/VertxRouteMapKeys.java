@@ -38,7 +38,9 @@ public interface VertxRouteMapKeys
         summary = "Abort restore job",
         description = "Aborts an active restore job and stops all associated operations",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Restore job aborted successfully", mediaType = "application/json", schemaRef = "#/components/schemas/AbortRestoreJobResponse")
+            @OpenApiResponse(responseCode = "200", description = "Restore job aborted successfully", mediaType = "application/json", 
+                           example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"ABORTED\", \"message\": \"Restore job aborted successfully\"}",
+                           schemaRef = "#/components/schemas/AbortRestoreJobResponse")
         }
     )
     interface AbortRestoreJobRouteKey extends RouteClassKey
@@ -52,7 +54,9 @@ public interface VertxRouteMapKeys
         summary = "Get all keyspaces schema",
         description = "Returns the schema information for all keyspaces in the Cassandra cluster",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Schema information retrieved successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.SchemaResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "Schema information retrieved successfully", mediaType = "application/json", 
+                           example = "{\"keyspace\": \"test_keyspace\", \"schema\": \"CREATE KEYSPACE test_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};\"}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.SchemaResponse.class)
         }
     )
     interface AllKeyspacesSchemaRouteKey extends RouteClassKey
@@ -66,7 +70,9 @@ public interface VertxRouteMapKeys
         summary = "Get connected client stats",
         description = "Returns statistics about connected clients to the Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Connected client statistics retrieved successfully", mediaType = "application/json", schemaClass = java.util.Map.class)
+            @OpenApiResponse(responseCode = "200", description = "Connected client statistics retrieved successfully", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object")
         }
     )
     interface CassandraConnectedClientStatsRouteKey extends RouteClassKey
@@ -80,8 +86,11 @@ public interface VertxRouteMapKeys
         summary = "Check Cassandra gossip health",
         description = "Returns the health status of Cassandra's gossip protocol",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Cassandra gossip is healthy", mediaType = "application/json", schemaClass = java.util.Map.class),
-            @OpenApiResponse(responseCode = "503", description = "Cassandra gossip is unhealthy")
+            @OpenApiResponse(responseCode = "200", description = "Cassandra gossip is healthy", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object"),
+            @OpenApiResponse(responseCode = "503", description = "Cassandra gossip is unhealthy", mediaType = "application/json", 
+                           example = "{\"status\": \"UNHEALTHY\", \"message\": \"Gossip protocol is not responding\"}", schemaType = "object")
         }
     )
     interface CassandraGossipHealthRouteKey extends RouteClassKey
@@ -111,8 +120,11 @@ public interface VertxRouteMapKeys
         summary = "Check Cassandra health",
         description = "Returns the overall health status of the Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Cassandra is healthy", mediaType = "application/json", schemaClass = java.util.Map.class),
-            @OpenApiResponse(responseCode = "503", description = "Cassandra is unhealthy")
+            @OpenApiResponse(responseCode = "200", description = "Cassandra is healthy", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object"),
+            @OpenApiResponse(responseCode = "503", description = "Cassandra is unhealthy", mediaType = "application/json", 
+                           example = "{\"status\": \"UNHEALTHY\", \"message\": \"Cassandra node is not responding\"}", schemaType = "object")
         }
     )
     interface CassandraHealthRouteKey extends RouteClassKey
@@ -126,8 +138,11 @@ public interface VertxRouteMapKeys
         summary = "Check Cassandra JMX health",
         description = "Returns the health status of Cassandra's JMX interface",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Cassandra JMX is healthy", mediaType = "application/json", schemaClass = java.util.Map.class),
-            @OpenApiResponse(responseCode = "503", description = "Cassandra JMX is unhealthy")
+            @OpenApiResponse(responseCode = "200", description = "Cassandra JMX is healthy", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object"),
+            @OpenApiResponse(responseCode = "503", description = "Cassandra JMX is unhealthy", mediaType = "application/json", 
+                           example = "{\"status\": \"UNHEALTHY\", \"message\": \"JMX interface is not accessible\"}", schemaType = "object")
         }
     )
     interface CassandraJmxHealthRouteKey extends RouteClassKey
@@ -141,8 +156,11 @@ public interface VertxRouteMapKeys
         summary = "Check Cassandra native protocol health",
         description = "Returns the health status of Cassandra's native protocol interface",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Cassandra native protocol is healthy", mediaType = "application/json", schemaClass = java.util.Map.class),
-            @OpenApiResponse(responseCode = "503", description = "Cassandra native protocol is unhealthy")
+            @OpenApiResponse(responseCode = "200", description = "Cassandra native protocol is healthy", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object"),
+            @OpenApiResponse(responseCode = "503", description = "Cassandra native protocol is unhealthy", mediaType = "application/json", 
+                           example = "{\"status\": \"UNHEALTHY\", \"message\": \"Native protocol is not responding\"}", schemaType = "object")
         }
     )
     interface CassandraNativeHealthRouteKey extends RouteClassKey
@@ -156,7 +174,9 @@ public interface VertxRouteMapKeys
         summary = "Get node decommission status",
         description = "Returns the decommission status of a Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Node decommission status retrieved successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.OperationalJobResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "Node decommission status retrieved successfully", mediaType = "application/json", 
+                           example = "{\"jobId\": \"decommission-456\", \"operation\": \"DECOMMISSION\", \"status\": \"STARTED\", \"message\": \"Node decommission initiated\"}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.OperationalJobResponse.class)
         }
     )
     interface CassandraNodeDecommissionRouteKey extends RouteClassKey
@@ -170,7 +190,9 @@ public interface VertxRouteMapKeys
         summary = "Get node settings",
         description = "Returns configuration settings for the Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Node settings retrieved successfully", mediaType = "application/json", schemaClass = java.util.Map.class)
+            @OpenApiResponse(responseCode = "200", description = "Node settings retrieved successfully", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object")
         }
     )
     interface CassandraNodeSettingsRouteKey extends RouteClassKey
@@ -184,7 +206,9 @@ public interface VertxRouteMapKeys
         summary = "Get operational job status",
         description = "Returns the status of a specific operational job running on the node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Operational job status retrieved successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.OperationalJobResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "Operational job status retrieved successfully", mediaType = "application/json", 
+                           example = "{\"jobId\": \"decommission-456\", \"operation\": \"DECOMMISSION\", \"status\": \"STARTED\", \"message\": \"Node decommission initiated\"}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.OperationalJobResponse.class)
         }
     )
     interface CassandraOperationalJobRouteKey extends RouteClassKey
@@ -230,7 +254,9 @@ public interface VertxRouteMapKeys
         summary = "Get stream statistics",
         description = "Returns streaming statistics for the Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Stream statistics retrieved successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.StreamStatsResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "Stream statistics retrieved successfully", mediaType = "application/json", 
+                           example = "{\"operationMode\": \"JOINING\", \"streamsProgressStats\": {\"totalFilesToReceive\": 10, \"totalFilesReceived\": 7, \"totalBytesToReceive\": 104857600, \"totalBytesReceived\": 73400320, \"totalFilesToSend\": 5, \"totalFilesSent\": 3, \"totalBytesToSend\": 52428800, \"totalBytesSent\": 31457280}}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.StreamStatsResponse.class)
         }
     )
     interface CassandraStreamStatsRouteKey extends RouteClassKey
@@ -260,7 +286,9 @@ public interface VertxRouteMapKeys
         summary = "Clear snapshot",
         description = "Clears/deletes an existing snapshot",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Snapshot cleared successfully", mediaType = "application/json", schemaRef = "#/components/schemas/ClearSnapshotResponse")
+            @OpenApiResponse(responseCode = "200", description = "Snapshot cleared successfully", mediaType = "application/json", 
+                           example = "{\"result\": \"Success\", \"message\": \"Snapshot cleared successfully\"}",
+                           schemaRef = "#/components/schemas/ClearSnapshotResponse")
         }
     )
     interface ClearSnapshotRouteKey extends RouteClassKey
@@ -274,7 +302,9 @@ public interface VertxRouteMapKeys
         summary = "Create restore job",
         description = "Creates a new restore job for importing data from backup sources",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Restore job created successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.data.CreateRestoreJobResponsePayload.class)
+            @OpenApiResponse(responseCode = "200", description = "Restore job created successfully", mediaType = "application/json", 
+                           example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"CREATED\"}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.data.CreateRestoreJobResponsePayload.class)
         }
     )
     interface CreateRestoreJobRouteKey extends RouteClassKey
@@ -288,7 +318,9 @@ public interface VertxRouteMapKeys
         summary = "Create restore slice",
         description = "Creates a new restore slice as part of a restore job",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Restore slice created successfully", mediaType = "application/json", schemaRef = "#/components/schemas/CreateRestoreSliceResponsePayload")
+            @OpenApiResponse(responseCode = "200", description = "Restore slice created successfully", mediaType = "application/json", 
+                           example = "{\"sliceId\": \"slice-789\", \"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"CREATED\"}",
+                           schemaRef = "#/components/schemas/CreateRestoreSliceResponsePayload")
         }
     )
     interface CreateRestoreSliceRouteKey extends RouteClassKey
@@ -302,7 +334,9 @@ public interface VertxRouteMapKeys
         summary = "Create snapshot",
         description = "Creates a snapshot for the specified keyspace and table",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Snapshot created successfully", mediaType = "application/json", schemaRef = "#/components/schemas/CreateSnapshotResponse")
+            @OpenApiResponse(responseCode = "200", description = "Snapshot created successfully", mediaType = "application/json", 
+                           example = "{\"result\": \"Success\", \"snapshotName\": \"backup_20240101\", \"keyspace\": \"test_keyspace\", \"table\": \"test_table\"}",
+                           schemaRef = "#/components/schemas/CreateSnapshotResponse")
         }
     )
     interface CreateSnapshotRouteKey extends RouteClassKey
@@ -316,7 +350,9 @@ public interface VertxRouteMapKeys
         summary = "Report schema to DataHub",
         description = "Reports schema information to DataHub for data cataloging",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Schema reported successfully", mediaType = "application/json", schemaRef = "#/components/schemas/ReportSchemaResponse")
+            @OpenApiResponse(responseCode = "200", description = "Schema reported successfully", mediaType = "application/json", 
+                           example = "{\"result\": \"Success\", \"message\": \"Schema reported successfully\", \"timestamp\": \"2024-01-01T10:00:00Z\"}",
+                           schemaRef = "#/components/schemas/ReportSchemaResponse")
         }
     )
     interface DataHubSchemaReportingRouteKey extends RouteClassKey
@@ -332,7 +368,8 @@ public interface VertxRouteMapKeys
         responses = {
             @OpenApiResponse(responseCode = "200", description = "Service configuration deleted successfully", mediaType = "application/json", 
                            example = "{\"message\": \"Configuration deleted successfully\", \"deletedKey\": \"cdc.retention_hours\"}", schemaType = "object"),
-            @OpenApiResponse(responseCode = "404", description = "Configuration key not found")
+            @OpenApiResponse(responseCode = "404", description = "Configuration key not found", mediaType = "application/json", 
+                           example = "{\"error\": \"Configuration key not found\", \"code\": 404}", schemaType = "object")
         }
     )
     interface DeleteServiceConfigurationRouteKey extends RouteClassKey
@@ -346,7 +383,9 @@ public interface VertxRouteMapKeys
         summary = "Get all keyspaces schema (deprecated)",
         description = "Returns the schema information for all keyspaces in the Cassandra cluster. This endpoint is deprecated.",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Schema information retrieved successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.SchemaResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "Schema information retrieved successfully", mediaType = "application/json", 
+                           example = "{\"keyspace\": \"test_keyspace\", \"schema\": \"CREATE KEYSPACE test_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};\"}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.SchemaResponse.class)
         }
     )
     interface DeprecatedAllKeyspacesSchemaRouteKey extends RouteClassKey
@@ -360,7 +399,9 @@ public interface VertxRouteMapKeys
         summary = "Get keyspace schema (deprecated)",
         description = "Returns the schema information for a specific keyspace. This endpoint is deprecated.",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Keyspace schema retrieved successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.SchemaResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "Keyspace schema retrieved successfully", mediaType = "application/json", 
+                           example = "{\"keyspace\": \"test_keyspace\", \"schema\": \"CREATE KEYSPACE test_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};\"}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.SchemaResponse.class)
         }
     )
     interface DeprecatedKeyspaceSchemaRouteKey extends RouteClassKey
@@ -374,7 +415,9 @@ public interface VertxRouteMapKeys
         summary = "List snapshots (deprecated)",
         description = "Lists all snapshots available on the node. This endpoint is deprecated.",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Snapshots listed successfully", mediaType = "application/json", schemaRef = "#/components/schemas/ListSnapshotFilesResponse")
+            @OpenApiResponse(responseCode = "200", description = "Snapshots listed successfully", mediaType = "application/json", 
+                           example = "{\"snapshotFilesInfo\": [{\"size\": 1048576, \"host\": \"127.0.0.1\", \"port\": 9042, \"dataDirIndex\": 0, \"snapshotName\": \"backup_20240101\", \"keySpaceName\": \"test_keyspace\", \"tableName\": \"test_table\", \"fileName\": \"mc-1-big-Data.db\"}]}",
+                           schemaRef = "#/components/schemas/ListSnapshotFilesResponse")
         }
     )
     interface DeprecatedListSnapshotRouteKey extends RouteClassKey
@@ -388,7 +431,8 @@ public interface VertxRouteMapKeys
         summary = "Stream SSTable components (deprecated)",
         description = "Streams SSTable component files from the Cassandra node. This endpoint is deprecated.",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "SSTable component stream initiated successfully", mediaType = "application/octet-stream")
+            @OpenApiResponse(responseCode = "200", description = "SSTable component stream initiated successfully", mediaType = "application/octet-stream", 
+                           example = "[Binary SSTable component content]", schemaType = "string")
         }
     )
     interface DeprecatedStreamSSTableComponentsRouteKey extends RouteClassKey
@@ -402,7 +446,9 @@ public interface VertxRouteMapKeys
         summary = "Get all service configurations",
         description = "Returns all service configuration settings",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Service configurations retrieved successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload.class)
+            @OpenApiResponse(responseCode = "200", description = "Service configurations retrieved successfully", mediaType = "application/json", 
+                           example = "{\"configurations\": [{\"key\": \"cdc.retention_hours\", \"value\": \"24\"}, {\"key\": \"compaction.enabled\", \"value\": \"true\"}]}",
+                           schemaClass = org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload.class)
         }
     )
     interface GetAllServiceConfigurationsRouteKey extends RouteClassKey
@@ -416,7 +462,9 @@ public interface VertxRouteMapKeys
         summary = "Get restore job progress",
         description = "Returns the progress information for a specific restore job",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Restore job progress retrieved successfully", mediaType = "application/json", schemaRef = "#/components/schemas/RestoreJobProgressResponsePayload")
+            @OpenApiResponse(responseCode = "200", description = "Restore job progress retrieved successfully", mediaType = "application/json", 
+                           example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"IN_PROGRESS\", \"progressPercentage\": 75.5, \"message\": \"Restoring data files...\", \"startTime\": \"2024-01-01T10:00:00Z\", \"elapsedTime\": \"PT45M30S\"}",
+                           schemaRef = "#/components/schemas/RestoreJobProgressResponsePayload")
         }
     )
     interface GetRestoreJobProgressRouteKey extends RouteClassKey
@@ -430,7 +478,9 @@ public interface VertxRouteMapKeys
         summary = "Get restore job summary",
         description = "Returns a summary of restore jobs",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Restore job summary retrieved successfully", mediaType = "application/json", schemaRef = "#/components/schemas/RestoreJobSummaryResponsePayload")
+            @OpenApiResponse(responseCode = "200", description = "Restore job summary retrieved successfully", mediaType = "application/json", 
+                           example = "{\"jobs\": [{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"COMPLETED\", \"createdAt\": \"2024-01-01T10:00:00Z\", \"completedAt\": \"2024-01-01T11:30:00Z\"}]}",
+                           schemaRef = "#/components/schemas/RestoreJobSummaryResponsePayload")
         }
     )
     interface GetRestoreJobSummaryRouteKey extends RouteClassKey
@@ -444,7 +494,9 @@ public interface VertxRouteMapKeys
         summary = "Get keyspace schema",
         description = "Returns the schema information for a specific keyspace",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Keyspace schema retrieved successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.SchemaResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "Keyspace schema retrieved successfully", mediaType = "application/json", 
+                           example = "{\"keyspace\": \"test_keyspace\", \"schema\": \"CREATE KEYSPACE test_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};\"}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.SchemaResponse.class)
         }
     )
     interface KeyspaceSchemaRouteKey extends RouteClassKey
@@ -458,7 +510,9 @@ public interface VertxRouteMapKeys
         summary = "List operational jobs",
         description = "Returns a list of all operational jobs running on the node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Operational jobs listed successfully", mediaType = "application/json", schemaClass = java.util.List.class)
+            @OpenApiResponse(responseCode = "200", description = "Operational jobs listed successfully", mediaType = "application/json", 
+                           example = "[{\"jobId\": \"decommission-456\", \"operation\": \"DECOMMISSION\", \"status\": \"STARTED\", \"message\": \"Node decommission initiated\"}]",
+                           schemaType = "array")
         }
     )
     interface ListCassandraOperationalJobRouteKey extends RouteClassKey
@@ -472,7 +526,9 @@ public interface VertxRouteMapKeys
         summary = "List CDC segments",
         description = "Lists CDC (Change Data Capture) segments available for streaming",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "CDC segments listed successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.ListCdcSegmentsResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "CDC segments listed successfully", mediaType = "application/json", 
+                           example = "{\"segments\": [{\"filename\": \"CommitLog-7-1641024000000.log\", \"size\": 67108864, \"createdDate\": \"2024-01-01T10:00:00Z\"}]}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.ListCdcSegmentsResponse.class)
         }
     )
     interface ListCdcSegmentsRouteKey extends RouteClassKey
@@ -486,7 +542,9 @@ public interface VertxRouteMapKeys
         summary = "List snapshot files",
         description = "Lists all files in existing snapshots",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Snapshot files listed successfully", mediaType = "application/json", schemaRef = "#/components/schemas/ListSnapshotFilesResponse")
+            @OpenApiResponse(responseCode = "200", description = "Snapshot files listed successfully", mediaType = "application/json", 
+                           example = "{\"snapshotFilesInfo\": [{\"size\": 1048576, \"host\": \"127.0.0.1\", \"port\": 9042, \"dataDirIndex\": 0, \"snapshotName\": \"backup_20240101\", \"keySpaceName\": \"test_keyspace\", \"tableName\": \"test_table\", \"fileName\": \"mc-1-big-Data.db\"}]}",
+                           schemaRef = "#/components/schemas/ListSnapshotFilesResponse")
         }
     )
     interface ListSnapshotRouteKey extends RouteClassKey
@@ -500,7 +558,8 @@ public interface VertxRouteMapKeys
         summary = "Get OpenAPI specification",
         description = "Returns the OpenAPI specification for the Cassandra Sidecar API",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "OpenAPI specification retrieved successfully", mediaType = "application/json")
+            @OpenApiResponse(responseCode = "200", description = "OpenAPI specification retrieved successfully", mediaType = "application/json", 
+                           example = "{\"openapi\": \"3.0.0\", \"info\": {\"title\": \"Cassandra Sidecar API\", \"version\": \"1.0\"}}", schemaType = "object")
         }
     )
     interface OpenApiRouteKey extends RouteClassKey
@@ -514,7 +573,8 @@ public interface VertxRouteMapKeys
         summary = "Get Swagger UI",
         description = "Returns the Swagger UI for interactive API documentation",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Swagger UI page retrieved successfully", mediaType = "text/html")
+            @OpenApiResponse(responseCode = "200", description = "Swagger UI page retrieved successfully", mediaType = "text/html", 
+                           example = "<!DOCTYPE html><html><head><title>Swagger UI</title></head><body><div id=\"swagger-ui\"></div></body></html>", schemaType = "string")
         }
     )
     interface SwaggerUIRouteKey extends RouteClassKey
@@ -528,7 +588,8 @@ public interface VertxRouteMapKeys
         summary = "Get WebJar resources",
         description = "Serves WebJar resources for Swagger UI",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "WebJar resource retrieved successfully", mediaType = "application/javascript")
+            @OpenApiResponse(responseCode = "200", description = "WebJar resource retrieved successfully", mediaType = "application/javascript", 
+                           example = "// Swagger UI JavaScript resource content", schemaType = "string")
         }
     )
     interface WebJarRouteKey extends RouteClassKey
@@ -542,8 +603,10 @@ public interface VertxRouteMapKeys
         summary = "Stream file for live migration",
         description = "Streams a file for live migration data transfer",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "File stream for live migration initiated successfully", mediaType = "application/octet-stream"),
-            @OpenApiResponse(responseCode = "403", description = "Live migration not enabled or file access denied")
+            @OpenApiResponse(responseCode = "200", description = "File stream for live migration initiated successfully", mediaType = "application/octet-stream", 
+                           example = "[Binary file content]", schemaType = "string"),
+            @OpenApiResponse(responseCode = "403", description = "Live migration not enabled or file access denied", mediaType = "application/json", 
+                           example = "{\"error\": \"Live migration not enabled or file access denied\", \"code\": 403}", schemaType = "object")
         }
     )
     interface LiveMigrationFileStreamHandlerRouteKey extends RouteClassKey
@@ -557,8 +620,11 @@ public interface VertxRouteMapKeys
         summary = "List instance files",
         description = "Lists files available on an instance for live migration purposes",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Instance files listed successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.InstanceFilesListResponse.class),
-            @OpenApiResponse(responseCode = "403", description = "Live migration not enabled or node not configured for migration")
+            @OpenApiResponse(responseCode = "200", description = "Instance files listed successfully", mediaType = "application/json", 
+                           example = "{\"files\": [{\"filename\": \"mc-1-big-Data.db\", \"size\": 1048576, \"lastModified\": \"2024-01-01T10:00:00Z\"}]}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.InstanceFilesListResponse.class),
+            @OpenApiResponse(responseCode = "403", description = "Live migration not enabled or node not configured for migration", mediaType = "application/json", 
+                           example = "{\"error\": \"Live migration not enabled or node not configured for migration\", \"code\": 403}", schemaType = "object")
         }
     )
     interface LiveMigrationListInstanceFilesRouteKey extends RouteClassKey
@@ -572,7 +638,9 @@ public interface VertxRouteMapKeys
         summary = "Clean up SSTable files",
         description = "Cleans up SSTable files to free up disk space",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "SSTable cleanup completed successfully", mediaType = "application/json", schemaRef = "#/components/schemas/SSTableCleanupResponse")
+            @OpenApiResponse(responseCode = "200", description = "SSTable cleanup completed successfully", mediaType = "application/json", 
+                           example = "{\"result\": \"Success\", \"cleanedFiles\": 5, \"freedSpace\": \"10MB\"}",
+                           schemaRef = "#/components/schemas/SSTableCleanupResponse")
         }
     )
     interface SSTableCleanupRouteKey extends RouteClassKey
@@ -586,7 +654,9 @@ public interface VertxRouteMapKeys
         summary = "Import SSTable",
         description = "Imports previously uploaded SSTable files into the Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "SSTable imported successfully", mediaType = "application/json", schemaRef = "#/components/schemas/SSTableImportResponse")
+            @OpenApiResponse(responseCode = "200", description = "SSTable imported successfully", mediaType = "application/json", 
+                           example = "{\"success\": true, \"uploadId\": \"upload-123456\", \"keyspace\": \"test_keyspace\", \"tableName\": \"test_table\"}",
+                           schemaRef = "#/components/schemas/SSTableImportResponse")
         }
     )
     interface SSTableImportRouteKey extends RouteClassKey
@@ -600,7 +670,9 @@ public interface VertxRouteMapKeys
         summary = "Upload SSTable",
         description = "Uploads SSTable files to the Cassandra node for staging",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "SSTable uploaded successfully", mediaType = "application/json", schemaClass = org.apache.cassandra.sidecar.common.response.SSTableUploadResponse.class)
+            @OpenApiResponse(responseCode = "200", description = "SSTable uploaded successfully", mediaType = "application/json", 
+                           example = "{\"uploadId\": \"upload-789012\", \"uploadSizeBytes\": 2097152, \"serviceTimeMillis\": 1500}",
+                           schemaClass = org.apache.cassandra.sidecar.common.response.SSTableUploadResponse.class)
         }
     )
     interface SSTableUploadRouteKey extends RouteClassKey
@@ -614,7 +686,9 @@ public interface VertxRouteMapKeys
         summary = "Check Sidecar health",
         description = "Returns the health status of the Sidecar application",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Sidecar is healthy", mediaType = "application/json", schemaClass = java.util.Map.class)
+            @OpenApiResponse(responseCode = "200", description = "Sidecar is healthy", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object")
         }
     )
     interface SidecarHealthRouteKey extends RouteClassKey
@@ -628,7 +702,8 @@ public interface VertxRouteMapKeys
         summary = "Stream CDC segment",
         description = "Streams a specific CDC segment file for consumption",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "CDC segment stream initiated successfully", mediaType = "application/octet-stream")
+            @OpenApiResponse(responseCode = "200", description = "CDC segment stream initiated successfully", mediaType = "application/octet-stream", 
+                           example = "[Binary CDC segment content]", schemaType = "string")
         }
     )
     interface StreamCdcSegmentRouteKey extends RouteClassKey
@@ -642,7 +717,8 @@ public interface VertxRouteMapKeys
         summary = "Stream SSTable components",
         description = "Streams SSTable component files from the Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "SSTable component stream initiated successfully", mediaType = "application/octet-stream")
+            @OpenApiResponse(responseCode = "200", description = "SSTable component stream initiated successfully", mediaType = "application/octet-stream", 
+                           example = "[Binary SSTable component content]", schemaType = "string")
         }
     )
     interface StreamSSTableComponentsRouteKey extends RouteClassKey
@@ -656,7 +732,8 @@ public interface VertxRouteMapKeys
         summary = "Stream SSTable components with secondary index",
         description = "Streams SSTable component files with secondary index support",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "SSTable component with secondary index stream initiated successfully", mediaType = "application/octet-stream")
+            @OpenApiResponse(responseCode = "200", description = "SSTable component with secondary index stream initiated successfully", mediaType = "application/octet-stream", 
+                           example = "[Binary SSTable component with secondary index content]", schemaType = "string")
         }
     )
     interface StreamSSTableComponentsWithSecondaryIndexRouteKey extends RouteClassKey
@@ -670,7 +747,9 @@ public interface VertxRouteMapKeys
         summary = "Get table statistics",
         description = "Returns statistics for a specific table",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Table statistics retrieved successfully", mediaType = "application/json", schemaClass = java.util.Map.class)
+            @OpenApiResponse(responseCode = "200", description = "Table statistics retrieved successfully", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object")
         }
     )
     interface TableStatsRouteKey extends RouteClassKey
@@ -684,7 +763,9 @@ public interface VertxRouteMapKeys
         summary = "Get time skew information",
         description = "Returns time skew information for the node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Time skew information retrieved successfully", mediaType = "application/json", schemaClass = java.util.Map.class)
+            @OpenApiResponse(responseCode = "200", description = "Time skew information retrieved successfully", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object")
         }
     )
     interface TimeSkewRouteKey extends RouteClassKey
@@ -698,7 +779,9 @@ public interface VertxRouteMapKeys
         summary = "Update node gossip state",
         description = "Updates the gossip state of the Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Node gossip state updated successfully", mediaType = "application/json", schemaClass = java.util.Map.class)
+            @OpenApiResponse(responseCode = "200", description = "Node gossip state updated successfully", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object")
         }
     )
     interface UpdateNodeGossipStateRouteKey extends RouteClassKey
@@ -712,7 +795,9 @@ public interface VertxRouteMapKeys
         summary = "Update node native state",
         description = "Updates the native protocol state of the Cassandra node",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Node native state updated successfully", mediaType = "application/json", schemaClass = java.util.Map.class)
+            @OpenApiResponse(responseCode = "200", description = "Node native state updated successfully", mediaType = "application/json", 
+                           example = "{\"status\": \"OK\"}",
+                           schemaType = "object")
         }
     )
     interface UpdateNodeNativeStateRouteKey extends RouteClassKey
@@ -726,7 +811,9 @@ public interface VertxRouteMapKeys
         summary = "Update restore job",
         description = "Updates an existing restore job configuration",
         responses = {
-            @OpenApiResponse(responseCode = "200", description = "Restore job updated successfully", mediaType = "application/json", schemaRef = "#/components/schemas/UpdateRestoreJobResponsePayload")
+            @OpenApiResponse(responseCode = "200", description = "Restore job updated successfully", mediaType = "application/json", 
+                           example = "{\"jobId\": \"123e4567-e89b-12d3-a456-426614174000\", \"status\": \"UPDATED\", \"message\": \"Job configuration updated\"}",
+                           schemaRef = "#/components/schemas/UpdateRestoreJobResponsePayload")
         }
     )
     interface UpdateRestoreJobRouteKey extends RouteClassKey

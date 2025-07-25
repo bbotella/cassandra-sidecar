@@ -850,12 +850,7 @@ public class OpenApiDocumentationGenerator
         
         schema.setProperties(properties);
         
-        // Add examples based on known response types
-        Object example = generateExampleForClass(clazz);
-        if (example != null)
-        {
-            schema.setExample(example);
-        }
+        // Examples are now provided in the annotations
         
         return schema;
     }
@@ -991,218 +986,6 @@ public class OpenApiDocumentationGenerator
         return propertySchema;
     }
     
-    /**
-     * Generates example data for known response classes
-     */
-    private static Object generateExampleForClass(Class<?> clazz)
-    {
-        String className = clazz.getSimpleName();
-        
-        switch (className)
-        {
-            case "ListSnapshotFilesResponse":
-                Map<String, Object> listSnapshotExample = new HashMap<>();
-                Map<String, Object> fileInfoExample = new HashMap<>();
-                fileInfoExample.put("size", 1048576L);
-                fileInfoExample.put("host", "127.0.0.1");
-                fileInfoExample.put("port", 9042);
-                fileInfoExample.put("dataDirIndex", 0);
-                fileInfoExample.put("snapshotName", "backup_20240101");
-                fileInfoExample.put("keySpaceName", "test_keyspace");
-                fileInfoExample.put("tableName", "test_table");
-                fileInfoExample.put("fileName", "mc-1-big-Data.db");
-                listSnapshotExample.put("snapshotFilesInfo", List.of(fileInfoExample));
-                return listSnapshotExample;
-                
-            case "CreateRestoreJobResponsePayload":
-                Map<String, Object> createJobExample = new HashMap<>();
-                createJobExample.put("jobId", "123e4567-e89b-12d3-a456-426614174000");
-                createJobExample.put("status", "CREATED");
-                return createJobExample;
-                
-            case "UpdateRestoreJobResponsePayload":
-                Map<String, Object> updateJobExample = new HashMap<>();
-                updateJobExample.put("jobId", "123e4567-e89b-12d3-a456-426614174000");
-                updateJobExample.put("status", "UPDATED");
-                updateJobExample.put("message", "Job configuration updated");
-                return updateJobExample;
-                
-            case "CreateRestoreSliceResponsePayload":
-                Map<String, Object> createSliceExample = new HashMap<>();
-                createSliceExample.put("sliceId", "slice-789");
-                createSliceExample.put("jobId", "123e4567-e89b-12d3-a456-426614174000");
-                createSliceExample.put("status", "CREATED");
-                return createSliceExample;
-                
-            case "SSTableImportResponse":
-                Map<String, Object> importExample = new HashMap<>();
-                importExample.put("success", true);
-                importExample.put("uploadId", "upload-123456");
-                importExample.put("keyspace", "test_keyspace");
-                importExample.put("tableName", "test_table");
-                return importExample;
-                
-            case "SSTableUploadResponse":
-                Map<String, Object> uploadExample = new HashMap<>();
-                uploadExample.put("uploadId", "upload-789012");
-                uploadExample.put("uploadSizeBytes", 2097152L);
-                uploadExample.put("serviceTimeMillis", 1500L);
-                return uploadExample;
-                
-            case "StreamStatsResponse":
-                Map<String, Object> streamExample = new HashMap<>();
-                streamExample.put("operationMode", "JOINING");
-                Map<String, Object> statsExample = new HashMap<>();
-                statsExample.put("totalFilesToReceive", 10L);
-                statsExample.put("totalFilesReceived", 7L);
-                statsExample.put("totalBytesToReceive", 104857600L);
-                statsExample.put("totalBytesReceived", 73400320L);
-                statsExample.put("totalFilesToSend", 5L);
-                statsExample.put("totalFilesSent", 3L);
-                statsExample.put("totalBytesToSend", 52428800L);
-                statsExample.put("totalBytesSent", 31457280L);
-                streamExample.put("streamsProgressStats", statsExample);
-                return streamExample;
-                
-            case "GossipInfoResponse":
-                Map<String, Object> gossipExample = new HashMap<>();
-                Map<String, Object> nodeInfo = new HashMap<>();
-                nodeInfo.put("generation", "1641024000"); 
-                nodeInfo.put("heartbeat", "12345");
-                nodeInfo.put("dc", "datacenter1");
-                nodeInfo.put("rack", "rack1");
-                nodeInfo.put("releaseVersion", "4.1.0");
-                nodeInfo.put("schema", "a1b2c3d4-e5f6-7890-abcd-ef1234567890");
-                nodeInfo.put("load", "1024.5 MB");
-                nodeInfo.put("hostId", "550e8400-e29b-41d4-a716-446655440000");
-                gossipExample.put("/127.0.0.1:7000", nodeInfo);
-                return gossipExample;
-                
-            case "SchemaResponse":
-                Map<String, Object> schemaExample = new HashMap<>();
-                schemaExample.put("keyspace", "test_keyspace");
-                schemaExample.put("schema", "CREATE KEYSPACE test_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};");
-                return schemaExample;
-                
-            case "HealthResponse":
-                return Collections.singletonMap("status", "OK");
-                
-            case "RingResponse":
-                Map<String, Object> ringEntryExample = new HashMap<>();
-                ringEntryExample.put("datacenter", "datacenter1");
-                ringEntryExample.put("address", "127.0.0.1");
-                ringEntryExample.put("port", 7000);
-                ringEntryExample.put("rack", "rack1");
-                ringEntryExample.put("status", "Up");
-                ringEntryExample.put("state", "Normal");
-                ringEntryExample.put("load", "1024.5 MB");
-                ringEntryExample.put("owns", "33.33%");
-                ringEntryExample.put("token", "1234567890123456789");
-                ringEntryExample.put("fqdn", "node1.cluster.local");
-                ringEntryExample.put("hostId", "550e8400-e29b-41d4-a716-446655440000");
-                return List.of(ringEntryExample);
-                
-            case "TokenRangeReplicasResponse":
-                Map<String, Object> rangeExample = new HashMap<>();
-                rangeExample.put("writeReplicas", List.of("127.0.0.1:9042", "127.0.0.2:9042"));
-                rangeExample.put("readReplicas", List.of("127.0.0.1:9042", "127.0.0.2:9042", "127.0.0.3:9042"));
-                Map<String, Object> tokenRangeExample = new HashMap<>();
-                tokenRangeExample.put("start", "0");
-                tokenRangeExample.put("end", "1000000000000000000");
-                rangeExample.put("tokenRange", tokenRangeExample);
-                return rangeExample;
-                
-            case "RestoreJobProgressResponsePayload":
-                Map<String, Object> progressExample = new HashMap<>();
-                progressExample.put("jobId", "123e4567-e89b-12d3-a456-426614174000");
-                progressExample.put("status", "IN_PROGRESS");
-                progressExample.put("progressPercentage", 75.5);
-                progressExample.put("message", "Restoring data files...");
-                progressExample.put("startTime", "2024-01-01T10:00:00Z");
-                progressExample.put("elapsedTime", "PT45M30S");
-                return progressExample;
-                
-            case "RestoreJobSummaryResponsePayload":
-                Map<String, Object> summaryExample = new HashMap<>();
-                Map<String, Object> jobExample = new HashMap<>();
-                jobExample.put("jobId", "123e4567-e89b-12d3-a456-426614174000");
-                jobExample.put("status", "COMPLETED");
-                jobExample.put("createdAt", "2024-01-01T10:00:00Z");
-                jobExample.put("completedAt", "2024-01-01T11:30:00Z");
-                summaryExample.put("jobs", List.of(jobExample));
-                return summaryExample;
-                
-            case "ListCdcSegmentsResponse":
-                Map<String, Object> cdcExample = new HashMap<>();
-                Map<String, Object> segmentExample = new HashMap<>();
-                segmentExample.put("filename", "CommitLog-7-1641024000000.log");
-                segmentExample.put("size", 67108864L);
-                segmentExample.put("createdDate", "2024-01-01T10:00:00Z");
-                cdcExample.put("segments", List.of(segmentExample));
-                return cdcExample;
-                
-            case "UpdateServiceConfigResponse":
-                Map<String, Object> configExample = new HashMap<>();
-                configExample.put("message", "Service configuration updated successfully");
-                configExample.put("timestamp", "2024-01-01T10:00:00Z");
-                return configExample;
-                
-            case "OperationalJobResponse":
-                Map<String, Object> opExample = new HashMap<>();
-                opExample.put("jobId", "decommission-456");
-                opExample.put("operation", "DECOMMISSION");
-                opExample.put("status", "STARTED");
-                opExample.put("message", "Node decommission initiated");
-                return opExample;
-                
-            case "InstanceFilesListResponse":
-                Map<String, Object> filesExample = new HashMap<>();
-                Map<String, Object> fileExample = new HashMap<>();
-                fileExample.put("filename", "mc-1-big-Data.db");
-                fileExample.put("size", 1048576L);
-                fileExample.put("lastModified", "2024-01-01T10:00:00Z");
-                filesExample.put("files", List.of(fileExample));
-                return filesExample;
-                
-            case "CreateSnapshotResponse":
-                Map<String, Object> createExample = new HashMap<>();
-                createExample.put("result", "Success");
-                createExample.put("snapshotName", "backup_20240101");
-                createExample.put("keyspace", "test_keyspace");
-                createExample.put("table", "test_table");
-                return createExample;
-                
-            case "ClearSnapshotResponse":
-                Map<String, Object> clearExample = new HashMap<>();
-                clearExample.put("result", "Success");
-                clearExample.put("message", "Snapshot cleared successfully");
-                return clearExample;
-                
-            case "SSTableCleanupResponse":
-                Map<String, Object> cleanupExample = new HashMap<>();
-                cleanupExample.put("result", "Success");
-                cleanupExample.put("cleanedFiles", 5);
-                cleanupExample.put("freedSpace", "10MB");
-                return cleanupExample;
-                
-            case "ReportSchemaResponse":
-                Map<String, Object> reportExample = new HashMap<>();
-                reportExample.put("result", "Success");
-                reportExample.put("message", "Schema reported successfully");
-                reportExample.put("timestamp", "2024-01-01T10:00:00Z");
-                return reportExample;
-                
-            case "AbortRestoreJobResponse":
-                Map<String, Object> abortExample = new HashMap<>();
-                abortExample.put("jobId", "123e4567-e89b-12d3-a456-426614174000");
-                abortExample.put("status", "ABORTED");
-                abortExample.put("message", "Restore job aborted successfully");
-                return abortExample;
-                
-            default:
-                return null;
-        }
-    }
     
     /**
      * Adds synthetic response schemas for endpoints that don't have proper response classes
@@ -1228,11 +1011,7 @@ public class OpenApiDocumentationGenerator
         ringEntryProps.put("hostId", createStringSchema());
         ringEntrySchema.setProperties(ringEntryProps);
         ringResponseSchema.setItems(ringEntrySchema);
-        Object ringExample = generateExampleForClass(createDummyClass("RingResponse"));
-        if (ringExample != null)
-        {
-            ringResponseSchema.setExample(ringExample);
-        }
+        // Ring response example is now in the annotation
         schemas.put("RingResponse", ringResponseSchema);
         
         // Gossip info response schema
@@ -1258,11 +1037,7 @@ public class OpenApiDocumentationGenerator
         gossipEntryProps.put("statusWithPort", createStringSchema());
         gossipEntrySchema.setProperties(gossipEntryProps);
         gossipResponseSchema.setAdditionalProperties(gossipEntrySchema);
-        Object gossipResponseExample = generateExampleForClass(createDummyClass("GossipInfoResponse"));
-        if (gossipResponseExample != null)
-        {
-            gossipResponseSchema.setExample(gossipResponseExample);
-        }
+        // Gossip info response example is now in the annotation
         schemas.put("GossipInfoResponse", gossipResponseSchema);
         
         // Simple success response schemas
@@ -1284,11 +1059,7 @@ public class OpenApiDocumentationGenerator
         progressProps.put("startTime", createStringSchema());
         progressProps.put("elapsedTime", createStringSchema());
         restoreProgressSchema.setProperties(progressProps);
-        Object progressExample = generateExampleForClass(createDummyClass("RestoreJobProgressResponsePayload"));
-        if (progressExample != null)
-        {
-            restoreProgressSchema.setExample(progressExample);
-        }
+        // Progress response example is now in the annotation
         schemas.put("RestoreJobProgressResponsePayload", restoreProgressSchema);
         
         // CDC responses
@@ -1307,11 +1078,7 @@ public class OpenApiDocumentationGenerator
         Map<String, Schema> cdcProps = new HashMap<>();
         cdcProps.put("segments", segmentArraySchema);
         cdcSegmentsSchema.setProperties(cdcProps);
-        Object cdcExample = generateExampleForClass(createDummyClass("ListCdcSegmentsResponse"));
-        if (cdcExample != null)
-        {
-            cdcSegmentsSchema.setExample(cdcExample);
-        }
+        // CDC response example is now in the annotation
         schemas.put("ListCdcSegmentsResponse", cdcSegmentsSchema);
         
         // Operation response
@@ -1323,11 +1090,7 @@ public class OpenApiDocumentationGenerator
         operationProps.put("status", createStringSchema());
         operationProps.put("message", createStringSchema());
         operationResponseSchema.setProperties(operationProps);
-        Object operationExample = generateExampleForClass(createDummyClass("OperationalJobResponse"));
-        if (operationExample != null)
-        {
-            operationResponseSchema.setExample(operationExample);
-        }
+        // Operation response example is now in the annotation
         // Add more response schemas for endpoints using inline examples
         
         // SSTable Upload/Import responses
@@ -1338,11 +1101,7 @@ public class OpenApiDocumentationGenerator
         uploadProps.put("uploadSizeBytes", createLongSchema());
         uploadProps.put("serviceTimeMillis", createLongSchema());
         sstableUploadSchema.setProperties(uploadProps);
-        Object uploadExample = generateExampleForClass(createDummyClass("SSTableUploadResponse"));
-        if (uploadExample != null)
-        {
-            sstableUploadSchema.setExample(uploadExample);
-        }
+        // SSTable upload response example is now in the annotation
         schemas.put("SSTableUploadResponse", sstableUploadSchema);
         
         Schema<Object> sstableImportSchema = new Schema<>();
@@ -1353,11 +1112,7 @@ public class OpenApiDocumentationGenerator
         importProps.put("keyspace", createStringSchema());
         importProps.put("tableName", createStringSchema());
         sstableImportSchema.setProperties(importProps);
-        Object importExample = generateExampleForClass(createDummyClass("SSTableImportResponse"));
-        if (importExample != null)
-        {
-            sstableImportSchema.setExample(importExample);
-        }
+        // SSTable import response example is now in the annotation
         schemas.put("SSTableImportResponse", sstableImportSchema);
         
         // Snapshot listing response
@@ -1381,11 +1136,7 @@ public class OpenApiDocumentationGenerator
         snapshotFilesArraySchema.setItems(snapshotFileSchema);
         listSnapshotProps.put("snapshotFilesInfo", snapshotFilesArraySchema);
         listSnapshotSchema.setProperties(listSnapshotProps);
-        Object listSnapshotExample = generateExampleForClass(createDummyClass("ListSnapshotFilesResponse"));
-        if (listSnapshotExample != null)
-        {
-            listSnapshotSchema.setExample(listSnapshotExample);
-        }
+        // List snapshot response example is now in the annotation
         schemas.put("ListSnapshotFilesResponse", listSnapshotSchema);
         
         // Stream Stats response
@@ -1403,11 +1154,7 @@ public class OpenApiDocumentationGenerator
         streamsProgressSchema.setProperties(progressStatsProps);
         streamProps.put("streamsProgressStats", streamsProgressSchema);
         streamStatsSchema.setProperties(streamProps);
-        Object streamExample = generateExampleForClass(createDummyClass("StreamStatsResponse"));
-        if (streamExample != null)
-        {
-            streamStatsSchema.setExample(streamExample);
-        }
+        // Stream stats response example is now in the annotation
         schemas.put("StreamStatsResponse", streamStatsSchema);
         
         // Schema response
@@ -1417,11 +1164,7 @@ public class OpenApiDocumentationGenerator
         schemaProps.put("keyspace", createStringSchema());
         schemaProps.put("schema", createStringSchema());
         schemaResponseSchema.setProperties(schemaProps);
-        Object schemaExample = generateExampleForClass(createDummyClass("SchemaResponse"));
-        if (schemaExample != null)
-        {
-            schemaResponseSchema.setExample(schemaExample);
-        }
+        // Schema response example is now in the annotation
         schemas.put("SchemaResponse", schemaResponseSchema);
         
         // Additional GossipInfoResponse schema (already defined above but keeping for completeness)
@@ -1434,11 +1177,7 @@ public class OpenApiDocumentationGenerator
         createJobProps.put("jobId", createUuidSchema());
         createJobProps.put("status", createStringSchema());
         createRestoreJobSchema.setProperties(createJobProps);
-        Object createJobExample = generateExampleForClass(createDummyClass("CreateRestoreJobResponsePayload"));
-        if (createJobExample != null)
-        {
-            createRestoreJobSchema.setExample(createJobExample);
-        }
+        // Example is now provided in the annotation
         schemas.put("CreateRestoreJobResponsePayload", createRestoreJobSchema);
         
         Schema<Object> restoreJobSummarySchema = new Schema<>();
@@ -1457,11 +1196,7 @@ public class OpenApiDocumentationGenerator
         jobsArraySchema.setItems(jobSchema);
         summaryProps.put("jobs", jobsArraySchema);
         restoreJobSummarySchema.setProperties(summaryProps);
-        Object summaryExample = generateExampleForClass(createDummyClass("RestoreJobSummaryResponsePayload"));
-        if (summaryExample != null)
-        {
-            restoreJobSummarySchema.setExample(summaryExample);
-        }
+        // Example is now provided in the annotation
         schemas.put("RestoreJobSummaryResponsePayload", restoreJobSummarySchema);
         
         // Additional restore job response schemas
@@ -1472,11 +1207,7 @@ public class OpenApiDocumentationGenerator
         updateJobProps.put("status", createStringSchema());
         updateJobProps.put("message", createStringSchema());
         updateRestoreJobSchema.setProperties(updateJobProps);
-        Object updateJobExample = generateExampleForClass(createDummyClass("UpdateRestoreJobResponsePayload"));
-        if (updateJobExample != null)
-        {
-            updateRestoreJobSchema.setExample(updateJobExample);
-        }
+        // Example is now provided in the annotation
         schemas.put("UpdateRestoreJobResponsePayload", updateRestoreJobSchema);
         
         Schema<Object> createRestoreSliceSchema = new Schema<>();
@@ -1486,11 +1217,7 @@ public class OpenApiDocumentationGenerator
         createSliceProps.put("jobId", createUuidSchema());
         createSliceProps.put("status", createStringSchema());
         createRestoreSliceSchema.setProperties(createSliceProps);
-        Object createSliceExample = generateExampleForClass(createDummyClass("CreateRestoreSliceResponsePayload"));
-        if (createSliceExample != null)
-        {
-            createRestoreSliceSchema.setExample(createSliceExample);
-        }
+        // Example is now provided in the annotation
         schemas.put("CreateRestoreSliceResponsePayload", createRestoreSliceSchema);
         
         // Service configuration responses
@@ -1526,11 +1253,7 @@ public class OpenApiDocumentationGenerator
         filesArraySchema.setItems(fileSchema);
         filesProps.put("files", filesArraySchema);
         instanceFilesSchema.setProperties(filesProps);
-        Object filesExample = generateExampleForClass(createDummyClass("InstanceFilesListResponse"));
-        if (filesExample != null)
-        {
-            instanceFilesSchema.setExample(filesExample);
-        }
+        // Example is now provided in the annotation
         schemas.put("InstanceFilesListResponse", instanceFilesSchema);
         
         // Token range replica response
@@ -1555,11 +1278,7 @@ public class OpenApiDocumentationGenerator
         tokenRangeProps.put("tokenRange", tokenRangeSchema);
         
         tokenRangeReplicasSchema.setProperties(tokenRangeProps);
-        Object tokenRangeExample = generateExampleForClass(createDummyClass("TokenRangeReplicasResponse"));
-        if (tokenRangeExample != null)
-        {
-            tokenRangeReplicasSchema.setExample(tokenRangeExample);
-        }
+        // Example is now provided in the annotation
         schemas.put("TokenRangeReplicasResponse", tokenRangeReplicasSchema);
     }
     
@@ -1617,21 +1336,8 @@ public class OpenApiDocumentationGenerator
         props.put("result", createStringSchema());
         props.put("message", createStringSchema());
         schema.setProperties(props);
-        Object example = generateExampleForClass(createDummyClass(className));
-        if (example != null)
-        {
-            schema.setExample(example);
-        }
+        // Example is now provided in the annotation
         return schema;
     }
     
-    private static Class<?> createDummyClass(String className)
-    {
-        // Create a simple class reference for example generation
-        switch (className)
-        {
-            case "RingResponse": return java.util.List.class;
-            default: return java.util.Map.class;
-        }
-    }
 }
