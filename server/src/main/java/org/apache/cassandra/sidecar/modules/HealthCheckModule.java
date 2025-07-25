@@ -54,7 +54,9 @@ public class HealthCheckModule extends AbstractModule
     VertxRoute sidecarHealthRoute(RouteBuilder.Factory factory)
     {
         return factory.builderForUnauthorizedRoute()
-                      .handler(context -> context.json(ApiModule.OK_STATUS))
+                      .handler(context -> {
+                          context.json(ApiModule.OK_STATUS);
+                      })
                       .build();
     }
 

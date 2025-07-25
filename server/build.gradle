@@ -126,6 +126,17 @@ dependencies {
 
     // DataHub client is used to convert and report Cassandra schema on a periodic basis
     implementation(group: 'io.acryl', name: 'datahub-client', version: '0.15.0-3')
+    
+    // OpenAPI support
+    implementation('org.eclipse.microprofile.openapi:microprofile-openapi-api:3.1.1')
+    implementation('io.swagger.core.v3:swagger-core:2.2.21')
+    implementation('io.swagger.core.v3:swagger-annotations:2.2.21')
+    implementation('io.swagger.core.v3:swagger-models:2.2.21')
+    implementation('io.swagger.core.v3:swagger-jaxrs2:2.2.21')
+    implementation('org.webjars:swagger-ui:5.17.14')
+    
+    // For HTML documentation generation
+    compileOnly('io.swagger.codegen.v3:swagger-codegen-cli:3.0.46')
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${project.junitVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-params:${project.junitVersion}"
@@ -228,6 +239,9 @@ jib {
     to {
         image = "cassandra-sidecar:${project.version}"
     }
+    container {
+        mainClass = 'org.apache.cassandra.sidecar.CassandraSidecarDaemon'
+    }
 }
 
 spotbugsTest.enabled = false
@@ -236,3 +250,62 @@ checkstyleContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 spotbugsContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 
 check.dependsOn containerTest, integrationTest, jacocoTestReport
+
+// Task to generate OpenAPI documentation
+tasks.register('generateOpenApiDocs', JavaExec) {
+    group = 'documentation'
+    description = 'Generates OpenAPI documentation files (JSON, YAML, HTML)'
+    
+    dependsOn compileJava
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.apache.cassandra.sidecar.docs.OpenApiDocumentationGenerator'
+    
+    def outputDir = layout.buildDirectory.dir('docs/openapi').get().asFile
+    args outputDir.absolutePath
+    
+    outputs.dir outputDir
+    
+    doFirst {
+        if (!outputDir.exists()) {
+            outputDir.mkdirs()
+        }
+    }
+    
+    doLast {
+        println "\nOpenAPI documentation generated at:"
+        println "  JSON: ${outputDir}/openapi.json"
+        println "  YAML: ${outputDir}/openapi.yaml" 
+        println "  HTML: ${outputDir}/api-docs.html"
+        println "\nTo view the documentation, open: ${outputDir}/api-docs.html"
+    }
+}
+
+// Task to generate and open the HTML documentation
+tasks.register('openApiDocs') {
+    group = 'documentation'
+    description = 'Generates and opens OpenAPI documentation in the default browser'
+    
+    dependsOn 'generateOpenApiDocs'
+    
+    doLast {
+        def htmlFile = layout.buildDirectory.file('docs/openapi/api-docs.html').get().asFile
+        if (htmlFile.exists()) {
+            if (System.getProperty('os.name').toLowerCase().contains('mac')) {
+                exec {
+                    commandLine 'open', htmlFile.absolutePath
+                }
+            } else if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+                exec {
+                    commandLine 'cmd', '/c', 'start', htmlFile.absolutePath
+                }
+            } else {
+                exec {
+                    commandLine 'xdg-open', htmlFile.absolutePath
+                }
+            }
+            println "Documentation opened in browser: ${htmlFile.absolutePath}"
+        } else {
+            println "Documentation file not found: ${htmlFile.absolutePath}"
+        }
+    }
+}

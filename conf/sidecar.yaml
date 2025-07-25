@@ -398,3 +398,14 @@ live_migration:
     - glob:${DATA_FILE_DIR}/*/*/snapshots # Excludes snapshot directories in data folder to copy to destination
   migration_map:                          # Map of source and destination Cassandra instances
 #    localhost1: localhost4               # This entry says that localhost1 will be migrated to localhost4
+
+# OpenAPI documentation configuration
+openapi:
+  enabled: true
+  title: "Cassandra Sidecar API"
+  description: "REST API for managing Apache Cassandra operations"
+  version: "1.0.0"
+  license_name: "Apache License 2.0"
+  license_url: "https://www.apache.org/licenses/LICENSE-2.0"
+  server_url: "http://localhost:9043/api/v1"
+  server_description: "Development server"

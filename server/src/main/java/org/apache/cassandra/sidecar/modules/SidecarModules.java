@@ -60,7 +60,8 @@ public class SidecarModules
                        new TelemetryModule(),
                        new UtilitiesModule(),
                        new MultiBindingTypeResolverModule(),
-                       new LiveMigrationModule());
+                       new LiveMigrationModule(),
+                       new OpenApiModule());
     }
 
     /**
