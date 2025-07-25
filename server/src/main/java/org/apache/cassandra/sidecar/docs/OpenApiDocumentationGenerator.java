@@ -1091,7 +1091,7 @@ public class OpenApiDocumentationGenerator
         operationProps.put("message", createStringSchema());
         operationResponseSchema.setProperties(operationProps);
         // Operation response example is now in the annotation
-        // Add more response schemas for endpoints using inline examples
+        schemas.put("OperationalJobResponse", operationResponseSchema);
         
         // SSTable Upload/Import responses
         Schema<Object> sstableUploadSchema = new Schema<>();
