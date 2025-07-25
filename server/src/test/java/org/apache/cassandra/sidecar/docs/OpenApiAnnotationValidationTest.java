@@ -24,9 +24,6 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import com.google.inject.multibindings.ProvidesIntoMap;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.apache.cassandra.sidecar.modules.CassandraOperationsModule;
 import org.apache.cassandra.sidecar.modules.CdcModule;
