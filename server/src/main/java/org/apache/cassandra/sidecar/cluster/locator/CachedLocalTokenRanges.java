@@ -205,22 +205,26 @@ public class CachedLocalTokenRanges implements LocalTokenRangesProvider
             if (isClusterTheSame && localTokenRangesCache != null && localTokenRangesCache.containsKey(ks.getName()))
             {
                 // we don't need to rebuild if already cached
-                perKeyspaceBuilder.put(ks.getName(), localTokenRangesCache.get(ks.getName()));
-            }
-            else
-            {
-                ImmutableMap.Builder<Integer, Set<TokenRange>> resultBuilder = ImmutableMap.builder();
-                for (InstanceMetadata instance : localInstances)
+                Map<Integer, Set<TokenRange>> cachedRanges = localTokenRangesCache.get(ks.getName());
+                if (cachedRanges != null)
                 {
-                    Pair<Host, Set<TokenRange>> pair = tokenRangesOfHost(metadata, keyspace, instance, allHosts);
-                    if (pair != null)
-                    {
-                        hostBuilder.add(pair.getKey());
-                        resultBuilder.put(instance.id(), Collections.unmodifiableSet(pair.getValue()));
-                    }
+                    perKeyspaceBuilder.put(ks.getName(), cachedRanges);
+                    continue;
                 }
-                perKeyspaceBuilder.put(ks.getName(), resultBuilder.build());
             }
+            
+            // Build token ranges for this keyspace
+            ImmutableMap.Builder<Integer, Set<TokenRange>> resultBuilder = ImmutableMap.builder();
+            for (InstanceMetadata instance : localInstances)
+            {
+                Pair<Host, Set<TokenRange>> pair = tokenRangesOfHost(metadata, keyspace, instance, allHosts);
+                if (pair != null)
+                {
+                    hostBuilder.add(pair.getKey());
+                    resultBuilder.put(instance.id(), Collections.unmodifiableSet(pair.getValue()));
+                }
+            }
+            perKeyspaceBuilder.put(ks.getName(), resultBuilder.build());
         }
         localTokenRangesCache = perKeyspaceBuilder.build();
         localInstancesCache = hostBuilder.build();
