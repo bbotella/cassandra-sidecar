@@ -37,7 +37,7 @@ public class SwaggerUIHandler implements Handler<RoutingContext>
         "<head>\n" +
         "    <meta charset=\"UTF-8\">\n" +
         "    <title>Cassandra Sidecar API Documentation</title>\n" +
-        "    <link rel=\"stylesheet\" type=\"text/css\" href=\"/webjars/swagger-ui/5.17.14/swagger-ui-bundle.css\" />\n" +
+        "    <link rel=\"stylesheet\" type=\"text/css\" href=\"https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css\" />\n" +
         "    <style>\n" +
         "        html {\n" +
         "            box-sizing: border-box;\n" +
@@ -55,8 +55,8 @@ public class SwaggerUIHandler implements Handler<RoutingContext>
         "</head>\n" +
         "<body>\n" +
         "    <div id=\"swagger-ui\"></div>\n" +
-        "    <script src=\"/webjars/swagger-ui/5.17.14/swagger-ui-bundle.js\"></script>\n" +
-        "    <script src=\"/webjars/swagger-ui/5.17.14/swagger-ui-standalone-preset.js\"></script>\n" +
+        "    <script src=\"https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js\"></script>\n" +
+        "    <script src=\"https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-standalone-preset.js\"></script>\n" +
         "    <script>\n" +
         "        window.onload = function() {\n" +
         "            const ui = SwaggerUIBundle({\n" +
