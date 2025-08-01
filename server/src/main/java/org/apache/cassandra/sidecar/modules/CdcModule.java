@@ -22,9 +22,16 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.ProvidesIntoMap;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
 import org.apache.cassandra.sidecar.cdc.CdcLogCache;
 import org.apache.cassandra.sidecar.client.SidecarInstancesProvider;
 import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
+import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
+import org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload;
+import org.apache.cassandra.sidecar.common.response.ListCdcSegmentsResponse;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
@@ -51,10 +58,16 @@ import org.apache.cassandra.sidecar.routes.VertxRoute;
 import org.apache.cassandra.sidecar.tasks.CdcRawDirectorySpaceCleaner;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
 import org.apache.cassandra.sidecar.utils.SidecarClientProvider;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /**
  * Provides Cassandra change-data capture (CDC) publishing capability
  */
+@Path("/")
 public class CdcModule extends AbstractModule
 {
     @ProvidesIntoMap
@@ -86,6 +99,14 @@ public class CdcModule extends AbstractModule
         return schema;
     }
 
+    @GET
+    @Path(ApiEndpointsV1.LIST_CDC_SEGMENTS_ROUTE)
+    @Operation(summary = "List CDC segments",
+               description = "Lists CDC (Change Data Capture) segments available for streaming")
+    @APIResponse(description = "CDC segments listed successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(implementation = ListCdcSegmentsResponse.class)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.ListCdcSegmentsRouteKey.class)
     VertxRoute listCdcSegmentsRoute(RouteBuilder.Factory factory,
@@ -94,6 +115,14 @@ public class CdcModule extends AbstractModule
         return factory.buildRouteWithHandler(listCdcDirHandler);
     }
 
+    @GET
+    @Path(ApiEndpointsV1.STREAM_CDC_SEGMENTS_ROUTE)
+    @Operation(summary = "Stream CDC segment",
+               description = "Streams a specific CDC segment file for consumption")
+    @APIResponse(description = "CDC segment stream initiated successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/octet-stream",
+                 schema = @Schema(type = SchemaType.STRING)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.StreamCdcSegmentRouteKey.class)
     VertxRoute streamCdcSegmentRoute(RouteBuilder.Factory factory,
@@ -102,6 +131,14 @@ public class CdcModule extends AbstractModule
         return factory.buildRouteWithHandler(streamCdcSegmentHandler);
     }
 
+    @GET
+    @Path(ApiEndpointsV1.SERVICES_CONFIG_ROUTE)
+    @Operation(summary = "Get all service configurations",
+               description = "Returns all service configuration settings")
+    @APIResponse(description = "Service configurations retrieved successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(implementation = AllServicesConfigPayload.class)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.GetAllServiceConfigurationsRouteKey.class)
     VertxRoute getAllServiceConfigurationsRoute(RouteBuilder.Factory factory,
@@ -110,6 +147,14 @@ public class CdcModule extends AbstractModule
         return factory.buildRouteWithHandler(allServiceConfigHandler);
     }
 
+    @PUT
+    @Path(ApiEndpointsV1.SERVICE_CONFIG_ROUTE)
+    @Operation(summary = "Update service configuration",
+               description = "Updates service configuration settings")
+    @APIResponse(description = "Service configuration updated successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(type = SchemaType.OBJECT)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.UpdateServiceConfigurationRouteKey.class)
     VertxRoute updateServiceConfigurationRoute(RouteBuilder.Factory factory,
@@ -118,6 +163,18 @@ public class CdcModule extends AbstractModule
         return factory.builderForRoute().setBodyHandler(true).handler(updateServiceConfigHandler).build();
     }
 
+    @DELETE
+    @Path(ApiEndpointsV1.SERVICE_CONFIG_ROUTE)
+    @Operation(summary = "Delete service configuration",
+               description = "Deletes a specific service configuration setting")
+    @APIResponse(description = "Service configuration deleted successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(type = SchemaType.OBJECT)))
+    @APIResponse(responseCode = "404",
+                 description = "Configuration key not found",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(type = SchemaType.OBJECT)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.DeleteServiceConfigurationRouteKey.class)
     VertxRoute deleteServiceConfigurationRoute(RouteBuilder.Factory factory,

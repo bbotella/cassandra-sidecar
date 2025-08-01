@@ -1,0 +1,1630 @@
+{
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/v1/__health" : {
+      "get" : {
+        "summary" : "Check Sidecar health",
+        "description" : "Returns the health status of the Sidecar application",
+        "responses" : {
+          "200" : {
+            "description" : "Sidecar is healthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/__health" : {
+      "get" : {
+        "summary" : "Check Cassandra health",
+        "description" : "Returns the overall health status of the Cassandra node",
+        "deprecated" : true,
+        "responses" : {
+          "200" : {
+            "description" : "Cassandra is healthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Cassandra is unhealthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/gossip" : {
+      "get" : {
+        "summary" : "Get gossip information",
+        "description" : "Returns gossip information about the Cassandra cluster",
+        "responses" : {
+          "200" : {
+            "description" : "Gossip information retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GossipInfoResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Update node gossip state",
+        "description" : "Updates the gossip state of the Cassandra node",
+        "responses" : {
+          "200" : {
+            "description" : "Node gossip state updated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "examples" : [ {
+                    "status" : "OK",
+                    "message" : "Node gossip state updated successfully"
+                  } ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/gossip/__health" : {
+      "get" : {
+        "summary" : "Check Cassandra gossip health",
+        "description" : "Returns the health status of Cassandra's gossip protocol",
+        "responses" : {
+          "200" : {
+            "description" : "Cassandra gossip is healthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Cassandra gossip is unhealthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/jmx/__health" : {
+      "get" : {
+        "summary" : "Check Cassandra JMX health",
+        "description" : "Returns the health status of Cassandra's JMX interface",
+        "responses" : {
+          "200" : {
+            "description" : "Cassandra JMX is healthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Cassandra JMX is unhealthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/keyspaces/:keyspace/tables/:table/stats" : {
+      "get" : {
+        "summary" : "Get table statistics",
+        "description" : "Returns statistics for a specific table",
+        "responses" : {
+          "200" : {
+            "description" : "Table statistics retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TableStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/native" : {
+      "put" : {
+        "summary" : "Update node native state",
+        "description" : "Updates the native protocol state of the Cassandra node",
+        "responses" : {
+          "200" : {
+            "description" : "Node native state updated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "examples" : [ {
+                    "status" : "OK",
+                    "message" : "Node native state updated successfully"
+                  } ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/native/__health" : {
+      "get" : {
+        "summary" : "Check Cassandra native protocol health",
+        "description" : "Returns the health status of Cassandra's native protocol interface",
+        "responses" : {
+          "200" : {
+            "description" : "Cassandra native protocol is healthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Cassandra native protocol is unhealthy",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/operational-jobs" : {
+      "get" : {
+        "summary" : "List operational jobs",
+        "description" : "Returns a list of all operational jobs running on the node",
+        "responses" : {
+          "200" : {
+            "description" : "Operational jobs listed successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ListOperationalJobsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/operational-jobs/:operationId" : {
+      "get" : {
+        "summary" : "Get operational job status",
+        "description" : "Returns the status of a specific operational job running on the node",
+        "responses" : {
+          "200" : {
+            "description" : "Operational job status retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OperationalJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/operations/decommission" : {
+      "put" : {
+        "summary" : "Get node decommission status",
+        "description" : "Returns the decommission status of a Cassandra node",
+        "responses" : {
+          "200" : {
+            "description" : "Node decommission status retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OperationalJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/ring" : {
+      "get" : {
+        "summary" : "Get cluster ring information",
+        "description" : "Returns information about the Cassandra cluster ring topology",
+        "responses" : {
+          "200" : {
+            "description" : "Ring information retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RingResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/ring/keyspaces/:keyspace" : {
+      "get" : {
+        "summary" : "Get Cassandra Ring by Keyspace",
+        "responses" : {
+          "200" : {
+            "description" : "Cassandra cluster ring information of a specific Keyspace",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RingResponse"
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Internal server error on getting the ring view"
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/schema" : {
+      "get" : {
+        "summary" : "Get all keyspaces schema",
+        "description" : "Returns the schema information for all keyspaces in the Cassandra cluster",
+        "responses" : {
+          "200" : {
+            "description" : "Schema information retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SchemaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/settings" : {
+      "get" : {
+        "summary" : "Get node settings",
+        "description" : "Returns configuration settings for the Cassandra node",
+        "responses" : {
+          "200" : {
+            "description" : "Node settings retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "examples" : [ {
+                    "status" : "OK",
+                    "message" : "Node settings retrieved successfully"
+                  } ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/stats/connected-clients" : {
+      "get" : {
+        "summary" : "Get connected client stats",
+        "description" : "Returns statistics about connected clients to the Cassandra node",
+        "responses" : {
+          "200" : {
+            "description" : "Connected client statistics retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConnectedClientStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cassandra/stats/streams" : {
+      "get" : {
+        "summary" : "Get stream statistics",
+        "description" : "Returns streaming statistics for the Cassandra node",
+        "responses" : {
+          "200" : {
+            "description" : "Stream statistics retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StreamStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cdc/segments" : {
+      "get" : {
+        "summary" : "List CDC segments",
+        "description" : "Lists CDC (Change Data Capture) segments available for streaming",
+        "responses" : {
+          "200" : {
+            "description" : "CDC segments listed successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ListCdcSegmentsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cdc/segments/:segment" : {
+      "get" : {
+        "summary" : "Stream CDC segment",
+        "description" : "Streams a specific CDC segment file for consumption",
+        "responses" : {
+          "200" : {
+            "description" : "CDC segment stream initiated successfully",
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/datahub/schemas" : {
+      "put" : {
+        "summary" : "Report schema to DataHub",
+        "description" : "Reports schema information to DataHub for data cataloging",
+        "responses" : {
+          "200" : {
+            "description" : "Schema reported successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "examples" : [ {
+                    "status" : "Schema reported successfully",
+                    "timestamp" : 1627846261000
+                  } ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/docs" : {
+      "get" : {
+        "summary" : "Get Swagger UI",
+        "description" : "Returns the Swagger UI for interactive API documentation",
+        "responses" : {
+          "200" : {
+            "description" : "Swagger UI page retrieved successfully",
+            "content" : {
+              "text/html" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspace/:keyspace/table/:table/snapshots/:snapshot" : {
+      "get" : {
+        "summary" : "List snapshots (deprecated)",
+        "description" : "Lists all snapshots available on the node. This endpoint is deprecated.",
+        "deprecated" : true,
+        "responses" : {
+          "200" : {
+            "description" : "Snapshots listed successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspace/:keyspace/table/:table/snapshots/:snapshot/component/:component" : {
+      "get" : {
+        "summary" : "Stream SSTable components (deprecated)",
+        "description" : "Streams SSTable component files from the Cassandra node. This endpoint is deprecated.",
+        "deprecated" : true,
+        "responses" : {
+          "200" : {
+            "description" : "SSTable component stream initiated successfully",
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/schema" : {
+      "get" : {
+        "summary" : "Get keyspace schema",
+        "description" : "Returns the schema information for a specific keyspace",
+        "responses" : {
+          "200" : {
+            "description" : "Keyspace schema retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SchemaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/tables/:table/restore-jobs" : {
+      "post" : {
+        "summary" : "Create restore job",
+        "description" : "Creates a new restore job for importing data from backup sources",
+        "responses" : {
+          "200" : {
+            "description" : "Restore job created successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreateRestoreJobResponsePayload"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/tables/:table/restore-jobs/:jobId" : {
+      "patch" : {
+        "summary" : "Update restore job",
+        "description" : "Updates an existing restore job configuration",
+        "responses" : {
+          "200" : {
+            "description" : "Restore job updated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "examples" : [ {
+                    "status" : "OK",
+                    "message" : "Restore job updated successfully"
+                  } ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "get" : {
+        "summary" : "Get restore job summary",
+        "description" : "Returns a summary of restore jobs",
+        "responses" : {
+          "200" : {
+            "description" : "Restore job summary retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestoreJobSummaryResponsePayload"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/tables/:table/restore-jobs/:jobId/abort" : {
+      "post" : {
+        "summary" : "Abort restore job",
+        "description" : "Aborts an active restore job and stops all associated operations",
+        "responses" : {
+          "200" : {
+            "description" : "Restore job aborted successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "examples" : [ {
+                    "status" : "OK",
+                    "message" : "Restore job aborted successfully"
+                  } ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/tables/:table/restore-jobs/:jobId/progress" : {
+      "get" : {
+        "summary" : "Get restore job progress",
+        "description" : "Returns the progress information for a specific restore job",
+        "responses" : {
+          "200" : {
+            "description" : "Restore job progress retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestoreJobProgressResponsePayload"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/tables/:table/restore-jobs/:jobId/slices" : {
+      "post" : {
+        "summary" : "Create restore slice",
+        "description" : "Creates a new restore slice as part of a restore job",
+        "responses" : {
+          "200" : {
+            "description" : "Restore slice created successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "examples" : [ {
+                    "status" : "OK",
+                    "message" : "Restore slice created successfully"
+                  } ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/tables/:table/snapshots/:snapshot" : {
+      "get" : {
+        "summary" : "List snapshot files",
+        "description" : "Lists all files in existing snapshots",
+        "responses" : {
+          "200" : {
+            "description" : "Snapshot files listed successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "summary" : "Create snapshot",
+        "description" : "Creates a snapshot for the specified keyspace and table",
+        "responses" : {
+          "200" : {
+            "description" : "Snapshot created successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Clear snapshot",
+        "description" : "Clears/deletes an existing snapshot",
+        "responses" : {
+          "200" : {
+            "description" : "Snapshot cleared successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/tables/:table/snapshots/:snapshot/components/:component" : {
+      "get" : {
+        "summary" : "Stream SSTable components",
+        "description" : "Streams SSTable component files from the Cassandra node",
+        "responses" : {
+          "200" : {
+            "description" : "SSTable component stream initiated successfully",
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/tables/:table/snapshots/:snapshot/components/:index/:component" : {
+      "get" : {
+        "summary" : "Stream SSTable components with secondary index",
+        "description" : "Streams SSTable component files with secondary index support",
+        "responses" : {
+          "200" : {
+            "description" : "SSTable component with secondary index stream initiated successfully",
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keyspaces/:keyspace/token-range-replicas" : {
+      "get" : {
+        "summary" : "Get token range replica mapping",
+        "description" : "Returns the replica mapping for token ranges in a specific keyspace",
+        "responses" : {
+          "200" : {
+            "description" : "Token range replica mapping retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TokenRangeReplicasResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live-migration/files" : {
+      "get" : {
+        "summary" : "List instance files",
+        "description" : "Lists files available on an instance for live migration purposes",
+        "responses" : {
+          "200" : {
+            "description" : "Instance files listed successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InstanceFilesListResponse"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Live migration not enabled or node not configured for migration",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live-migration/files/:dirType/:dirIndex/*" : {
+      "get" : {
+        "summary" : "Stream file for live migration",
+        "description" : "Streams a file for live migration data transfer",
+        "responses" : {
+          "200" : {
+            "description" : "File stream for live migration initiated successfully",
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Live migration not enabled or file access denied",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/openapi.json" : {
+      "get" : {
+        "summary" : "Get OpenAPI specification",
+        "description" : "Returns the OpenAPI specification for the Cassandra Sidecar API",
+        "responses" : {
+          "200" : {
+            "description" : "OpenAPI specification retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schema/keyspaces" : {
+      "get" : {
+        "summary" : "Get all keyspaces schema (deprecated)",
+        "description" : "Returns the schema information for all keyspaces in the Cassandra cluster. This endpoint is deprecated.",
+        "deprecated" : true,
+        "responses" : {
+          "200" : {
+            "description" : "Schema information retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SchemaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/schema/keyspaces/:keyspace" : {
+      "get" : {
+        "summary" : "Get keyspace schema (deprecated)",
+        "description" : "Returns the schema information for a specific keyspace. This endpoint is deprecated.",
+        "deprecated" : true,
+        "responses" : {
+          "200" : {
+            "description" : "Keyspace schema retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SchemaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/services" : {
+      "get" : {
+        "summary" : "Get all service configurations",
+        "description" : "Returns all service configuration settings",
+        "responses" : {
+          "200" : {
+            "description" : "Service configurations retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AllServicesConfigPayload"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/services/:service/config" : {
+      "put" : {
+        "summary" : "Update service configuration",
+        "description" : "Updates service configuration settings",
+        "responses" : {
+          "200" : {
+            "description" : "Service configuration updated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "summary" : "Delete service configuration",
+        "description" : "Deletes a specific service configuration setting",
+        "responses" : {
+          "200" : {
+            "description" : "Service configuration deleted successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Configuration key not found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/time-skew" : {
+      "get" : {
+        "summary" : "Get time skew information",
+        "description" : "Returns time skew information for the node",
+        "responses" : {
+          "200" : {
+            "description" : "Time skew information retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TimeSkewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/uploads/:uploadId" : {
+      "delete" : {
+        "summary" : "Clean up SSTable files",
+        "description" : "Cleans up SSTable files to free up disk space",
+        "responses" : {
+          "200" : {
+            "description" : "SSTable cleanup completed successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/uploads/:uploadId/keyspaces/:keyspace/tables/:table/components/:component" : {
+      "put" : {
+        "summary" : "Upload SSTable",
+        "description" : "Uploads SSTable files to the Cassandra node for staging",
+        "responses" : {
+          "200" : {
+            "description" : "SSTable uploaded successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SSTableUploadResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/uploads/:uploadId/keyspaces/:keyspace/tables/:table/import" : {
+      "put" : {
+        "summary" : "Import SSTable",
+        "description" : "Imports previously uploaded SSTable files into the Cassandra node",
+        "responses" : {
+          "200" : {
+            "description" : "SSTable imported successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/openapi.{type}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "type",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "pattern" : "json|yaml"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/webjars/*" : {
+      "get" : {
+        "summary" : "Get WebJar resources",
+        "description" : "Serves WebJar resources for Swagger UI",
+        "responses" : {
+          "200" : {
+            "description" : "WebJar resource retrieved successfully",
+            "content" : {
+              "application/javascript" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "AllServicesConfigPayload" : {
+        "type" : "object",
+        "properties" : {
+          "services" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Service"
+            }
+          }
+        }
+      },
+      "CdcSegmentInfo" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "idx" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "completed" : {
+            "type" : "boolean"
+          },
+          "lastModifiedTimestamp" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "ClientConnectionEntry" : {
+        "type" : "object",
+        "properties" : {
+          "address" : {
+            "type" : "string"
+          },
+          "port" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "sslEnabled" : {
+            "type" : "boolean"
+          },
+          "sslCipherSuite" : {
+            "type" : "string"
+          },
+          "sslProtocol" : {
+            "type" : "string"
+          },
+          "protocolVersion" : {
+            "type" : "string"
+          },
+          "username" : {
+            "type" : "string"
+          },
+          "requestCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "driverName" : {
+            "type" : "string"
+          },
+          "driverVersion" : {
+            "type" : "string"
+          },
+          "clientOptions" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "keyspaceName" : {
+            "type" : "string"
+          },
+          "authenticationMode" : {
+            "type" : "string"
+          },
+          "authenticationMetadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "ConnectedClientStatsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "clientConnections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ClientConnectionEntry"
+            }
+          },
+          "totalConnectedClients" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "connectionsByUser" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        }
+      },
+      "ConsistencyVerificationResult" : {
+        "type" : "string",
+        "enum" : [ "SATISFIED", "PENDING", "FAILED" ]
+      },
+      "CreateRestoreJobResponsePayload" : {
+        "type" : "object",
+        "properties" : {
+          "jobId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "FileType" : {
+        "type" : "string",
+        "enum" : [ "FILE", "DIRECTORY" ]
+      },
+      "GossipInfo" : {
+        "type" : "object"
+      },
+      "GossipInfoResponse" : {
+        "type" : "object",
+        "additionalProperties" : {
+          "$ref" : "#/components/schemas/GossipInfo"
+        }
+      },
+      "HealthResponse" : {
+        "type" : "object",
+        "required" : [ "status" ],
+        "properties" : {
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "InstanceFileInfo" : {
+        "type" : "object",
+        "properties" : {
+          "fileUrl" : {
+            "type" : "string"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "fileType" : {
+            "$ref" : "#/components/schemas/FileType"
+          },
+          "lastModifiedTime" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "InstanceFilesListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "files" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/InstanceFileInfo"
+            }
+          },
+          "totalSize" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "ListCdcSegmentsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "host" : {
+            "type" : "string"
+          },
+          "port" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "segmentsInfo" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CdcSegmentInfo"
+            }
+          }
+        }
+      },
+      "ListOperationalJobsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "jobs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/OperationalJobResponse"
+            }
+          }
+        }
+      },
+      "OperationalJobResponse" : {
+        "type" : "object",
+        "properties" : {
+          "jobId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+          },
+          "jobStatus" : {
+            "$ref" : "#/components/schemas/OperationalJobStatus"
+          },
+          "operation" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          }
+        }
+      },
+      "OperationalJobStatus" : {
+        "type" : "string",
+        "enum" : [ "CREATED", "RUNNING", "SUCCEEDED", "FAILED" ]
+      },
+      "ReplicaInfo" : {
+        "type" : "object",
+        "properties" : {
+          "start" : {
+            "type" : "string"
+          },
+          "end" : {
+            "type" : "string"
+          },
+          "replicasByDatacenter" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      },
+      "ReplicaMetadata" : {
+        "type" : "object",
+        "properties" : {
+          "state" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "fqdn" : {
+            "type" : "string"
+          },
+          "address" : {
+            "type" : "string"
+          },
+          "port" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "datacenter" : {
+            "type" : "string"
+          }
+        }
+      },
+      "RestoreJobProgressResponsePayload" : {
+        "type" : "object",
+        "required" : [ "message", "status", "summary" ],
+        "properties" : {
+          "message" : {
+            "type" : "string"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/ConsistencyVerificationResult"
+          },
+          "summary" : {
+            "$ref" : "#/components/schemas/RestoreJobSummaryResponsePayload"
+          },
+          "failedRanges" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "$ref" : "#/components/schemas/RestoreRangeJson"
+            }
+          },
+          "abortedRanges" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "$ref" : "#/components/schemas/RestoreRangeJson"
+            }
+          },
+          "pendingRanges" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "$ref" : "#/components/schemas/RestoreRangeJson"
+            }
+          },
+          "succeededRanges" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "$ref" : "#/components/schemas/RestoreRangeJson"
+            }
+          }
+        }
+      },
+      "RestoreJobSecrets" : {
+        "type" : "object",
+        "properties" : {
+          "writeCredentials" : {
+            "$ref" : "#/components/schemas/StorageCredentials"
+          },
+          "readCredentials" : {
+            "$ref" : "#/components/schemas/StorageCredentials"
+          }
+        }
+      },
+      "RestoreJobSummaryResponsePayload" : {
+        "type" : "object",
+        "properties" : {
+          "createdAt" : {
+            "type" : "string"
+          },
+          "jobId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+          },
+          "jobAgent" : {
+            "type" : "string"
+          },
+          "keyspace" : {
+            "type" : "string"
+          },
+          "table" : {
+            "type" : "string"
+          },
+          "secrets" : {
+            "$ref" : "#/components/schemas/RestoreJobSecrets"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "RestoreRangeJson" : {
+        "type" : "object",
+        "properties" : {
+          "sliceId" : {
+            "type" : "string"
+          },
+          "bucketId" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "storageBucket" : {
+            "type" : "string"
+          },
+          "storageKey" : {
+            "type" : "string"
+          },
+          "startToken" : {
+            "type" : "integer"
+          },
+          "endToken" : {
+            "type" : "integer"
+          }
+        }
+      },
+      "RingEntry" : {
+        "type" : "object",
+        "properties" : {
+          "datacenter" : {
+            "type" : "string"
+          },
+          "address" : {
+            "type" : "string"
+          },
+          "port" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "rack" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "load" : {
+            "type" : "string"
+          },
+          "owns" : {
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          },
+          "fqdn" : {
+            "type" : "string"
+          },
+          "hostId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "RingResponse" : {
+        "type" : "array",
+        "items" : {
+          "$ref" : "#/components/schemas/RingEntry"
+        }
+      },
+      "SSTableUploadResponse" : {
+        "type" : "object",
+        "properties" : {
+          "uploadId" : {
+            "type" : "string"
+          },
+          "uploadSizeBytes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "serviceTimeMillis" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "SchemaResponse" : {
+        "type" : "object",
+        "properties" : {
+          "keyspace" : {
+            "type" : "string"
+          },
+          "schema" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Service" : {
+        "type" : "object",
+        "properties" : {
+          "service" : {
+            "type" : "string"
+          },
+          "config" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "StorageCredentials" : {
+        "type" : "object",
+        "properties" : {
+          "accessKeyId" : {
+            "type" : "string"
+          },
+          "secretAccessKey" : {
+            "type" : "string"
+          },
+          "sessionToken" : {
+            "type" : "string"
+          },
+          "region" : {
+            "type" : "string"
+          }
+        }
+      },
+      "StreamStatsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "mode" : {
+            "type" : "string"
+          },
+          "stats" : {
+            "$ref" : "#/components/schemas/StreamsProgressStats"
+          },
+          "operationMode" : {
+            "type" : "string"
+          },
+          "streamsProgressStats" : {
+            "$ref" : "#/components/schemas/StreamsProgressStats"
+          }
+        }
+      },
+      "StreamsProgressStats" : {
+        "type" : "object",
+        "properties" : {
+          "totalFilesToReceive" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalFilesReceived" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalBytesToReceive" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalBytesReceived" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalFilesToSend" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalFilesSent" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalBytesToSend" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalBytesSent" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "TableStatsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "keyspace" : {
+            "type" : "string"
+          },
+          "table" : {
+            "type" : "string"
+          },
+          "sstableCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "diskSpaceUsedBytes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalDiskSpaceUsedBytes" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "snapshotsSizeBytes" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "TimeSkewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "currentTime" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "allowableSkewInMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "TokenRangeReplicasResponse" : {
+        "type" : "object",
+        "properties" : {
+          "writeReplicas" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReplicaInfo"
+            }
+          },
+          "readReplicas" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReplicaInfo"
+            }
+          },
+          "replicaMetadata" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/ReplicaMetadata"
+            }
+          }
+        }
+      }
+    }
+  },
+  "info" : {
+    "title" : "Generated API",
+    "version" : "1.0"
+  }
+}

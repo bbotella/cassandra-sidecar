@@ -112,10 +112,7 @@
 
     <Match>
         <Bug pattern="REC_CATCH_EXCEPTION" />
-        <Or>
-            <Class name="org.apache.cassandra.sidecar.restore.StorageClientTest" />
-            <Class name="org.apache.cassandra.sidecar.docs.OpenApiDocumentationGenerator" />
-        </Or>
+        <Class name="org.apache.cassandra.sidecar.restore.StorageClientTest" />
     </Match>
 
     <Match>
