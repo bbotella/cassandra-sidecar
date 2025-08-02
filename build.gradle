@@ -408,13 +408,6 @@ tasks.named('rat').configure {
     dependsOn(buildIgnoreRatList)
 }
 
-// Delegate OpenAPI documentation generation to server module
-tasks.register('generateOpenApiDocs') {
-    group = 'documentation'
-    description = 'Generates OpenAPI documentation files (JSON, YAML, HTML)'
-    dependsOn ':server:generateOpenApiDocs'
-}
-
 tasks.named('distTar').configure {
     compression = Compression.GZIP
     archiveExtension = "tar.gz"
