@@ -25,7 +25,6 @@ import jakarta.ws.rs.Path;
 import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
 import org.apache.cassandra.sidecar.handlers.OpenApiHandler;
 import org.apache.cassandra.sidecar.handlers.SwaggerUIHandler;
-import org.apache.cassandra.sidecar.handlers.WebJarHandler;
 import org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey;
 import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys;
 import org.apache.cassandra.sidecar.routes.RouteBuilder;
@@ -90,23 +89,6 @@ public class OpenApiModule extends AbstractModule
     {
         return factory.builderForUnauthorizedRoute()
                       .handler(swaggerUIHandler)
-                      .build();
-    }
-
-    @GET
-    @Path(ApiEndpointsV1.WEBJARS_ROUTE)
-    @Operation(summary = "Get WebJar resources",
-               description = "Serves WebJar resources for Swagger UI")
-    @APIResponse(description = "WebJar resource retrieved successfully",
-                 responseCode = "200",
-                 content = @Content(mediaType = "application/javascript",
-                 schema = @Schema(type = SchemaType.STRING)))
-    @ProvidesIntoMap
-    @KeyClassMapKey(VertxRouteMapKeys.WebJarRouteKey.class)
-    VertxRoute webJarRoute(RouteBuilder.Factory factory, WebJarHandler webJarHandler)
-    {
-        return factory.builderForUnauthorizedRoute()
-                      .handler(webJarHandler)
                       .build();
     }
 }

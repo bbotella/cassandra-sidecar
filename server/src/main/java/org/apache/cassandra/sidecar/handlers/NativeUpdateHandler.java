@@ -81,8 +81,8 @@ public class NativeUpdateHandler extends NodeCommandHandler implements AccessPro
                     throw new IllegalStateException("Unknown state: " + request.state());
             }
         })
-        .onSuccess(ignored -> context.json(OK_STATUS))
-        .onFailure(cause -> processFailure(cause, context, host, remoteAddress, request));
+                     .onSuccess(ignored -> context.json(OK_STATUS))
+                     .onFailure(cause -> processFailure(cause, context, host, remoteAddress, request));
     }
 }
 

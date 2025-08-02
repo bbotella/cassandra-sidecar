@@ -147,7 +147,6 @@ dependencies {
     implementation('io.swagger.core.v3:swagger-annotations:2.2.21')
     implementation('io.swagger.core.v3:swagger-models:2.2.21')
     implementation('io.swagger.core.v3:swagger-jaxrs2:2.2.21')
-    implementation('org.webjars:swagger-ui:5.17.14')
     
     // For HTML documentation generation
     compileOnly('io.swagger.codegen.v3:swagger-codegen-cli:3.0.46')

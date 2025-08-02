@@ -66,7 +66,6 @@ The running Sidecar server provides multiple OpenAPI endpoints:
 
 ### Interactive Documentation
 - **Swagger UI**: `GET http://localhost:9043/api/v1/docs`
-- **WebJar Resources**: `GET http://localhost:9043/webjars/*`
 
 ## Documentation Features
 

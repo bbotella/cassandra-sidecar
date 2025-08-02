@@ -415,13 +415,6 @@ tasks.register('generateOpenApiDocs') {
     dependsOn ':server:generateOpenApiDocs'
 }
 
-// Delegate OpenAPI documentation opening to server module
-tasks.register('openApiDocs') {
-    group = 'documentation'
-    description = 'Generates and opens OpenAPI documentation in the default browser'
-    dependsOn ':server:openApiDocs'
-}
-
 tasks.named('distTar').configure {
     compression = Compression.GZIP
     archiveExtension = "tar.gz"

@@ -160,7 +160,6 @@ public final class ApiEndpointsV1
     public static final String OPENAPI_ROUTE = API_V1 + "/openapi.json";
     public static final String OPENAPI_YAML_ROUTE = API_V1 + "/openapi.yaml";
     public static final String SWAGGER_UI_ROUTE = API_V1 + "/docs";
-    public static final String WEBJARS_ROUTE = "/webjars/*";
 
     private ApiEndpointsV1()
     {
