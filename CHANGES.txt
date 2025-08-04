@@ -1,5 +1,6 @@
 0.2.0
 -----
+ * Remove Jolokia agent (CASSSIDECAR-330)
  * Update Google Guice to 7.0.0 (CASSSIDECAR-89)
  * Fix rpm broken symlink (CASSSIDECAR-327)
  * Fix system_views client table access and make CreateRestoreJobRequestPayload serialization backward compatible (CASSSIDECAR-326)
