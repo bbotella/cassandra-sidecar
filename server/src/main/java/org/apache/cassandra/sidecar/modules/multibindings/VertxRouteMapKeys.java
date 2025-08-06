@@ -203,10 +203,10 @@ public interface VertxRouteMapKeys
         HttpMethod HTTP_METHOD = HttpMethod.GET;
         String ROUTE_URI = ApiEndpointsV1.OPENAPI_YAML_ROUTE;
     }
-    interface SwaggerUIRouteKey extends RouteClassKey
+    interface OpenApiHtmlRouteKey extends RouteClassKey
     {
         HttpMethod HTTP_METHOD = HttpMethod.GET;
-        String ROUTE_URI = ApiEndpointsV1.SWAGGER_UI_ROUTE;
+        String ROUTE_URI = ApiEndpointsV1.OPENAPI_HTML_ROUTE;
     }
     interface LiveMigrationFileStreamHandlerRouteKey extends RouteClassKey
     {

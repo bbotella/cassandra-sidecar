@@ -22,21 +22,6 @@
 
 This project uses standard JAX-RS and MicroProfile OpenAPI annotations to generate comprehensive API documentation for the Cassandra Sidecar.
 
-## Architecture Overview
-
-### Standard Annotations Approach
-The Cassandra Sidecar uses industry-standard annotations for OpenAPI documentation generation:
-
-- **JAX-RS Annotations**: `@GET`, `@POST`, `@PUT`, `@DELETE`, `@Path` - Define HTTP methods and routes
-- **MicroProfile OpenAPI Annotations**: `@Operation`, `@APIResponse`, `@Schema` - Add comprehensive API documentation
-- **SmallRye OpenAPI Plugin**: Gradle plugin that processes annotations to generate OpenAPI specifications
-
-### Benefits
-- ✅ **Standards Compliance** - Uses widely adopted JAX-RS and MicroProfile specifications
-- ✅ **Tool Integration** - Works with existing OpenAPI ecosystem and code generators
-- ✅ **Maintainability** - Documentation lives alongside code, reducing maintenance overhead
-- ✅ **Rich Schema Support** - Specific response types with examples instead of generic objects
-
 ## Generating Documentation
 
 ### Build-time Generation
@@ -61,13 +46,20 @@ The generated OpenAPI specifications are automatically copied to the application
 The running Sidecar server provides multiple OpenAPI endpoints:
 
 ### OpenAPI Specifications
-- **JSON Format**: `GET http://localhost:9043/api/v1/openapi.json`
-- **YAML Format**: `GET http://localhost:9043/api/v1/openapi.yaml`
+- **JSON Format**: `GET http://localhost:9043/openapi.json`
+- **YAML Format**: `GET http://localhost:9043/openapi.yaml`
 
 ### Interactive Documentation
-- **Swagger UI**: `GET http://localhost:9043/api/v1/docs`
+- **Swagger UI**: `GET http://localhost:9043/openapi.html`
 
 ## Documentation Features
+
+### Standard Annotations Approach
+The Cassandra Sidecar uses industry-standard annotations for OpenAPI documentation generation:
+
+- [**JAX-RS Annotations**](https://docs.oracle.com/cd/E19798-01/821-1841/6nmq2cp1v/index.html): `@GET`, `@POST`, `@PUT`, `@DELETE`, `@Path` - Define HTTP methods and routes
+- [**MicroProfile OpenAPI Annotations**](https://microprofile.io/specifications/open-api/): `@Operation`, `@APIResponse`, `@Schema` - Add comprehensive API documentation 
+- [**SmallRye OpenAPI Plugin**](https://github.com/smallrye/smallrye-open-api): Gradle plugin that processes annotations to generate OpenAPI specifications
 
 ### Comprehensive Coverage
 - **All Endpoints** - Health checks, schema operations, snapshots, restore jobs, live migration, CDC, etc.
@@ -105,69 +97,3 @@ public VertxRoute myEndpoint(RouteBuilder.Factory factory, MyHandler handler) {
                   .build();
 }
 ```
-
-## Client Code Generation
-
-Use the generated OpenAPI specifications with standard tools:
-
-```bash
-# Generate Java client
-swagger-codegen generate -i server/build/generated/openapi/openapi.json -l java -o client/
-
-# Generate Python client  
-swagger-codegen generate -i server/build/generated/openapi/openapi.yaml -l python -o python-client/
-
-# Generate TypeScript client
-swagger-codegen generate -i server/build/generated/openapi/openapi.json -l typescript-fetch -o ts-client/
-```
-
-## Development Workflow
-
-### Local Development
-```bash
-# Start the server
-./gradlew run
-
-# Access interactive documentation
-open http://localhost:9043/api/v1/docs
-
-# Get OpenAPI spec for external tools
-curl http://localhost:9043/api/v1/openapi.json
-curl http://localhost:9043/api/v1/openapi.yaml
-```
-
-### CI/CD Integration
-```bash
-# Generate specs as part of build
-./gradlew generateOpenApiSpec
-
-# Copy specs for documentation deployment
-cp server/build/generated/openapi/* docs/api/
-
-# Validate API changes
-swagger-codegen validate -i server/build/generated/openapi/openapi.json
-```
-
-## Migration Notes
-
-This documentation system replaces the previous custom `@OpenApiEndpoint` annotation approach with standards-compliant JAX-RS and MicroProfile annotations. The migration:
-
-- **Removed** 1,343-line custom `OpenApiDocumentationGenerator.java`
-- **Eliminated** custom annotation processing infrastructure  
-- **Added** comprehensive standard annotations across all modules
-- **Enhanced** response schemas with specific types and examples
-- **Integrated** with Gradle SmallRye OpenAPI plugin for automatic generation
-
-## Output Structure
-
-```
-server/build/generated/openapi/
-├── openapi.json    # OpenAPI 3.1.0 specification (JSON)
-└── openapi.yaml    # OpenAPI 3.1.0 specification (YAML)
-
-server/build/resources/main/openapi/  # Packaged in JAR
-├── openapi.json    # Runtime-accessible JSON spec  
-└── openapi.yaml    # Runtime-accessible YAML spec
-```
-
-The specifications are fully compliant with OpenAPI 3.1.0 and include comprehensive schemas, examples, and documentation for all Cassandra Sidecar APIs.

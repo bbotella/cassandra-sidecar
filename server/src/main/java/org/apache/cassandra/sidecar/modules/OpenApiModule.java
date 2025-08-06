@@ -76,7 +76,7 @@ public class OpenApiModule extends AbstractModule
     }
 
     @GET
-    @Path(ApiEndpointsV1.SWAGGER_UI_ROUTE)
+    @Path(ApiEndpointsV1.OPENAPI_HTML_ROUTE)
     @Operation(summary = "Get Swagger UI",
                description = "Returns the Swagger UI for interactive API documentation")
     @APIResponse(description = "Swagger UI page retrieved successfully",
@@ -84,7 +84,7 @@ public class OpenApiModule extends AbstractModule
                  content = @Content(mediaType = "text/html",
                  schema = @Schema(type = SchemaType.STRING)))
     @ProvidesIntoMap
-    @KeyClassMapKey(VertxRouteMapKeys.SwaggerUIRouteKey.class)
+    @KeyClassMapKey(VertxRouteMapKeys.OpenApiHtmlRouteKey.class)
     VertxRoute swaggerUIRoute(RouteBuilder.Factory factory, SwaggerUIHandler swaggerUIHandler)
     {
         return factory.builderForUnauthorizedRoute()

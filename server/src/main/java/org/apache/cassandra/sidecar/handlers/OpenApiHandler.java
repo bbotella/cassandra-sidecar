@@ -24,15 +24,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.swagger.v3.core.util.Json;
-import io.swagger.v3.oas.models.OpenAPI;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.cassandra.sidecar.config.OpenApiConfiguration;
@@ -50,10 +48,6 @@ public class OpenApiHandler implements Handler<RoutingContext>
     private static final Logger logger = LoggerFactory.getLogger(OpenApiHandler.class);
     private final OpenApiConfiguration openApiConfig;
     
-    // Cache for both JSON and YAML specifications
-    private volatile String cachedJsonSpec;
-    private volatile String cachedYamlSpec;
-    private volatile long lastModified;
 
     @Inject
     public OpenApiHandler(SidecarConfiguration sidecarConfiguration)
@@ -78,14 +72,9 @@ public class OpenApiHandler implements Handler<RoutingContext>
         catch (Exception e)
         {
             logger.warn("Failed to load generated OpenAPI specification, falling back to basic config", e);
-            
-            // Fallback to basic OpenAPI config if generated file is not available
-            OpenAPI openAPI = createOpenApiFromConfig(openApiConfig);
-            String openApiJson = Json.pretty(openAPI);
-            
-            context.response()
+            context.response().setStatusCode(HttpResponseStatus.NOT_FOUND.code())
                    .putHeader("Content-Type", "application/json")
-                   .end(openApiJson);
+                   .end();
         }
     }
 
@@ -105,28 +94,15 @@ public class OpenApiHandler implements Handler<RoutingContext>
     }
     
     /**
-     * Loads the generated OpenAPI specification from resources or build output with caching
+     * Loads the generated OpenAPI specification from resources or build output
      */
     private String loadGeneratedOpenApiSpec(boolean isYaml) throws IOException
     {
         // First try to load from classpath resources (for packaged deployments)
-        String cached = isYaml ? cachedYamlSpec : cachedJsonSpec;
-        if (cached == null)
+        String content = loadFromClasspathResource(isYaml);
+        if (content != null)
         {
-            cached = loadFromClasspathResource(isYaml);
-            if (isYaml)
-            {
-                cachedYamlSpec = cached;
-            }
-            else
-            {
-                cachedJsonSpec = cached;
-            }
-        }
-        
-        if (cached != null)
-        {
-            return cached;
+            return content;
         }
 
         // Fallback to file system paths (for development)
@@ -140,16 +116,18 @@ public class OpenApiHandler implements Handler<RoutingContext>
     {
         String fileName = isYaml ? "openapi.yaml" : "openapi.json";
         String resourcePath = "/openapi/" + fileName;
+        
         InputStream inputStream = getClass().getResourceAsStream(resourcePath);
         if (inputStream == null)
         {
             return null;
         }
         
-        try
+        logger.debug("Loading OpenAPI specification from classpath: {}", resourcePath);
+        try 
         {
-            logger.debug("Loading OpenAPI specification from classpath: {}", resourcePath);
-            String content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            byte[] bytes = inputStream.readAllBytes();
+            String content = new String(bytes, StandardCharsets.UTF_8);
             logger.info("Loaded OpenAPI specification from classpath resource");
             return content;
         }
@@ -188,59 +166,10 @@ public class OpenApiHandler implements Handler<RoutingContext>
                                 "Please run './gradlew openApiGenerate' and ensure the generated file is included in the build.");
         }
         
-        // Check if we need to reload the file (if it's newer than our cached version)
-        long fileLastModified = Files.getLastModifiedTime(foundPath).toMillis();
-        String cached = isYaml ? cachedYamlSpec : cachedJsonSpec;
-        if (cached == null || fileLastModified > lastModified)
-        {
-            logger.debug("Loading OpenAPI specification from: {}", foundPath.toAbsolutePath());
-            String content = Files.readString(foundPath, StandardCharsets.UTF_8);
-            lastModified = fileLastModified;
-            logger.info("Loaded OpenAPI specification from {}", foundPath.toAbsolutePath());
-            
-            // Update the appropriate cache
-            if (isYaml)
-            {
-                cachedYamlSpec = content;
-            }
-            else
-            {
-                cachedJsonSpec = content;
-            }
-            
-            return content;
-        }
+        logger.debug("Loading OpenAPI specification from: {}", foundPath.toAbsolutePath());
+        String content = Files.readString(foundPath, StandardCharsets.UTF_8);
+        logger.info("Loaded OpenAPI specification from {}", foundPath.toAbsolutePath());
         
-        return cached;
-    }
-    
-    /**
-     * Creates a basic OpenAPI configuration as fallback when generated spec is not available
-     */
-    private static OpenAPI createOpenApiFromConfig(OpenApiConfiguration config)
-    {
-        OpenAPI openApi = new OpenAPI();
-        
-        // Set basic info
-        io.swagger.v3.oas.models.info.Info info = new io.swagger.v3.oas.models.info.Info();
-        info.setTitle(config.title());
-        info.setDescription(config.description() + " (Generated specification not available - run './gradlew openApiGenerate')");
-        info.setVersion(config.version());
-        
-        // Set license info
-        io.swagger.v3.oas.models.info.License license = new io.swagger.v3.oas.models.info.License();
-        license.setName(config.licenseName());
-        license.setUrl(config.licenseUrl());
-        info.setLicense(license);
-        
-        openApi.setInfo(info);
-        
-        // Set server info
-        io.swagger.v3.oas.models.servers.Server server = new io.swagger.v3.oas.models.servers.Server();
-        server.setUrl(config.serverUrl());
-        server.setDescription(config.serverDescription());
-        openApi.setServers(Collections.singletonList(server));
-        
-        return openApi;
+        return content;
     }
 }

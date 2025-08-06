@@ -46,6 +46,12 @@ plugins {
 apply from: "$rootDir/gradle/common/publishing.gradle"
 apply plugin: "io.smallrye.openapi"
 
+// Configure SmallRye OpenAPI plugin
+generateOpenApiSpec {
+    outputDirectory = layout.buildDirectory.dir('resources/main/openapi')
+//    outputDirectory = layout.buildDirectory.dir('/Users/bernardobotellacorbi/Downloads')
+}
+
 sourceCompatibility = JavaVersion.VERSION_11
 
 // add additional test source set
@@ -221,12 +227,6 @@ test {
 apply from: "${project.rootDir}/gradle/common/integrationTestTask.gradle"
 apply from: "${project.rootDir}/gradle/common/java11Options.gradle"
 
-tasks.withType(JavaCompile) {
-    doFirst {
-        println "AnnotationProcessorPath for $name is ${options.getAnnotationProcessorPath().getFiles()}"
-    }
-}
-
 tasks.register("containerTest", Test) {
     if (JavaVersion.current().isJava11Compatible()) {
         jvmArgs(project.ext.JDK11_OPTIONS)
@@ -258,9 +258,6 @@ jib {
     to {
         image = "cassandra-sidecar:${project.version}"
     }
-    container {
-        mainClass = 'org.apache.cassandra.sidecar.CassandraSidecarDaemon'
-    }
 }
 
 spotbugsTest.enabled = false
@@ -270,21 +267,6 @@ spotbugsContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 
 check.dependsOn containerTest, integrationTest, jacocoTestReport
 
-// Configure OpenAPI generation to work with packaged deployments
-// Copy generated OpenAPI spec to resources build directory so it's available in the JAR
-tasks.register('copyOpenApiSpec', Copy) {
-    dependsOn generateOpenApiSpec
-    from layout.buildDirectory.dir('generated/openapi')
-    include 'openapi.json', 'openapi.yaml'
-    into layout.buildDirectory.dir('resources/main/openapi')
-    doFirst {
-        mkdir layout.buildDirectory.dir('resources/main/openapi')
-    }
-}
+// Ensure the OpenAPI spec is generated before building the JAR
+processResources.dependsOn generateOpenApiSpec
 
-// Ensure the OpenAPI spec is copied before building the JAR
-processResources.dependsOn copyOpenApiSpec
-
-// OpenAPI generation now uses standard JAX-RS/MicroProfile annotations
-// and can be generated using external tools like the swagger-codegen plugin  
-// or the official MicroProfile OpenAPI Maven/Gradle plugins

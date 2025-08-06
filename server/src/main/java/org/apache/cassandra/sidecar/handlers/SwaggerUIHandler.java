@@ -60,7 +60,7 @@ public class SwaggerUIHandler implements Handler<RoutingContext>
         "    <script>\n" +
         "        window.onload = function() {\n" +
         "            const ui = SwaggerUIBundle({\n" +
-        "                url: '/api/v1/openapi.json',\n" +
+        "                url: '/openapi.json',\n" +
         "                dom_id: '#swagger-ui',\n" +
         "                deepLinking: true,\n" +
         "                presets: [\n" +
