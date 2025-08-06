@@ -29,7 +29,7 @@ import io.vertx.ext.web.RoutingContext;
  */
 @Hidden
 @Singleton
-public class SwaggerUIHandler implements Handler<RoutingContext>
+public class OpenApiUIHandler implements Handler<RoutingContext>
 {
     private static final String SWAGGER_UI_HTML = 
         "<!DOCTYPE html>\n" +
@@ -78,7 +78,7 @@ public class SwaggerUIHandler implements Handler<RoutingContext>
         "</html>";
 
     @Inject
-    public SwaggerUIHandler()
+    public OpenApiUIHandler()
     {
     }
 

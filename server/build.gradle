@@ -49,7 +49,6 @@ apply plugin: "io.smallrye.openapi"
 // Configure SmallRye OpenAPI plugin
 generateOpenApiSpec {
     outputDirectory = layout.buildDirectory.dir('resources/main/openapi')
-//    outputDirectory = layout.buildDirectory.dir('/Users/bernardobotellacorbi/Downloads')
 }
 
 sourceCompatibility = JavaVersion.VERSION_11

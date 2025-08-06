@@ -28,13 +28,10 @@ import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
-import org.apache.cassandra.sidecar.config.OpenApiConfiguration;
-import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 
 /**
  * Handler that serves the OpenAPI specification
@@ -46,14 +43,6 @@ import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 public class OpenApiHandler implements Handler<RoutingContext>
 {
     private static final Logger logger = LoggerFactory.getLogger(OpenApiHandler.class);
-    private final OpenApiConfiguration openApiConfig;
-    
-
-    @Inject
-    public OpenApiHandler(SidecarConfiguration sidecarConfiguration)
-    {
-        this.openApiConfig = sidecarConfiguration.openApiConfiguration();
-    }
 
     @Override
     public void handle(RoutingContext context)

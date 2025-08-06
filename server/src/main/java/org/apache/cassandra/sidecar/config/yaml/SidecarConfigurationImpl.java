@@ -19,10 +19,7 @@
 package org.apache.cassandra.sidecar.config.yaml;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -47,7 +44,6 @@ import org.apache.cassandra.sidecar.config.DriverConfiguration;
 import org.apache.cassandra.sidecar.config.InstanceConfiguration;
 import org.apache.cassandra.sidecar.config.LiveMigrationConfiguration;
 import org.apache.cassandra.sidecar.config.MetricsConfiguration;
-import org.apache.cassandra.sidecar.config.OpenApiConfiguration;
 import org.apache.cassandra.sidecar.config.PeriodicTaskConfiguration;
 import org.apache.cassandra.sidecar.config.RestoreJobConfiguration;
 import org.apache.cassandra.sidecar.config.S3ClientConfiguration;
@@ -119,9 +115,6 @@ public class SidecarConfigurationImpl implements SidecarConfiguration
     @JsonProperty("live_migration")
     private LiveMigrationConfiguration liveMigrationConfiguration;
 
-    @JsonProperty("openapi")
-    protected final OpenApiConfiguration openApiConfiguration;
-
     public SidecarConfigurationImpl()
     {
         this(builder());
@@ -145,7 +138,6 @@ public class SidecarConfigurationImpl implements SidecarConfiguration
         vertxConfiguration = builder.vertxConfiguration;
         schemaReportingConfiguration = builder.schemaReportingConfiguration;
         liveMigrationConfiguration = builder.liveMigrationConfiguration;
-        openApiConfiguration = builder.openApiConfiguration;
     }
 
     /**
@@ -308,24 +300,6 @@ public class SidecarConfigurationImpl implements SidecarConfiguration
         return liveMigrationConfiguration;
     }
 
-    @Override
-    @JsonProperty("openapi")
-    public OpenApiConfiguration openApiConfiguration()
-    {
-        return openApiConfiguration;
-    }
-
-    public static SidecarConfigurationImpl readYamlConfiguration(String yamlConfigurationPath) throws IOException
-    {
-        try
-        {
-            return readYamlConfiguration(Paths.get(new URI(yamlConfigurationPath)));
-        }
-        catch (URISyntaxException e)
-        {
-            throw new IOException("Invalid URI: " + yamlConfigurationPath, e);
-        }
-    }
 
     public static SidecarConfigurationImpl readYamlConfiguration(Path yamlConfigurationPath) throws IOException
     {
@@ -438,7 +412,6 @@ public class SidecarConfigurationImpl implements SidecarConfiguration
         private VertxConfiguration vertxConfiguration = new VertxConfigurationImpl();
         private SchemaReportingConfiguration schemaReportingConfiguration = new SchemaReportingConfigurationImpl();
         private LiveMigrationConfiguration liveMigrationConfiguration = new LiveMigrationConfigurationImpl();
-        private OpenApiConfiguration openApiConfiguration = new OpenApiConfigurationImpl();
 
         protected Builder()
         {
@@ -630,18 +603,6 @@ public class SidecarConfigurationImpl implements SidecarConfiguration
         public Builder liveMigrationConfiguration(LiveMigrationConfiguration liveMigrationConfiguration)
         {
             return update(b -> b.liveMigrationConfiguration = liveMigrationConfiguration);
-        }
-
-        /**
-         * Sets the {@code openApiConfiguration} and returns a reference to this Builder enabling method
-         * chaining
-         *
-         * @param openApiConfiguration the {@code openApiConfiguration} to set
-         * @return a reference to this Builder
-         */
-        public Builder openApiConfiguration(OpenApiConfiguration openApiConfiguration)
-        {
-            return update(b -> b.openApiConfiguration = openApiConfiguration);
         }
 
         /**
