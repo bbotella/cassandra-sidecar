@@ -4,3 +4,6 @@ Copyright 2023- The Apache Software Foundation
 This product includes software developed by The Apache Software
 Foundation (http://www.apache.org/).
 
+This product includes the Jakarta RESTful Web Services API (jakarta.ws.rs-api),
+licensed under the Eclipse Public License 2.0 and/or the GNU General Public License v2.0 with the Classpath Exception.
+See: https://projects.eclipse.org/projects/ee4j.jaxrs

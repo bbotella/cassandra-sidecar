@@ -21,16 +21,16 @@ package org.apache.cassandra.sidecar.handlers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.RoutingContext;
 
 /**
@@ -43,6 +43,13 @@ import io.vertx.ext.web.RoutingContext;
 public class OpenApiHandler implements Handler<RoutingContext>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenApiHandler.class);
+    private final Vertx vertx;
+
+    @Inject
+    public OpenApiHandler(Vertx vertx)
+    {
+        this.vertx = vertx;
+    }
 
     @Override
     public void handle(RoutingContext context)
@@ -60,7 +67,6 @@ public class OpenApiHandler implements Handler<RoutingContext>
         }
         catch (Exception e)
         {
-            LOGGER.warn("Failed to load generated OpenAPI specification, falling back to basic config", e);
             context.response().setStatusCode(HttpResponseStatus.NOT_FOUND.code())
                    .putHeader("Content-Type", "application/json")
                    .end();
@@ -138,13 +144,12 @@ public class OpenApiHandler implements Handler<RoutingContext>
             "../server/build/generated/openapi/" + fileName, // Alternative relative path
         };
         
-        Path foundPath = null;
+        String foundPath = null;
         for (String pathStr : possiblePaths)
         {
-            Path path = Paths.get(pathStr);
-            if (Files.exists(path))
+            if (vertx.fileSystem().existsBlocking(pathStr))
             {
-                foundPath = path;
+                foundPath = pathStr;
                 break;
             }
         }
@@ -155,9 +160,10 @@ public class OpenApiHandler implements Handler<RoutingContext>
                                 "Please run './gradlew generateOpenApiSpec' and ensure the generated file is included in the build.");
         }
         
-        LOGGER.debug("Loading OpenAPI specification from: {}", foundPath.toAbsolutePath());
-        String content = Files.readString(foundPath, StandardCharsets.UTF_8);
-        LOGGER.info("Loaded OpenAPI specification from {}", foundPath.toAbsolutePath());
+        LOGGER.debug("Loading OpenAPI specification from: {}", foundPath);
+        Buffer buffer = vertx.fileSystem().readFileBlocking(foundPath);
+        String content = buffer.toString();
+        LOGGER.info("Loaded OpenAPI specification from {}", foundPath);
         
         return content;
     }

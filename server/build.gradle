@@ -25,7 +25,7 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath("io.smallrye.openapi:io.smallrye.openapi.gradle.plugin:4.1.1") // Replace with the desired version
+        classpath("io.smallrye.openapi:io.smallrye.openapi.gradle.plugin:${project.smallryeOpenApiVersion}") // Replace with the desired version
         classpath("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml") {
             version { strictly("2.14.2") }
         }
@@ -146,15 +146,15 @@ dependencies {
     implementation(group: 'io.acryl', name: 'datahub-client', version: '0.15.0-3')
     
     // OpenAPI support
-    implementation('org.eclipse.microprofile.openapi:microprofile-openapi-api:3.1.1')
-    implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
-    implementation('io.swagger.core.v3:swagger-core:2.2.21')
-    implementation('io.swagger.core.v3:swagger-annotations:2.2.21')
-    implementation('io.swagger.core.v3:swagger-models:2.2.21')
-    implementation('io.swagger.core.v3:swagger-jaxrs2:2.2.21')
+    implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api:${project.microprofileOpenApiVersion}")
+    implementation("jakarta.ws.rs:jakarta.ws.rs-api:${project.jakartaWsRsVersion}")
+    implementation("io.swagger.core.v3:swagger-core:${project.swaggerVersion}")
+    implementation("io.swagger.core.v3:swagger-annotations:${project.swaggerVersion}")
+    implementation("io.swagger.core.v3:swagger-models:${project.swaggerVersion}")
+    implementation("io.swagger.core.v3:swagger-jaxrs2:${project.swaggerVersion}")
     
     // For HTML documentation generation
-    compileOnly('io.swagger.codegen.v3:swagger-codegen-cli:3.0.46')
+    compileOnly("io.swagger.codegen.v3:swagger-codegen-cli:${project.swaggerCodegenVersion}")
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${project.junitVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-params:${project.junitVersion}"
