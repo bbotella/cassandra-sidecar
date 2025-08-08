@@ -18,6 +18,10 @@
 
 package org.apache.cassandra.sidecar.handlers;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -31,55 +35,29 @@ import io.vertx.ext.web.RoutingContext;
 @Singleton
 public class OpenApiUIHandler implements Handler<RoutingContext>
 {
-    private static final String SWAGGER_UI_HTML = 
-        "<!DOCTYPE html>\n" +
-        "<html lang=\"en\">\n" +
-        "<head>\n" +
-        "    <meta charset=\"UTF-8\">\n" +
-        "    <title>Cassandra Sidecar API Documentation</title>\n" +
-        "    <link rel=\"stylesheet\" type=\"text/css\" href=\"https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css\" />\n" +
-        "    <style>\n" +
-        "        html {\n" +
-        "            box-sizing: border-box;\n" +
-        "            overflow: -moz-scrollbars-vertical;\n" +
-        "            overflow-y: scroll;\n" +
-        "        }\n" +
-        "        *, *:before, *:after {\n" +
-        "            box-sizing: inherit;\n" +
-        "        }\n" +
-        "        body {\n" +
-        "            margin:0;\n" +
-        "            background: #fafafa;\n" +
-        "        }\n" +
-        "    </style>\n" +
-        "</head>\n" +
-        "<body>\n" +
-        "    <div id=\"swagger-ui\"></div>\n" +
-        "    <script src=\"https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js\"></script>\n" +
-        "    <script src=\"https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-standalone-preset.js\"></script>\n" +
-        "    <script>\n" +
-        "        window.onload = function() {\n" +
-        "            const ui = SwaggerUIBundle({\n" +
-        "                url: '/openapi.json',\n" +
-        "                dom_id: '#swagger-ui',\n" +
-        "                deepLinking: true,\n" +
-        "                presets: [\n" +
-        "                    SwaggerUIBundle.presets.apis,\n" +
-        "                    SwaggerUIStandalonePreset\n" +
-        "                ],\n" +
-        "                plugins: [\n" +
-        "                    SwaggerUIBundle.plugins.DownloadUrl\n" +
-        "                ],\n" +
-        "                layout: \"StandaloneLayout\"\n" +
-        "            });\n" +
-        "        };\n" +
-        "    </script>\n" +
-        "</body>\n" +
-        "</html>";
+    private static final String HTML_TEMPLATE_PATH = "/openapi-ui.html";
+    private final String swaggerUiHtml;
 
     @Inject
     public OpenApiUIHandler()
     {
+        this.swaggerUiHtml = loadHtmlTemplate();
+    }
+
+    private String loadHtmlTemplate()
+    {
+        try (InputStream inputStream = getClass().getResourceAsStream(HTML_TEMPLATE_PATH))
+        {
+            if (inputStream == null)
+            {
+                throw new RuntimeException("Could not find HTML template at " + HTML_TEMPLATE_PATH);
+            }
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Failed to load HTML template", e);
+        }
     }
 
     @Override
@@ -87,6 +65,6 @@ public class OpenApiUIHandler implements Handler<RoutingContext>
     {
         context.response()
                .putHeader("Content-Type", "text/html; charset=utf-8")
-               .end(SWAGGER_UI_HTML);
+               .end(swaggerUiHtml);
     }
 }
