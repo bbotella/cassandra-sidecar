@@ -16,18 +16,12 @@
  * limitations under the License.
  */
 
-import org.apache.tools.ant.taskdefs.condition.Os
-
 import java.nio.file.Paths
 
 buildscript {
-    repositories {
-        gradlePluginPortal()
-    }
     dependencies {
-        classpath("io.smallrye.openapi:io.smallrye.openapi.gradle.plugin:${project.smallryeOpenApiVersion}") // Replace with the desired version
         classpath("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml") {
-            version { strictly("2.14.2") }
+            version { strictly("2.14.3") }
         }
     }
 }
@@ -42,9 +36,10 @@ plugins {
     id('maven-publish')
     // and produces a docker image
     id('com.google.cloud.tools.jib') version '3.4.4'
+    // and generates an openAPI specification
+    id('io.smallrye.openapi') version "${smallryeOpenApiVersion}"
 }
 apply from: "$rootDir/gradle/common/publishing.gradle"
-apply plugin: "io.smallrye.openapi"
 
 // Configure SmallRye OpenAPI plugin
 generateOpenApiSpec {
@@ -152,9 +147,6 @@ dependencies {
     implementation("io.swagger.core.v3:swagger-annotations:${project.swaggerVersion}")
     implementation("io.swagger.core.v3:swagger-models:${project.swaggerVersion}")
     implementation("io.swagger.core.v3:swagger-jaxrs2:${project.swaggerVersion}")
-    
-    // For HTML documentation generation
-    compileOnly("io.swagger.codegen.v3:swagger-codegen-cli:${project.swaggerCodegenVersion}")
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${project.junitVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-params:${project.junitVersion}"

@@ -157,10 +157,11 @@ public final class ApiEndpointsV1
     public static final String LIVE_MIGRATION_FILE_TRANSFER_API = LIVE_MIGRATION_FILES_API + "/:" + DIR_TYPE_PARAM
                                                                   + "/:" + DIR_INDEX_PARAM + "/*";
 
-    public static final String OPENAPI_ROUTE = "/openapi";
-    public static final String OPENAPI_JSON_ROUTE = "/openapi.json";
-    public static final String OPENAPI_YAML_ROUTE = "/openapi.yaml";
-    public static final String OPENAPI_HTML_ROUTE = "/openapi.html";
+    public static final String OPENAPI_JSON_ROUTE = "/spec/openapi.json";
+    public static final String OPENAPI_YAML_ROUTE = "/spec/openapi.yaml";
+    // With the wildcard, the index.html page under resources/docs/openapi/index.html will render
+    // when a user visits /openapi
+    public static final String OPENAPI_HTML_ROUTE = "/openapi/*";
 
     private ApiEndpointsV1()
     {

@@ -193,11 +193,6 @@ public interface VertxRouteMapKeys
         HttpMethod HTTP_METHOD = HttpMethod.GET;
         String ROUTE_URI = ApiEndpointsV1.SNAPSHOTS_ROUTE;
     }
-    interface OpenApiRouteKey extends RouteClassKey
-    {
-        HttpMethod HTTP_METHOD = HttpMethod.GET;
-        String ROUTE_URI = ApiEndpointsV1.OPENAPI_ROUTE;
-    }
     interface OpenApiJsonRouteKey extends RouteClassKey
     {
         HttpMethod HTTP_METHOD = HttpMethod.GET;

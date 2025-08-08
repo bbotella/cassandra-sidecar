@@ -20,11 +20,11 @@ package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
+import io.vertx.ext.web.handler.StaticHandler;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
 import org.apache.cassandra.sidecar.handlers.OpenApiHandler;
-import org.apache.cassandra.sidecar.handlers.OpenApiUIHandler;
 import org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey;
 import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys;
 import org.apache.cassandra.sidecar.routes.RouteBuilder;
@@ -41,22 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 @Path("/")
 public class OpenApiModule extends AbstractModule
 {
-    @GET
-    @Path(ApiEndpointsV1.OPENAPI_ROUTE)
-    @Operation(summary = "Get OpenAPI specification",
-    description = "Returns the OpenAPI specification for the Cassandra Sidecar API")
-    @APIResponse(description = "OpenAPI specification retrieved successfully",
-    responseCode = "200",
-    content = @Content(mediaType = "application/json",
-    schema = @Schema(type = SchemaType.OBJECT)))
-    @ProvidesIntoMap
-    @KeyClassMapKey(VertxRouteMapKeys.OpenApiRouteKey.class)
-    VertxRoute openApiRoute(RouteBuilder.Factory factory, OpenApiHandler openApiHandler)
-    {
-        return factory.builderForUnauthorizedRoute()
-                      .handler(openApiHandler)
-                      .build();
-    }
+
 
     @GET
     @Path(ApiEndpointsV1.OPENAPI_JSON_ROUTE)
@@ -102,10 +87,10 @@ public class OpenApiModule extends AbstractModule
                  schema = @Schema(type = SchemaType.STRING)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.OpenApiHtmlRouteKey.class)
-    VertxRoute swaggerUIRoute(RouteBuilder.Factory factory, OpenApiUIHandler openApiUIHandler)
+    VertxRoute swaggerUIRoute(RouteBuilder.Factory factory)
     {
         return factory.builderForUnauthorizedRoute()
-                      .handler(openApiUIHandler)
+                      .handler(StaticHandler.create("docs/openapi"))
                       .build();
     }
 }

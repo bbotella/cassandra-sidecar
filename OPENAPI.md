@@ -46,8 +46,8 @@ The generated OpenAPI specifications are automatically copied to the application
 The running Sidecar server provides multiple OpenAPI endpoints:
 
 ### OpenAPI Specifications
-- **JSON Format**: `GET http://localhost:9043/openapi.json`
-- **YAML Format**: `GET http://localhost:9043/openapi.yaml`
+- **JSON Format**: `GET http://localhost:9043/spec/openapi.json`
+- **YAML Format**: `GET http://localhost:9043/spec/openapi.yaml`
 
 ### Interactive Documentation
 - **Swagger UI**: `GET http://localhost:9043/openapi.html`
