@@ -95,7 +95,7 @@ class OpenApiHandlerTest
     void testJsonRequestByPath(VertxTestContext testContext)
     {
         WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/openapi.json")
+        client.get(server.actualPort(), "localhost", "/spec/openapi.json")
               .as(BodyCodec.buffer())
               .send(resp -> {
                   HttpResponse<Buffer> response = resp.result();
@@ -149,7 +149,7 @@ class OpenApiHandlerTest
     void testJsonRequestByAcceptHeader(VertxTestContext testContext)
     {
         WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/openapi")
+        client.get(server.actualPort(), "localhost", "/spec/openapi")
               .putHeader("Accept", "application/json")
               .as(BodyCodec.buffer())
               .send(resp -> {
@@ -177,7 +177,7 @@ class OpenApiHandlerTest
     void testYamlRequestByAcceptHeader(VertxTestContext testContext)
     {
         WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/openapi")
+        client.get(server.actualPort(), "localhost", "/spec/openapi")
               .putHeader("Accept", "application/yaml")
               .as(BodyCodec.buffer())
               .send(resp -> {
@@ -206,7 +206,7 @@ class OpenApiHandlerTest
     void testYamlRequestByAcceptHeaderWithMultipleValues(String acceptHeader, VertxTestContext testContext)
     {
         WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/openapi")
+        client.get(server.actualPort(), "localhost", "/spec/openapi")
               .putHeader("Accept", acceptHeader)
               .as(BodyCodec.buffer())
               .send(resp -> {
@@ -234,7 +234,7 @@ class OpenApiHandlerTest
     void testDefaultToJsonWhenNoFormatSpecified(VertxTestContext testContext)
     {
         WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/openapi")
+        client.get(server.actualPort(), "localhost", "/spec/openapi")
               .as(BodyCodec.buffer())
               .send(resp -> {
                   HttpResponse<Buffer> response = resp.result();
