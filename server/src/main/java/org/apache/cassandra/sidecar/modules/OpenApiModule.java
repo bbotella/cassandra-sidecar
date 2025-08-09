@@ -18,12 +18,17 @@
 
 package org.apache.cassandra.sidecar.modules;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.handler.StaticHandler;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
+import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.handlers.OpenApiHandler;
 import org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey;
 import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys;
@@ -41,8 +46,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 @Path("/")
 public class OpenApiModule extends AbstractModule
 {
-
-
     @GET
     @Path(ApiEndpointsV1.OPENAPI_JSON_ROUTE)
     @Operation(summary = "Get OpenAPI specification",
@@ -87,10 +90,38 @@ public class OpenApiModule extends AbstractModule
                  schema = @Schema(type = SchemaType.STRING)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.OpenApiHtmlRouteKey.class)
-    VertxRoute swaggerUIRoute(RouteBuilder.Factory factory)
+    VertxRoute swaggerUIRoute(RouteBuilder.Factory factory, ExecutorPools executorPools)
     {
+
         return factory.builderForUnauthorizedRoute()
                       .handler(StaticHandler.create("docs/openapi"))
+                      // This means that vertx.filesystem_options.classpath_resolving_enabled is disabled
+                      // so we read from resources
+                      .handler(context -> executorPools.service().runBlocking(() -> {
+                          HttpServerRequest request = context.request();
+                          if (!request.isEnded())
+                          {
+                              request.pause();
+                          }
+
+                          try (InputStream inputStream = getClass().getResourceAsStream("/docs/openapi/index.html"))
+                          {
+                              if (inputStream == null)
+                              {
+                                  if (!context.request().isEnded())
+                                  {
+                                      context.request().resume();
+                                  }
+                                  context.next();
+                              }
+                              else
+                              {
+                                  context.response()
+                                         .putHeader("Content-Type", "text/html; charset=utf-8")
+                                         .end(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
+                              }
+                          }
+                      }))
                       .build();
     }
 }
