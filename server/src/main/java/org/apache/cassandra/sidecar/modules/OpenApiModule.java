@@ -23,7 +23,8 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
-import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.ext.web.handler.StaticHandler;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -92,36 +93,47 @@ public class OpenApiModule extends AbstractModule
     @KeyClassMapKey(VertxRouteMapKeys.OpenApiHtmlRouteKey.class)
     VertxRoute swaggerUIRoute(RouteBuilder.Factory factory, ExecutorPools executorPools)
     {
-
         return factory.builderForUnauthorizedRoute()
                       .handler(StaticHandler.create("docs/openapi"))
                       // This means that vertx.filesystem_options.classpath_resolving_enabled is disabled
                       // so we read from resources
-                      .handler(context -> executorPools.service().runBlocking(() -> {
-                          HttpServerRequest request = context.request();
-                          if (!request.isEnded())
+                      .handler(context -> new Handler<>()
+                      {
+                          private Future<String> swaggerUiHtml = loadHtmlTemplateFuture();
+
+                          @Override
+                          public void handle(Object event)
                           {
-                              request.pause();
+                              Future<String> resourceFuture = swaggerUiHtml;
+                              if (resourceFuture.failed())
+                              {
+                                  swaggerUiHtml = loadHtmlTemplateFuture();
+                              }
+
+                              resourceFuture.onSuccess(html ->
+                                                       context.response()
+                                                              .putHeader("Content-Type", "text/html; charset=utf-8")
+                                                              .end(html))
+                                            .onFailure(throwable -> context.next());
                           }
 
-                          try (InputStream inputStream = getClass().getResourceAsStream("/docs/openapi/index.html"))
+                          private Future<String> loadHtmlTemplateFuture()
                           {
-                              if (inputStream == null)
-                              {
-                                  if (!context.request().isEnded())
+                              return executorPools.service().executeBlocking(() -> {
+                                  try (InputStream inputStream = getClass().getResourceAsStream("/docs/openapi/index.html"))
                                   {
-                                      context.request().resume();
+                                      if (inputStream != null)
+                                      {
+                                          return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                                      }
+                                      else
+                                      {
+                                          throw new NullPointerException("InputStream for resource is null");
+                                      }
                                   }
-                                  context.next();
-                              }
-                              else
-                              {
-                                  context.response()
-                                         .putHeader("Content-Type", "text/html; charset=utf-8")
-                                         .end(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
-                              }
+                              });
                           }
-                      }))
+                      })
                       .build();
     }
 }

@@ -19,13 +19,9 @@
 package org.apache.cassandra.sidecar.handlers;
 
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
@@ -47,14 +43,6 @@ import static org.apache.cassandra.sidecar.utils.HttpExceptions.wrapHttpExceptio
 public class OpenApiHandler implements Handler<RoutingContext>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenApiHandler.class);
-    private final Vertx vertx;
-    private final Map<String, Buffer> specCache = new ConcurrentHashMap<>();
-
-    @Inject
-    public OpenApiHandler(Vertx vertx)
-    {
-        this.vertx = vertx;
-    }
 
     @Override
     public void handle(RoutingContext context)
@@ -63,28 +51,12 @@ public class OpenApiHandler implements Handler<RoutingContext>
         String contentType = isYaml ? "application/yaml" : "application/json";
         String fileName = isYaml ? "openapi.yaml" : "openapi.json";
 
-        // Check cache first
-        Buffer cachedSpec = specCache.get(fileName);
-        if (cachedSpec != null)
-        {
-            LOGGER.debug("Serving cached OpenAPI specification: {}", fileName);
-            context.response()
-                   .putHeader("Content-Type", contentType)
-                   .end(cachedSpec);
-            return;
-        }
-
-        // Load from file system and cache
-        loadGeneratedOpenApiSpec(fileName)
-        .onSuccess(buffer -> {
-            specCache.put(fileName, buffer);
-            LOGGER.info("Loaded and cached OpenAPI specification: {}", fileName);
-            context.response()
-                   .putHeader("Content-Type", contentType)
-                   .end(buffer);
-        })
+        loadGeneratedOpenApiSpec(context.vertx(), fileName)
+        .onSuccess(buffer -> context.response()
+                                    .putHeader("Content-Type", contentType)
+                                    .end(buffer))
         .onFailure(throwable -> {
-            LOGGER.error("Unable to read specification: {}", fileName, throwable);
+            LOGGER.error("Unable to read specification", throwable);
             context.fail(wrapHttpException(HttpResponseStatus.NOT_FOUND, "Unable to find specification"));
         });
     }
@@ -92,10 +64,11 @@ public class OpenApiHandler implements Handler<RoutingContext>
     /**
      * Loads the generated OpenAPI specification from resources or build output
      *
+     * @param vertx    the vertx instance
      * @param fileName the name of the file to load
      * @return a future with the contents of the file
      */
-    private Future<Buffer> loadGeneratedOpenApiSpec(String fileName)
+    private Future<Buffer> loadGeneratedOpenApiSpec(Vertx vertx, String fileName)
     {
         FileSystem fileSystem = vertx.fileSystem();
         return fileSystem
