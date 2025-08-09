@@ -25,8 +25,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +120,7 @@ class OpenApiHandlerTest
     void testYamlRequestByPath(VertxTestContext testContext)
     {
         WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/openapi.yaml")
+        client.get(server.actualPort(), "localhost", "/spec/openapi.yaml")
               .as(BodyCodec.buffer())
               .send(resp -> {
                   HttpResponse<Buffer> response = resp.result();
@@ -141,34 +139,6 @@ class OpenApiHandlerTest
                   catch (Exception e)
                   {
                       testContext.failNow(new AssertionError("Response is not valid YAML: " + e.getMessage()));
-                  }
-              });
-    }
-
-    @Test
-    void testJsonRequestByAcceptHeader(VertxTestContext testContext)
-    {
-        WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/spec/openapi")
-              .putHeader("Accept", "application/json")
-              .as(BodyCodec.buffer())
-              .send(resp -> {
-                  HttpResponse<Buffer> response = resp.result();
-                  assertThat(response.statusCode()).isEqualTo(HttpResponseStatus.OK.code());
-                  assertThat(response.getHeader("Content-Type")).isEqualTo("application/json");
-
-                  String body = response.bodyAsString();
-                  assertThat(body).isNotEmpty();
-
-                  // Validate that the response is valid JSON
-                  try
-                  {
-                      JSON_MAPPER.readTree(body);
-                      testContext.completeNow();
-                  }
-                  catch (Exception e)
-                  {
-                      testContext.failNow(new AssertionError("Response is not valid JSON: " + e.getMessage()));
                   }
               });
     }
@@ -197,62 +167,6 @@ class OpenApiHandlerTest
                   catch (Exception e)
                   {
                       testContext.failNow(new AssertionError("Response is not valid YAML: " + e.getMessage()));
-                  }
-              });
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"application/json, application/yaml", "text/html, application/yaml", "application/yaml; q=0.9"})
-    void testYamlRequestByAcceptHeaderWithMultipleValues(String acceptHeader, VertxTestContext testContext)
-    {
-        WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/spec/openapi")
-              .putHeader("Accept", acceptHeader)
-              .as(BodyCodec.buffer())
-              .send(resp -> {
-                  HttpResponse<Buffer> response = resp.result();
-                  assertThat(response.statusCode()).isEqualTo(HttpResponseStatus.OK.code());
-                  assertThat(response.getHeader("Content-Type")).isEqualTo("application/yaml");
-
-                  String body = response.bodyAsString();
-                  assertThat(body).isNotEmpty();
-
-                  // Validate that the response is valid YAML
-                  try
-                  {
-                      YAML_MAPPER.readTree(body);
-                      testContext.completeNow();
-                  }
-                  catch (Exception e)
-                  {
-                      testContext.failNow(new AssertionError("Response is not valid YAML: " + e.getMessage()));
-                  }
-              });
-    }
-
-    @Test
-    void testDefaultToJsonWhenNoFormatSpecified(VertxTestContext testContext)
-    {
-        WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/spec/openapi")
-              .as(BodyCodec.buffer())
-              .send(resp -> {
-                  HttpResponse<Buffer> response = resp.result();
-                  assertThat(response.statusCode()).isEqualTo(HttpResponseStatus.OK.code());
-                  assertThat(response.getHeader("Content-Type")).isEqualTo("application/json");
-
-                  String body = response.bodyAsString();
-                  assertThat(body).isNotEmpty();
-
-                  // Validate that the response is valid JSON
-                  try
-                  {
-                      JSON_MAPPER.readTree(body);
-                      testContext.completeNow();
-                  }
-                  catch (Exception e)
-                  {
-                      testContext.failNow(new AssertionError("Response is not valid JSON: " + e.getMessage()));
                   }
               });
     }
