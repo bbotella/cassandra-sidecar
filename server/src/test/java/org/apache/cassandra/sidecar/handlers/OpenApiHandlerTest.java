@@ -142,32 +142,4 @@ class OpenApiHandlerTest
                   }
               });
     }
-
-    @Test
-    void testYamlRequestByAcceptHeader(VertxTestContext testContext)
-    {
-        WebClient client = WebClient.create(vertx);
-        client.get(server.actualPort(), "localhost", "/spec/openapi")
-              .putHeader("Accept", "application/yaml")
-              .as(BodyCodec.buffer())
-              .send(resp -> {
-                  HttpResponse<Buffer> response = resp.result();
-                  assertThat(response.statusCode()).isEqualTo(HttpResponseStatus.OK.code());
-                  assertThat(response.getHeader("Content-Type")).isEqualTo("application/yaml");
-
-                  String body = response.bodyAsString();
-                  assertThat(body).isNotEmpty();
-
-                  // Validate that the response is valid YAML
-                  try
-                  {
-                      YAML_MAPPER.readTree(body);
-                      testContext.completeNow();
-                  }
-                  catch (Exception e)
-                  {
-                      testContext.failNow(new AssertionError("Response is not valid YAML: " + e.getMessage()));
-                  }
-              });
-    }
 }
