@@ -23,8 +23,7 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.handler.StaticHandler;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -67,11 +66,11 @@ public class OpenApiModule extends AbstractModule
     @GET
     @Path(ApiEndpointsV1.OPENAPI_YAML_ROUTE)
     @Operation(summary = "Get OpenAPI specification in YAML",
-               description = "Returns the OpenAPI specification for the Cassandra Sidecar API in YAML format")
+    description = "Returns the OpenAPI specification for the Cassandra Sidecar API in YAML format")
     @APIResponse(description = "OpenAPI specification retrieved successfully",
-                 responseCode = "200",
-                 content = @Content(mediaType = "application/yaml",
-                 schema = @Schema(type = SchemaType.OBJECT)))
+    responseCode = "200",
+    content = @Content(mediaType = "application/yaml",
+    schema = @Schema(type = SchemaType.OBJECT)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.OpenApiYamlRouteKey.class)
     VertxRoute openApiYamlRoute(RouteBuilder.Factory factory, OpenApiHandler openApiHandler)
@@ -84,11 +83,11 @@ public class OpenApiModule extends AbstractModule
     @GET
     @Path(ApiEndpointsV1.OPENAPI_HTML_ROUTE)
     @Operation(summary = "Get Swagger UI",
-               description = "Returns the Swagger UI for interactive API documentation")
+    description = "Returns the Swagger UI for interactive API documentation")
     @APIResponse(description = "Swagger UI page retrieved successfully",
-                 responseCode = "200",
-                 content = @Content(mediaType = "text/html",
-                 schema = @Schema(type = SchemaType.STRING)))
+    responseCode = "200",
+    content = @Content(mediaType = "text/html",
+    schema = @Schema(type = SchemaType.STRING)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.OpenApiHtmlRouteKey.class)
     VertxRoute swaggerUIRoute(RouteBuilder.Factory factory, ExecutorPools executorPools)
@@ -97,42 +96,31 @@ public class OpenApiModule extends AbstractModule
                       .handler(StaticHandler.create("docs/openapi"))
                       // This means that vertx.filesystem_options.classpath_resolving_enabled is disabled
                       // so we read from resources
-                      .handler(context -> new Handler<>()
-                      {
-                          private Future<String> swaggerUiHtml = loadHtmlTemplateFuture();
-
-                          @Override
-                          public void handle(Object event)
+                      .handler(context -> {
+                          HttpServerRequest request = context.request();
+                          if (!request.isEnded())
                           {
-                              Future<String> resourceFuture = swaggerUiHtml;
-                              if (resourceFuture.failed())
+                              request.pause();
+                          }
+                          executorPools.service().runBlocking(() -> {
+                              try (InputStream inputStream = getClass().getResourceAsStream("/docs/openapi/index.html"))
                               {
-                                  swaggerUiHtml = loadHtmlTemplateFuture();
-                              }
-
-                              resourceFuture.onSuccess(html ->
-                                                       context.response()
-                                                              .putHeader("Content-Type", "text/html; charset=utf-8")
-                                                              .end(html))
-                                            .onFailure(throwable -> context.next());
-                          }
-
-                          private Future<String> loadHtmlTemplateFuture()
-                          {
-                              return executorPools.service().executeBlocking(() -> {
-                                  try (InputStream inputStream = getClass().getResourceAsStream("/docs/openapi/index.html"))
+                                  if (inputStream == null)
                                   {
-                                      if (inputStream != null)
+                                      if (!context.request().isEnded())
                                       {
-                                          return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                                          context.request().resume();
                                       }
-                                      else
-                                      {
-                                          throw new NullPointerException("InputStream for resource is null");
-                                      }
+                                      context.next();
                                   }
-                              });
-                          }
+                                  else
+                                  {
+                                      context.response()
+                                             .putHeader("Content-Type", "text/html; charset=utf-8")
+                                             .end(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
+                                  }
+                              }
+                          });
                       })
                       .build();
     }

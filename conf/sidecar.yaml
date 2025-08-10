@@ -162,10 +162,26 @@ sidecar:
       # The minimum value allowed for the cluster lease claim process task implementation is 30 seconds
       execute_interval: 100s
 
+# Exposes vertx configurations
 vertx:
+  # Configuration options for the vertx filesystem
+  # These options will affect the behavior when serving static resources from the
+  # classpath. For example, setting classpath_resolving_enabled to false will cause
+  # the static file resolution to only look for files in the filesystem and avoid
+  # resolving resources from the classpath.
   filesystem_options:
+    # When vert.x cannot find the file on the filesystem it tries to resolve the
+    # file from the classpath when this is set to true. Otherwise, vert.x
+    # will not attempt to resolve the file on the classpath
     classpath_resolving_enabled: true
-    file_caching_enabled: false
+    # Set to true to enable caching files on the real file system
+    # when the filesystem performs class path resolving. Set to false to
+    # disable caching.
+    file_caching_enabled: true
+    # When vert.x reads a file that is packaged with the application it gets
+    # extracted to this directory first and subsequent reads will use the extracted
+    # file to get better IO performance.
+    #file_cache_dir: /tmp
 
 schema_reporting:                            # Schema Reporting configuration
   enabled:          false                    # Disabled by default
