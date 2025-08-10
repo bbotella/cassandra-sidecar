@@ -36,7 +36,10 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.ErrorHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.handler.TimeoutHandler;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
+import org.apache.cassandra.sidecar.common.response.TimeSkewResponse;
 import org.apache.cassandra.sidecar.config.FileSystemOptionsConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.VertxConfiguration;
@@ -53,6 +56,10 @@ import org.apache.cassandra.sidecar.routes.RouteBuilder;
 import org.apache.cassandra.sidecar.routes.RoutingOrder;
 import org.apache.cassandra.sidecar.routes.SettableVertxRoute;
 import org.apache.cassandra.sidecar.routes.VertxRoute;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.API_V1_ALL_ROUTES;
 
@@ -60,6 +67,7 @@ import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.API_V1_ALL_ROUT
  * Provides the glue code for API definition and the related, i.e. Vertx, handlers, etc.
  * <p>Note that feature-specific routes are defined in the corresponding modules, e.g. {@link HealthCheckModule}
  */
+@Path("/")
 public class ApiModule extends AbstractModule
 {
     /**
@@ -162,6 +170,14 @@ public class ApiModule extends AbstractModule
         });
     }
 
+    @GET
+    @Path(ApiEndpointsV1.TIME_SKEW_ROUTE)
+    @Operation(summary = "Get time skew information",
+               description = "Returns time skew information for the node")
+    @APIResponse(description = "Time skew information retrieved successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(implementation = TimeSkewResponse.class)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.TimeSkewRouteKey.class)
     VertxRoute timeSkewRoute(RouteBuilder.Factory factory,

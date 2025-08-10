@@ -20,6 +20,10 @@ package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.ProvidesIntoMap;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
+import org.apache.cassandra.sidecar.common.response.InstanceFilesListResponse;
 import org.apache.cassandra.sidecar.handlers.FileStreamHandler;
 import org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationApiEnableDisableHandler;
 import org.apache.cassandra.sidecar.handlers.livemigration.LiveMigrationFileStreamHandler;
@@ -30,10 +34,16 @@ import org.apache.cassandra.sidecar.modules.multibindings.KeyClassMapKey;
 import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys;
 import org.apache.cassandra.sidecar.routes.RouteBuilder;
 import org.apache.cassandra.sidecar.routes.VertxRoute;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 /**
  * Module for supporting LiveMigration feature.
  */
+@Path("/")
 public class LiveMigrationModule extends AbstractModule
 {
 
@@ -44,6 +54,18 @@ public class LiveMigrationModule extends AbstractModule
     }
 
 
+    @GET
+    @Path(ApiEndpointsV1.LIVE_MIGRATION_FILE_TRANSFER_API)
+    @Operation(summary = "Stream file for live migration",
+               description = "Streams a file for live migration data transfer")
+    @APIResponse(description = "File stream for live migration initiated successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/octet-stream",
+                 schema = @Schema(type = SchemaType.STRING)))
+    @APIResponse(responseCode = "403",
+                 description = "Live migration not enabled or file access denied",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(type = SchemaType.OBJECT)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.LiveMigrationFileStreamHandlerRouteKey.class)
     VertxRoute downloadFileRoute(RouteBuilder.Factory factory,
@@ -58,6 +80,18 @@ public class LiveMigrationModule extends AbstractModule
                       .build();
     }
 
+    @GET
+    @Path(ApiEndpointsV1.LIVE_MIGRATION_FILES_API)
+    @Operation(summary = "List instance files",
+               description = "Lists files available on an instance for live migration purposes")
+    @APIResponse(description = "Instance files listed successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(implementation = InstanceFilesListResponse.class)))
+    @APIResponse(responseCode = "403",
+                 description = "Live migration not enabled or node not configured for migration",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(type = SchemaType.OBJECT)))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.LiveMigrationListInstanceFilesRouteKey.class)
     VertxRoute listInstanceFiles(RouteBuilder.Factory factory,

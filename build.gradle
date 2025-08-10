@@ -403,6 +403,8 @@ if (JavaVersion.current().isJava11Compatible()) {
     build.dependsOn codeCheckTasks, copyDocs
 }
 run.dependsOn build
+// Ensure OpenAPI spec is generated when running the application
+run.dependsOn ':server:generateOpenApiSpec'
 
 tasks.named('rat').configure {
     dependsOn(buildIgnoreRatList)

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.cassandra.sidecar.modules.multibindings;
 
 import io.vertx.core.http.HttpMethod;
@@ -191,6 +192,21 @@ public interface VertxRouteMapKeys
     {
         HttpMethod HTTP_METHOD = HttpMethod.GET;
         String ROUTE_URI = ApiEndpointsV1.SNAPSHOTS_ROUTE;
+    }
+    interface OpenApiJsonRouteKey extends RouteClassKey
+    {
+        HttpMethod HTTP_METHOD = HttpMethod.GET;
+        String ROUTE_URI = ApiEndpointsV1.OPENAPI_JSON_ROUTE;
+    }
+    interface OpenApiYamlRouteKey extends RouteClassKey
+    {
+        HttpMethod HTTP_METHOD = HttpMethod.GET;
+        String ROUTE_URI = ApiEndpointsV1.OPENAPI_YAML_ROUTE;
+    }
+    interface OpenApiHtmlRouteKey extends RouteClassKey
+    {
+        HttpMethod HTTP_METHOD = HttpMethod.GET;
+        String ROUTE_URI = ApiEndpointsV1.OPENAPI_HTML_ROUTE;
     }
     interface LiveMigrationFileStreamHandlerRouteKey extends RouteClassKey
     {

@@ -26,6 +26,9 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.ProvidesIntoMap;
 import datahub.client.rest.RestEmitter;
 import datahub.client.rest.RestEmitterConfig;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.common.server.utils.ThrowableUtils;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
@@ -43,14 +46,27 @@ import org.apache.cassandra.sidecar.routes.RouteBuilder;
 import org.apache.cassandra.sidecar.routes.VertxRoute;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Instantiates the objects necessary for converting and reporting the cluster's
  * current schema in a DataHub-compatible format either on schedule or as requested
  */
+@Path("/")
 public class SchemaReportingModule extends AbstractModule
 {
+    @PUT
+    @Path(ApiEndpointsV1.REPORT_SCHEMA_ROUTE)
+    @Operation(summary = "Report schema to DataHub",
+               description = "Reports schema information to DataHub for data cataloging")
+    @APIResponse(description = "Schema reported successfully",
+                 responseCode = "200",
+                 content = @Content(mediaType = "application/json",
+                 schema = @Schema(implementation = Object.class, example = "{\"status\": \"Schema reported successfully\", \"timestamp\": 1627846261000}")))
     @ProvidesIntoMap
     @KeyClassMapKey(VertxRouteMapKeys.DataHubSchemaReportingRouteKey.class)
     VertxRoute schemaReportingRoute(@NotNull RouteBuilder.Factory factory,

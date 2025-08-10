@@ -35,8 +35,8 @@ public class FileSystemOptionsConfigurationImpl implements FileSystemOptionsConf
     @JsonProperty(value = "file_caching_enabled")
     private final boolean fileCachingEnabled;
 
-    public static final boolean DEFAULT_CLASSPATH_RESOLVING_ENABLED = false;
-    public static final boolean DEFAULT_FILE_CACHING_ENABLED = false;
+    public static final boolean DEFAULT_CLASSPATH_RESOLVING_ENABLED = true;
+    public static final boolean DEFAULT_FILE_CACHING_ENABLED = true;
 
     public FileSystemOptionsConfigurationImpl()
     {

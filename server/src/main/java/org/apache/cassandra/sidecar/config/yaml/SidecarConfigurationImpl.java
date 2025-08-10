@@ -19,10 +19,7 @@
 package org.apache.cassandra.sidecar.config.yaml;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -303,17 +300,6 @@ public class SidecarConfigurationImpl implements SidecarConfiguration
         return liveMigrationConfiguration;
     }
 
-    public static SidecarConfigurationImpl readYamlConfiguration(String yamlConfigurationPath) throws IOException
-    {
-        try
-        {
-            return readYamlConfiguration(Paths.get(new URI(yamlConfigurationPath)));
-        }
-        catch (URISyntaxException e)
-        {
-            throw new IOException("Invalid URI: " + yamlConfigurationPath, e);
-        }
-    }
 
     public static SidecarConfigurationImpl readYamlConfiguration(Path yamlConfigurationPath) throws IOException
     {

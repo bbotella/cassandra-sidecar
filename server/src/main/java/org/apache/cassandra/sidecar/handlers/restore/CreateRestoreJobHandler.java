@@ -114,8 +114,7 @@ public class CreateRestoreJobHandler extends AbstractHandler<CreateRestoreJobReq
         }
     }
 
-    private Future<CreateRestoreJobRequestPayload> validatePayload(CreateRestoreJobRequestPayload
-                                                                   createRestoreJobRequestPayload)
+    private Future<CreateRestoreJobRequestPayload> validatePayload(CreateRestoreJobRequestPayload createRestoreJobRequestPayload)
     {
         UUID jobId = createRestoreJobRequestPayload.jobId();
         if (jobId == null)

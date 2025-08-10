@@ -16,9 +16,15 @@
  * limitations under the License.
  */
 
-import org.apache.tools.ant.taskdefs.condition.Os
-
 import java.nio.file.Paths
+
+buildscript {
+    dependencies {
+        classpath("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml") {
+            version { strictly("2.14.3") }
+        }
+    }
+}
 
 plugins {
     id('idea')
@@ -30,8 +36,15 @@ plugins {
     id('maven-publish')
     // and produces a docker image
     id('com.google.cloud.tools.jib') version '3.4.4'
+    // and generates an openAPI specification
+    id('io.smallrye.openapi') version "${smallryeOpenApiVersion}"
 }
 apply from: "$rootDir/gradle/common/publishing.gradle"
+
+// Configure SmallRye OpenAPI plugin
+generateOpenApiSpec {
+    outputDirectory = layout.buildDirectory.dir('resources/main/openapi')
+}
 
 sourceCompatibility = JavaVersion.VERSION_11
 
@@ -126,6 +139,14 @@ dependencies {
 
     // DataHub client is used to convert and report Cassandra schema on a periodic basis
     implementation(group: 'io.acryl', name: 'datahub-client', version: '0.15.0-3')
+    
+    // OpenAPI support
+    implementation("org.eclipse.microprofile.openapi:microprofile-openapi-api:${project.microprofileOpenApiVersion}")
+    implementation("jakarta.ws.rs:jakarta.ws.rs-api:${project.jakartaWsRsVersion}")
+    implementation("io.swagger.core.v3:swagger-core:${project.swaggerVersion}")
+    implementation("io.swagger.core.v3:swagger-annotations:${project.swaggerVersion}")
+    implementation("io.swagger.core.v3:swagger-models:${project.swaggerVersion}")
+    implementation("io.swagger.core.v3:swagger-jaxrs2:${project.swaggerVersion}")
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${project.junitVersion}"
     testImplementation "org.junit.jupiter:junit-jupiter-params:${project.junitVersion}"
@@ -236,3 +257,7 @@ checkstyleContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 spotbugsContainerTest.onlyIf { "true" != System.getenv("skipContainerTest") }
 
 check.dependsOn containerTest, integrationTest, jacocoTestReport
+
+// Ensure the OpenAPI spec is generated before building the JAR
+processResources.dependsOn generateOpenApiSpec
+

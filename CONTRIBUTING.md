@@ -101,6 +101,14 @@ Similarly, a health check API should be located in the
 Second, declare the route to be injected into `Router`. Take the following code snippet as example,
 
 ```java
+@GET
+@Path(ApiEndpointsV1.HEALTH_ROUTE)
+@Operation(summary = "Check Sidecar health",
+           description = "Returns the health status of the Sidecar application")
+@APIResponse(description = "Sidecar is healthy",
+             responseCode = "200",
+             content = @Content(mediaType = "application/json",
+              schema = @Schema(implementation = HealthResponse.class)))
 @ProvidesIntoMap
 @KeyClassMapKey(VertxRouteMapKeys.SidecarHealthRouteKey.class)
 VertxRoute sidecarHealthRoute(RouteBuilder.Factory factory)

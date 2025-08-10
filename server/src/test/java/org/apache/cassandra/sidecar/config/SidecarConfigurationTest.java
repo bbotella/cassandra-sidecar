@@ -746,7 +746,7 @@ class SidecarConfigurationTest
     void validateVertxFilesystemOptionsClasspathResolvingDisabled(FileSystemOptionsConfiguration config)
     {
         assertThat(config).isNotNull();
-        assertThat(config.classpathResolvingEnabled()).isFalse();
+        assertThat(config.classpathResolvingEnabled()).isTrue();
         assertThat(config.fileCacheDir()).isNotNull();
         assertThat(config.fileCachingEnabled()).isNotNull();
     }
