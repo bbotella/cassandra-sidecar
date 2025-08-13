@@ -1,3 +1,29 @@
+0.2
+===
+
+Upgrading
+---------
+    - In CASSSIDECAR-176, the default values in sidecar.yaml for vertx.filesystem_options.classpath_resolving_enabled
+      and vertx.filesystem_options.file_caching_enabled changed from false to true to support the OpenAPI static
+      resources. Consider changing these values during the upgrade if you plan to leverage OpenAPI.
+    - In CASSSIDECAR-263, a new configuration exposes the ability to configure a new DNS resolution strategy.
+      Configure sidecar.dns_resolver to use a different strategy than the default.
+
+
+New features
+------------
+    - Enhances to the Sidecar client to list and download Cassandra instance files for Live Migration.
+    - JWT Authentication support.
+    - Comprehensive OpenAPI Documentation.
+    - Enhancements for the control plane such as Start/Stop Binary Transport & Gossip Endpoints.
+    - Enhancements to the restore capability from S3.
+    - Enhancements to schema reporting such as adding an endpoint to trigger immediate schema report,
+      retry failed reports, and better metrics.
+    - Additional enhancements for CEP-44 such as token ring peer health monitor, CDC/Kafka Config APIs,
+      and CDC Raw Directory Space Cleaner.
+    - Support for flag and implementation of forward-only DNS resolution.
+
+
 0.1
 ===
 
