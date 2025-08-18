@@ -21,12 +21,67 @@ package org.apache.cassandra.sidecar.utils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import com.google.common.annotations.VisibleForTesting;
+
+import org.apache.cassandra.spark.utils.TableIdentifier;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Class with utility methods for CDC.
+ * Utility class providing CDC (Change Data Capture) specific operations and file handling.
+ * <p>
+ * This class offers a comprehensive set of static utility methods for working with CDC files,
+ * parsing CDC-related data structures, and extracting schema information for CDC-enabled tables.
+ * The utilities are specifically designed to handle Cassandra commit log segments and their
+ * associated index files in the CDC context, providing:
+ * <ul>
+ *   <li>Commit log segment and index file name parsing and validation</li>
+ *   <li>CDC index file content parsing and interpretation</li>
+ *   <li>Schema extraction for CDC-enabled tables from cluster metadata</li>
+ *   <li>File naming convention utilities for CDC log and index files</li>
+ *   <li>Table schema cleaning and property filtering operations</li>
+ * </ul>
+ * <p>
+ * Key functionalities include:
+ * <ul>
+ *   <li><strong>File Management:</strong> Utilities for converting between log and index
+ *       file names, validating file naming conventions, and determining file types</li>
+ *   <li><strong>Index Parsing:</strong> Robust parsing of CDC index files with retry
+ *       logic to handle concurrent access scenarios</li>
+ *   <li><strong>Schema Processing:</strong> Extraction and cleaning of table schemas
+ *       for CDC-enabled tables, including property filtering and formatting</li>
+ *   <li><strong>Pattern Matching:</strong> Comprehensive regex-based validation of
+ *       CDC file naming conventions and structure</li>
+ * </ul>
+ * <p>
+ * The class handles Cassandra commit log file naming conventions which follow the pattern:
+ * {@code CommitLog-[sequence]-[timestamp].log} with corresponding index files using
+ * {@code CommitLog-[sequence]-[timestamp]_cdc.idx} format. It provides utilities to:
+ * <ul>
+ *   <li>Parse segment IDs from file names</li>
+ *   <li>Convert between log and index file names</li>
+ *   <li>Validate file naming conventions</li>
+ *   <li>Extract metadata from index files</li>
+ * </ul>
+ * <p>
+ * For schema operations, the class can extract CDC-enabled table definitions from
+ * cluster schema strings, clean and normalize the schema text, and filter table
+ * properties to include only allowed overrides. This is essential for maintaining
+ * consistent schema representations across CDC operations.
+ * <p>
+ * All methods in this class are static and thread-safe. The class cannot be
+ * instantiated and serves purely as a utility container for CDC-related operations.
+ *
+ * @see org.apache.cassandra.spark.utils.TableIdentifier
  */
 public final class CdcUtil
 {
@@ -40,6 +95,8 @@ public final class CdcUtil
     private static final String FILENAME_EXTENSION = "(" + IDX_FILE_EXTENSION + "|" + LOG_FILE_EXTENSION + ")";
     static final Pattern SEGMENT_PATTERN = Pattern.compile(FILENAME_PREFIX + "(?:\\d+" + SEPARATOR + ")?" + "(\\d+)" + FILENAME_EXTENSION);
     public static final Pattern IDX_FILE_PATTERN = Pattern.compile(FILENAME_PREFIX + "(?:\\d+" + SEPARATOR + ")?" + "(\\d+)" + IDX_FILE_EXTENSION);
+    public static final List<String> TABLE_PROPERTY_OVERRIDE_ALLOWLIST = 
+            Collections.unmodifiableList(Arrays.asList("min_index_interval", "max_index_interval", "cdc"));
 
     private static final int READ_INDEX_FILE_MAX_RETRY = 5;
 
@@ -174,5 +231,120 @@ public final class CdcUtil
     public static boolean matchIndexExtension(String fileName)
     {
         return fileName.endsWith(IDX_FILE_EXTENSION);
+    }
+
+    /**
+     * @param schemaStr full cluster schema text.
+     * @return map of keyspace/table identifier to table create statements.
+     */
+    public static Map<TableIdentifier, String> extractCdcTables(@NotNull final String schemaStr)
+    {
+        final String cleaned = cleanCql(schemaStr);
+        final Pattern pattern = Pattern.compile("CREATE TABLE \"?(\\w+)\"?\\.\"?(\\w+)\"?[^;]*cdc = true[^;]*;");
+        final Matcher matcher = pattern.matcher(cleaned);
+        final Map<TableIdentifier, String> createStmts = new HashMap<>();
+        while (matcher.find())
+        {
+            final String keyspace = matcher.group(1);
+            final String table = matcher.group(2);
+            createStmts.put(TableIdentifier.of(keyspace, table), extractCleanedTableSchema(cleaned, keyspace, table));
+        }
+        return createStmts;
+    }
+
+    public static String cleanCql(@NotNull final String cql)
+    {
+        return cql.replaceAll("(\\\\r|\\\\n|\\\\r\\n)+", "\n")
+                  .replaceAll("\n", "")
+                  .replaceAll("\\\\", "");
+    }
+
+    public static String extractCleanedTableSchema(@NotNull final String cleaned,
+                                                   @NotNull final String keyspace,
+                                                   @NotNull final String table)
+    {
+        final Pattern pattern = Pattern.compile(String.format("CREATE TABLE ?\"?%s?\"?\\.{1}\"?%s\"?[^;]*;", keyspace, table));
+        final Matcher matcher = pattern.matcher(cleaned);
+        if (matcher.find())
+        {
+            final String fullSchema = cleaned.substring(matcher.start(0), matcher.end(0));
+            String tableOnly = removeTableProps(fullSchema);
+            final String quotedTableName = String.format("\"%s\"", table);
+            if (tableOnly.contains(quotedTableName))
+            {
+                // remove quoted table name from schema
+                tableOnly = tableOnly.replaceFirst(quotedTableName, table);
+            }
+            String redactedSchema = tableOnly;
+            String clustering = extractClustering(fullSchema);
+            String separator = " WITH ";
+            if (clustering != null)
+            {
+                redactedSchema = redactedSchema + separator + clustering;
+                separator = " AND ";
+            }
+
+            List<String> propStrings = extractOverrideProperties(fullSchema, TABLE_PROPERTY_OVERRIDE_ALLOWLIST);
+            if (!propStrings.isEmpty())
+            {
+                redactedSchema = redactedSchema + separator + String.join(" AND ", propStrings);
+                separator = " AND "; // for completeness
+            }
+            return redactedSchema + ";";
+        }
+        throw new RuntimeException(String.format("Could not find schema for table: %s.%s", keyspace, table));
+    }
+
+    private static String removeTableProps(@NotNull final String schema)
+    {
+        int pos = schema.indexOf('(');
+        int count = 1;
+        if (pos < 0)
+        {
+            throw new RuntimeException("Missing parentheses in table schema " + schema);
+        }
+        while (++pos < schema.length()) // find closing bracket
+        {
+            if (schema.charAt(pos) == ')')
+            {
+                count--;
+            }
+            else if (schema.charAt(pos) == '(')
+            {
+                count++;
+            }
+            if (count == 0)
+            {
+                break;
+            }
+        }
+        return schema.substring(0, pos + 1);
+    }
+
+    @VisibleForTesting
+    static String extractClustering(String schemaStr)
+    {
+        final Pattern pattern = Pattern.compile("CLUSTERING ORDER BY \\([^)]*");
+        final Matcher matcher = pattern.matcher(schemaStr);
+        if (matcher.find())
+        {
+            return schemaStr.substring(matcher.start(0), matcher.end(0) + 1);
+        }
+        return null;
+    }
+
+    static List<String> extractOverrideProperties(String schemaStr, List<String> properties)
+    {
+        final List<String> overrideTableProps = new ArrayList<>();
+        if (properties.isEmpty()) return overrideTableProps;
+        final Pattern pattern = Pattern.compile("(" + properties.stream().collect(Collectors.joining("|")) + ") = (\\w+)");
+        final Matcher matcher = pattern.matcher(schemaStr);
+
+        while (matcher.find())
+        {
+            String parsedProp = schemaStr.substring(matcher.start(), matcher.end());
+            overrideTableProps.add(parsedProp);
+        }
+        return overrideTableProps;
     }
 }
