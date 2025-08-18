@@ -53,6 +53,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import static org.apache.cassandra.sidecar.config.yaml.CdcConfigurationImpl.DEFAULT_TABLE_SCHEMA_REFRESH_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -180,7 +181,7 @@ class CassandraClusterSchemaTest
     @Test
     void testDelayReturnsCorrectInterval()
     {
-        assertThat(clusterSchema.delay()).isEqualTo(CassandraClusterSchema.SCHEMA_REFRESH_INTERVAL);
+        assertThat(clusterSchema.delay()).isEqualTo(DEFAULT_TABLE_SCHEMA_REFRESH_TIME);
     }
 
     @Test
