@@ -36,6 +36,7 @@ import org.apache.cassandra.bridge.CassandraBridgeFactory;
 import org.apache.cassandra.bridge.CdcBridge;
 import org.apache.cassandra.bridge.CdcBridgeFactory;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
+import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 import org.apache.cassandra.sidecar.config.CdcConfiguration;
 import org.apache.cassandra.sidecar.config.SchemaKeyspaceConfiguration;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
@@ -115,6 +116,7 @@ class CassandraClusterSchemaTest
 
         // Setup default enabled configurations
         when(mockCdcConfiguration.isEnabled()).thenReturn(true);
+        when(mockCdcConfiguration.tableSchemaRefreshTime()).thenReturn(SecondBoundConfiguration.parse("60s"));
         when(mockSchemaKeyspaceConfiguration.isEnabled()).thenReturn(true);
 
         when(mockNodeSettings.releaseVersion()).thenReturn("4.0.0");
