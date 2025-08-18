@@ -42,7 +42,6 @@ import org.apache.cassandra.bridge.CdcBridge;
 import org.apache.cassandra.bridge.CdcBridgeFactory;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
-import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.db.CdcDatabaseAccessor;
