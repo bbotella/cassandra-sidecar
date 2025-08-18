@@ -152,7 +152,7 @@ public class RestoreProcessor implements PeriodicTask
     public DurationSpec delay()
     {
         // try to run the loop every second
-        return SecondBoundConfiguration.parse("60s");
+        return SecondBoundConfiguration.ONE;
     }
 
     @Override
