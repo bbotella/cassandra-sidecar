@@ -70,7 +70,7 @@ public class CdcConfigurationImpl implements CdcConfiguration
     private final boolean isEnabled;
     @JsonProperty(value = CONFIGURATION_REFRESH_TIME_PROPERTY)
     private final MillisecondBoundConfiguration cdcConfigRefreshTime;
-    @JsonProperty(value = CONFIGURATION_REFRESH_TIME_PROPERTY)
+    @JsonProperty(value = TABLE_SCHEMA_REFRESH_TIME_PROPERTY)
     private final SecondBoundConfiguration tableSchemaRefreshTime;
     @JsonProperty(value = SEGMENT_HARD_LINK_CACHE_EXPIRY_PROPERTY)
     private SecondBoundConfiguration segmentHardLinkCacheExpiry;
