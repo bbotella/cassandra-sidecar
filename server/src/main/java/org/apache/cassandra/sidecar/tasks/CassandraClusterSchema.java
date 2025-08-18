@@ -43,6 +43,7 @@ import org.apache.cassandra.bridge.CdcBridgeFactory;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
 import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
+import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.db.CdcDatabaseAccessor;
 import org.apache.cassandra.sidecar.utils.CdcUtil;
@@ -110,7 +111,6 @@ import org.jetbrains.annotations.NotNull;
 @Singleton
 public class CassandraClusterSchema implements PeriodicTask
 {
-    public static final DurationSpec SCHEMA_REFRESH_INTERVAL = MillisecondBoundConfiguration.parse("5s");
     // 49sec least-common multiple with 60sec is 49min so offers best monitor frequency without clashing with 60sec
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraClusterSchema.class);
 
@@ -121,6 +121,7 @@ public class CassandraClusterSchema implements PeriodicTask
     private final CopyOnWriteArrayList<Runnable> schemaChangeListeners = new CopyOnWriteArrayList<>();
     private final SidecarConfiguration sidecarConfiguration;
     private final InstanceMetadataFetcher instanceFetcher;
+    private final SecondBoundConfiguration tableSchemaRefreshTime;
 
     public CassandraClusterSchema(InstanceMetadataFetcher instanceFetcher,
                                   CdcDatabaseAccessor databaseAccessor,
@@ -130,6 +131,7 @@ public class CassandraClusterSchema implements PeriodicTask
         this.instanceFetcher = instanceFetcher;
         this.databaseAccessor = databaseAccessor;
         this.sidecarConfiguration = sidecarConfiguration;
+        this.tableSchemaRefreshTime = sidecarConfiguration.serviceConfiguration().cdcConfiguration().tableSchemaRefreshTime();
     }
 
     public void addSchemaChangeListener(Runnable listener)
@@ -176,7 +178,7 @@ public class CassandraClusterSchema implements PeriodicTask
 
     public DurationSpec delay()
     {
-        return SCHEMA_REFRESH_INTERVAL;
+        return tableSchemaRefreshTime;
     }
 
     @Override
