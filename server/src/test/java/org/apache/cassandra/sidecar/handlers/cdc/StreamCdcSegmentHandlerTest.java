@@ -120,6 +120,7 @@ class StreamCdcSegmentHandlerTest
                       latch.countDown();
                       if (latch.getCount() == 0)
                       {
+                          client.close();
                           context.completeNow();
                       }
                   }));
