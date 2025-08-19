@@ -26,6 +26,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import org.apache.cassandra.bridge.CassandraBridgeFactory;
 import org.apache.cassandra.sidecar.cdc.CdcConfig;
 import org.apache.cassandra.sidecar.cdc.CdcConfigImpl;
 import org.apache.cassandra.sidecar.cdc.CdcLogCache;
@@ -100,9 +101,10 @@ public class CdcModule extends AbstractModule
     @KeyClassMapKey(PeriodicTaskMapKeys.CassandraClusterSchemaTaskKey.class)
     PeriodicTask cassandraClusterSchema(InstanceMetadataFetcher instanceMetadataFetcher,
                                         CdcDatabaseAccessor databaseAccessor,
-                                        SidecarConfiguration configuration)
+                                        SidecarConfiguration configuration,
+                                        CassandraBridgeFactory cassandraBridgeFactory)
     {
-        return new CassandraClusterSchema(instanceMetadataFetcher, databaseAccessor, configuration);
+        return new CassandraClusterSchema(instanceMetadataFetcher, databaseAccessor, configuration, cassandraBridgeFactory);
     }
 
     @Provides
@@ -113,6 +115,13 @@ public class CdcModule extends AbstractModule
                         PeriodicTaskExecutor periodicTaskExecutor)
     {
         return new CdcConfigImpl(sidecarConfiguration, cdcConfigAccessor, kafkaConfigAccessor, periodicTaskExecutor);
+    }
+
+    @Provides
+    @Singleton
+    CassandraBridgeFactory cassandraBridgeFactory()
+    {
+        return new CassandraBridgeFactory();
     }
 
     @Provides

@@ -103,18 +103,21 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
     private final Provider<TokenSplitUtil> tokenSplitUtilProvider;
     private volatile TokenSplitUtil tokenSplitUtil = null;
     private volatile InstanceMetadataFetcher instanceMetadataFetcher;
+    private final CassandraBridgeFactory cassandraBridgeFactory;
 
     @Inject
     public CdcDatabaseAccessor(InstanceMetadataFetcher instanceMetadataFetcher,
                                CdcStatesSchema cdcStatesSchema,
                                TableHistorySchema tableHistorySchema,
                                CQLSessionProvider sessionProvider,
-                               Provider<TokenSplitUtil> tokenSplitUtilProvider)
+                               Provider<TokenSplitUtil> tokenSplitUtilProvider,
+                               CassandraBridgeFactory cassandraBridgeFactory)
     {
         super(cdcStatesSchema, sessionProvider);
         this.tableHistorySchema = tableHistorySchema;
         this.tokenSplitUtilProvider = tokenSplitUtilProvider;
         this.instanceMetadataFetcher = instanceMetadataFetcher;
+        this.cassandraBridgeFactory = cassandraBridgeFactory;
     }
 
     @VisibleForTesting
@@ -122,12 +125,14 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
                                CdcStatesSchema cdcStatesSchema,
                                TableHistorySchema tableHistorySchema,
                                CQLSessionProvider sessionProvider,
-                               TokenSplitUtil tokenSplitUtil)
+                               TokenSplitUtil tokenSplitUtil,
+                               CassandraBridgeFactory cassandraBridgeFactory)
     {
         super(cdcStatesSchema, sessionProvider);
         this.tableHistorySchema = tableHistorySchema;
         this.tokenSplitUtilProvider = () -> tokenSplitUtil;
         this.instanceMetadataFetcher = instanceMetadataFetcher;
+        this.cassandraBridgeFactory = cassandraBridgeFactory;
     }
 
     protected TokenSplitUtil tokenSplitUtil()
@@ -196,7 +201,7 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
     {
         NodeSettings nodeSettings = instanceMetadataFetcher
                                      .callOnFirstAvailableInstance(instance -> instance.delegate().nodeSettings());
-        CassandraBridge cassandraBridge = CassandraBridgeFactory.get(nodeSettings.releaseVersion());
+        CassandraBridge cassandraBridge = cassandraBridgeFactory.get(nodeSettings.releaseVersion());
         List<Integer> sizes = new ArrayList<>();
         // deserialize and merge the CDC state objects into canonical view
         Optional<CdcState> result = loadStateForRange(jobId, range)

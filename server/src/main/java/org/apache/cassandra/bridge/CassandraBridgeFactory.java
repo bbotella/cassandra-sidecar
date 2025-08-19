@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.base.Preconditions;
 
+import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.bridge.BaseCassandraBridgeFactory.getCassandraVersion;
@@ -39,38 +40,43 @@ import static org.apache.cassandra.bridge.BaseCassandraBridgeFactory.getCassandr
  * Factory class for creating Cassandra bridge instances based on version-specific jar files.
  * <p>
  * This factory maintains a cache of CassandraBridge instances mapped by Cassandra version labels
- * and provides static methods to retrieve bridge instances for specific Cassandra versions.
+ * and provides methods to retrieve bridge instances for specific Cassandra versions.
  * Each bridge is loaded from version-specific JAR resources and instantiated using reflection.
  */
+@Singleton
 public class CassandraBridgeFactory
 {
     // maps Cassandra version-specific jar name (e.g. 'four-zero') to matching CassandraBridge
-    private static final Map<String, CassandraBridge> CASSANDRA_BRIDGES =
-    new ConcurrentHashMap<>(CassandraVersion.values().length);
+    private final Map<String, CassandraBridge> cassandraBridges;
+    
+    public CassandraBridgeFactory()
+    {
+        cassandraBridges = new ConcurrentHashMap<>(CassandraVersion.values().length);
+    }
 
     @NotNull
-    public static CassandraBridge get(@NotNull String version)
+    public CassandraBridge get(@NotNull String version)
     {
         return get(getCassandraVersion(version));
     }
 
     @NotNull
-    public static CassandraBridge get(@NotNull CassandraVersionFeatures features)
+    public CassandraBridge get(@NotNull CassandraVersionFeatures features)
     {
         return get(getCassandraVersion(features));
     }
 
     @NotNull
-    public static CassandraBridge get(@NotNull CassandraVersion version)
+    public CassandraBridge get(@NotNull CassandraVersion version)
     {
         String jarBaseName = version.jarBaseName();
         Preconditions.checkNotNull(jarBaseName, "Cassandra version " + version + " is not supported");
-        return CASSANDRA_BRIDGES.computeIfAbsent(jarBaseName, CassandraBridgeFactory::create);
+        return cassandraBridges.computeIfAbsent(jarBaseName, this::create);
     }
 
     @NotNull
     @SuppressWarnings("unchecked")
-    private static CassandraBridge create(@NotNull String label)
+    private CassandraBridge create(@NotNull String label)
     {
         try
         {
@@ -90,29 +96,29 @@ public class CassandraBridgeFactory
     }
 
     @NotNull
-    static String cassandraResourceName(@NotNull String label)
+    String cassandraResourceName(@NotNull String label)
     {
         return "/bridges/" + label + ".jar";
     }
 
     @NotNull
-    static String bridgeResourceName(@NotNull String label)
+    String bridgeResourceName(@NotNull String label)
     {
         return jarResourceName(label, "bridge");
     }
 
     @NotNull
-    static String typesResourceName(@NotNull String label)
+    String typesResourceName(@NotNull String label)
     {
         return jarResourceName(label, "types");
     }
 
-    static String jarResourceName(String... parts)
+    String jarResourceName(String... parts)
     {
         return "/bridges/" + String.join("-", parts) + ".jar";
     }
 
-    public static ClassLoader buildClassLoader(String... resourceNames)
+    public ClassLoader buildClassLoader(String... resourceNames)
     {
         URL[] urls = Arrays.stream(resourceNames)
                            .map(BaseCassandraBridgeFactory::copyClassResourceToFile)
