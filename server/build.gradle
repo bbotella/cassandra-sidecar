@@ -97,7 +97,6 @@ dependencies {
     implementation("com.google.inject:guice:${guiceVersion}")
     implementation("com.github.ben-manes.caffeine:caffeine:2.9.3")
 
-    // Trying to be exactly compatible with Cassandra's deps
     implementation("org.slf4j:slf4j-api:${project.slf4jVersion}")
     implementation("ch.qos.logback:logback-core:${project.logbackVersion}")
     implementation("ch.qos.logback:logback-classic:${project.logbackVersion}")
