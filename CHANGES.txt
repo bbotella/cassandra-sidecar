@@ -1,3 +1,6 @@
+0.3.0
+-----
+
 0.2.0
 -----
  * Fix logging regression in Sidecar after CASSSIDECAR-176 (CASSSIDECAR-336)
