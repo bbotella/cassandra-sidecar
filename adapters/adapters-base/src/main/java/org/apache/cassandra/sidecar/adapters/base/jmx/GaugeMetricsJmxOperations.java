@@ -19,21 +19,14 @@
 package org.apache.cassandra.sidecar.adapters.base.jmx;
 
 /**
- * An interface that pulls methods from the Cassandra Metrics Proxy
+ * JMX operations for Gauge metrics
  */
-public interface MetricsJmxOperations
+public interface GaugeMetricsJmxOperations
 {
-    String METRICS_OBJ_TYPE_KEYSPACE_TABLE_FORMAT = "org.apache.cassandra.metrics:type=Table,keyspace=%s,scope=%s,name=%s";
-
     /**
      * Retrieves the value of the metric of type {@link com.codahale.metrics.Gauge}
+     *
      * @return the value of the Gauge metric
      */
     Object getValue();
-
-    /**
-     * Retrieves the value of the metric of type {@link com.codahale.metrics.Counter}
-     * @return the value of the Counter metric
-     */
-    long getCount();
 }

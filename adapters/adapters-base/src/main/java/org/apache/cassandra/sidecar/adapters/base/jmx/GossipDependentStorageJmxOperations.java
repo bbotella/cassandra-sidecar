@@ -201,4 +201,22 @@ public class GossipDependentStorageJmxOperations implements StorageJmxOperations
     {
         delegate.startGossiping();
     }
+
+    @Override
+    public int getConcurrentCompactors()
+    {
+        return delegate.getConcurrentCompactors();
+    }
+
+    @Override
+    public long getCompactionThroughtputBytesPerSec()
+    {
+        return delegate.getCompactionThroughtputBytesPerSec();
+    }
+
+    @Override
+    public int getCompactionThroughputMbPerSec()
+    {
+        return delegate.getCompactionThroughputMbPerSec();
+    }
 }

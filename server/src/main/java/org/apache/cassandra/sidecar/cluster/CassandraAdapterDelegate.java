@@ -48,6 +48,8 @@ import io.vertx.core.json.JsonObject;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.common.server.ClusterMembershipOperations;
+import org.apache.cassandra.sidecar.common.server.CompactionManagerOperations;
+import org.apache.cassandra.sidecar.common.server.CompactionStatsOperations;
 import org.apache.cassandra.sidecar.common.server.ICassandraAdapter;
 import org.apache.cassandra.sidecar.common.server.JmxClient;
 import org.apache.cassandra.sidecar.common.server.MetricsOperations;
@@ -425,6 +427,20 @@ public class CassandraAdapterDelegate implements ICassandraAdapter, Host.StateLi
     public TableOperations tableOperations() throws CassandraUnavailableException
     {
         return fromAdapter(ICassandraAdapter::tableOperations);
+    }
+
+    @Override
+    @NotNull
+    public CompactionManagerOperations compactionManagerOperations() throws CassandraUnavailableException
+    {
+        return fromAdapter(ICassandraAdapter::compactionManagerOperations);
+    }
+
+    @Override
+    @NotNull
+    public CompactionStatsOperations compactionStatsOperations() throws CassandraUnavailableException
+    {
+        return fromAdapter(ICassandraAdapter::compactionStatsOperations);
     }
 
     @Override

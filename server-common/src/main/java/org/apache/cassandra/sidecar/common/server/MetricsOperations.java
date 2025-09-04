@@ -21,6 +21,8 @@ package org.apache.cassandra.sidecar.common.server;
 import org.apache.cassandra.sidecar.common.response.ConnectedClientStatsResponse;
 import org.apache.cassandra.sidecar.common.response.TableStatsResponse;
 import org.apache.cassandra.sidecar.common.response.data.StreamsProgressStats;
+import org.apache.cassandra.sidecar.common.server.data.CompletedCompactionsRateData;
+import org.apache.cassandra.sidecar.common.server.data.MetricType;
 import org.apache.cassandra.sidecar.common.server.data.QualifiedTableName;
 
 /**
@@ -47,5 +49,21 @@ public interface MetricsOperations
      * @return the requested table stats
      */
     TableStatsResponse tableStats(QualifiedTableName tableName);
+
+    /**
+     * Get a specific compaction metric value
+     *
+     * @param metricName the name of the compaction metric to retrieve
+     * @param metricType the type of the metric (GAUGE, COUNTER, etc.)
+     * @return the metric value
+     */
+    Object getCompactionMetric(String metricName, MetricType metricType);
+
+    /**
+     * Get the completed compactions rate data
+     *
+     * @return the completed compactions rate data
+     */
+    CompletedCompactionsRateData getCompletedCompactionsRate();
 
 }

@@ -35,8 +35,11 @@ import org.apache.cassandra.sidecar.adapters.base.data.StreamState;
 import org.apache.cassandra.sidecar.adapters.base.db.ConnectedClientStats;
 import org.apache.cassandra.sidecar.adapters.base.db.ConnectedClientStatsDatabaseAccessor;
 import org.apache.cassandra.sidecar.adapters.base.db.ConnectedClientStatsSummary;
-import org.apache.cassandra.sidecar.adapters.base.jmx.MetricsJmxOperations;
+import org.apache.cassandra.sidecar.adapters.base.jmx.CounterMetricsJmxOperations;
+import org.apache.cassandra.sidecar.adapters.base.jmx.GaugeMetricsJmxOperations;
+import org.apache.cassandra.sidecar.adapters.base.jmx.MeterMetricsJmxOperations;
 import org.apache.cassandra.sidecar.adapters.base.jmx.StreamManagerJmxOperations;
+import org.apache.cassandra.sidecar.adapters.base.utils.DataTypeUtils;
 import org.apache.cassandra.sidecar.common.response.ConnectedClientStatsResponse;
 import org.apache.cassandra.sidecar.common.response.TableStatsResponse;
 import org.apache.cassandra.sidecar.common.response.data.ClientConnectionEntry;
@@ -45,11 +48,12 @@ import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.common.server.ICassandraAdapter;
 import org.apache.cassandra.sidecar.common.server.JmxClient;
 import org.apache.cassandra.sidecar.common.server.MetricsOperations;
+import org.apache.cassandra.sidecar.common.server.data.CompletedCompactionsRateData;
+import org.apache.cassandra.sidecar.common.server.data.MetricType;
 import org.apache.cassandra.sidecar.common.server.data.QualifiedTableName;
 import org.apache.cassandra.sidecar.db.schema.TableSchemaFetcher;
 import org.jetbrains.annotations.NotNull;
 
-import static org.apache.cassandra.sidecar.adapters.base.jmx.MetricsJmxOperations.METRICS_OBJ_TYPE_KEYSPACE_TABLE_FORMAT;
 import static org.apache.cassandra.sidecar.adapters.base.jmx.StreamManagerJmxOperations.STREAM_MANAGER_OBJ_NAME;
 
 /**
@@ -61,6 +65,9 @@ public class CassandraMetricsOperations implements MetricsOperations
     private final ConnectedClientStatsDatabaseAccessor dbAccessor;
     protected final JmxClient jmxClient;
 
+    private static final String METRICS_OBJ_TYPE_KEYSPACE_TABLE_FORMAT = "org.apache.cassandra.metrics:type=Table,keyspace=%s,scope=%s,name=%s";
+    private static final String METRICS_OBJ_TYPE_COMPACTION = "org.apache.cassandra.metrics:type=Compaction,name=%s";
+
     /**
      * Creates a new instance with the provided {@link CQLSessionProvider}
      */
@@ -68,15 +75,6 @@ public class CassandraMetricsOperations implements MetricsOperations
     {
         this.jmxClient = jmxClient;
         this.dbAccessor = new ConnectedClientStatsDatabaseAccessor(tableSchemaFetcher, cassandraAdapter);
-    }
-
-    /**
-     * Represents the types of metrics that are queried
-     */
-    public enum MetricType
-    {
-        GAUGE,
-        COUNTER
     }
 
     /**
@@ -110,45 +108,30 @@ public class CassandraMetricsOperations implements MetricsOperations
     @Override
     public TableStatsResponse tableStats(QualifiedTableName tableName)
     {
-        long sstableCount = queryMetric(tableName, TableStatsMetrics.SSTABLE_COUNT);
-        long diskSpaceUsed = queryMetric(tableName, TableStatsMetrics.DISKSPACE_USED);
-        long totalDiskSpaceUsed = queryMetric(tableName, TableStatsMetrics.TOTAL_DISKSPACE_USED);
-        long snapshotsSize = queryMetric(tableName, TableStatsMetrics.SNAPSHOTS_SIZE);
+        long sstableCount = queryTableMetric(tableName, TableStatsMetrics.SSTABLE_COUNT);
+        long diskSpaceUsed = queryTableMetric(tableName, TableStatsMetrics.DISKSPACE_USED);
+        long totalDiskSpaceUsed = queryTableMetric(tableName, TableStatsMetrics.TOTAL_DISKSPACE_USED);
+        long snapshotsSize = queryTableMetric(tableName, TableStatsMetrics.SNAPSHOTS_SIZE);
 
         return new TableStatsResponse(tableName.keyspace(), tableName.tableName(), sstableCount, diskSpaceUsed, totalDiskSpaceUsed, snapshotsSize);
     }
 
-    private long queryMetric(QualifiedTableName tableName, TableStatsMetrics metric)
+    private long queryTableMetric(QualifiedTableName tableName, TableStatsMetrics metric)
     {
         String metricObjectType = String.format(METRICS_OBJ_TYPE_KEYSPACE_TABLE_FORMAT, tableName.keyspace(), tableName.tableName(), metric.metricName());
-        MetricsJmxOperations queryResult = jmxClient.proxy(MetricsJmxOperations.class, metricObjectType);
-        return extractValue(metric, queryResult);
+        return DataTypeUtils.getValueAsLong(queryMetric(metricObjectType, metric.type));
     }
 
-    private long extractValue(TableStatsMetrics metric, MetricsJmxOperations queryResult)
+    private Object queryMetric(String metricObjectType, MetricType type)
     {
-        switch(metric.type)
+        switch (type)
         {
-            case GAUGE: return getValueAsLong(queryResult.getValue());
-            case COUNTER: return queryResult.getCount();
+            case GAUGE:
+                return jmxClient.proxy(GaugeMetricsJmxOperations.class, metricObjectType).getValue();
+            case COUNTER:
+                return jmxClient.proxy(CounterMetricsJmxOperations.class, metricObjectType).getCount();
             default:
-                throw new IllegalArgumentException("Unknown MetricType: " + metric.type);
-        }
-    }
-
-    private long getValueAsLong(Object value)
-    {
-        if (value instanceof Integer)
-        {
-            return ((Integer) value).longValue();
-        }
-        else if (value instanceof Long)
-        {
-            return (Long) value;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported value type: " + value.getClass());
+                throw new IllegalArgumentException("Unknown MetricType: " + type);
         }
     }
 
@@ -216,7 +199,6 @@ public class CassandraMetricsOperations implements MetricsOperations
                      totalBytesToReceive, totalBytesReceived, totalBytesToSend, totalBytesSent);
         return new StreamsProgressStats(totalFilesToReceive, totalFilesReceived, totalBytesToReceive, totalBytesReceived,
                                         totalFilesToSend, totalFilesSent, totalBytesToSend, totalBytesSent);
-
     }
 
     private ConnectedClientStatsResponse connectedClientSummary()
@@ -249,5 +231,31 @@ public class CassandraMetricsOperations implements MetricsOperations
                                          stat.clientOptions,
                                          stat.authenticationMode,
                                          stat.authenticationMetadata);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Object getCompactionMetric(String metricName, MetricType metricType)
+    {
+        String metricObjectType = String.format(METRICS_OBJ_TYPE_COMPACTION, metricName);
+        return queryMetric(metricObjectType, metricType);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CompletedCompactionsRateData getCompletedCompactionsRate()
+    {
+        // Get rates from meter metric for TotalCompactionsCompleted
+        String metricObjectType = String.format(METRICS_OBJ_TYPE_COMPACTION, "TotalCompactionsCompleted");
+        MeterMetricsJmxOperations metricsProxy = jmxClient.proxy(MeterMetricsJmxOperations.class, metricObjectType);
+
+        return CompletedCompactionsRateData.builder()
+                                           .meanRate(metricsProxy.getMeanRate())
+                                           .fifteenMinuteRate(metricsProxy.getFifteenMinuteRate())
+                                           .build();
     }
 }

@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.cassandra.sidecar.adapters.base.jmx.StorageJmxOperations;
+import org.apache.cassandra.sidecar.adapters.base.utils.DataTypeUtils;
 import org.apache.cassandra.sidecar.common.response.RingResponse;
 import org.apache.cassandra.sidecar.common.response.TokenRangeReplicasResponse;
 import org.apache.cassandra.sidecar.common.server.JmxClient;
@@ -293,5 +294,33 @@ public class CassandraStorageOperations implements StorageOperations
     {
         jmxClient.proxy(StorageJmxOperations.class, STORAGE_SERVICE_OBJ_NAME)
                  .startGossiping();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getConcurrentCompactors()
+    {
+        return jmxClient.proxy(StorageJmxOperations.class, STORAGE_SERVICE_OBJ_NAME)
+                        .getConcurrentCompactors();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getCompactionThroughputBytesPerSec()
+    {
+        return DataTypeUtils.mebibytesToBytes(getCompactionThroughputMbPerSec());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int getCompactionThroughputMbPerSec()
+    {
+        return jmxClient.proxy(StorageJmxOperations.class, STORAGE_SERVICE_OBJ_NAME)
+                        .getCompactionThroughputMbPerSec();
     }
 }
