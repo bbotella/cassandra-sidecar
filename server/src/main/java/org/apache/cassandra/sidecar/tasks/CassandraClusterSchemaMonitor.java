@@ -42,7 +42,6 @@ import org.apache.cassandra.bridge.CdcBridge;
 import org.apache.cassandra.bridge.CdcBridgeFactory;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
-import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.db.CdcDatabaseAccessor;
 import org.apache.cassandra.sidecar.utils.CdcUtil;
@@ -61,10 +60,10 @@ import org.jetbrains.annotations.NotNull;
  * in the Cassandra cluster and manages CDC-enabled table metadata.
  */
 @Singleton
-public class CassandraClusterSchema implements PeriodicTask
+public class CassandraClusterSchemaMonitor implements PeriodicTask
 {
     // 49sec least-common multiple with 60sec is 49min so offers best monitor frequency without clashing with 60sec
-    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraClusterSchema.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraClusterSchemaMonitor.class);
 
     private final AtomicReference<String> currSchemaText = new AtomicReference<>("");
     private final AtomicReference<Set<CqlTable>> cdcTables = new AtomicReference<>(Collections.emptySet());
@@ -73,19 +72,17 @@ public class CassandraClusterSchema implements PeriodicTask
     private final CopyOnWriteArrayList<Runnable> schemaChangeListeners = new CopyOnWriteArrayList<>();
     private final SidecarConfiguration sidecarConfiguration;
     private final InstanceMetadataFetcher instanceFetcher;
-    private final SecondBoundConfiguration tableSchemaRefreshTime;
     private final CassandraBridgeFactory cassandraBridgeFactory;
 
-    public CassandraClusterSchema(InstanceMetadataFetcher instanceFetcher,
-                                  CdcDatabaseAccessor databaseAccessor,
-                                  SidecarConfiguration sidecarConfiguration,
-                                  CassandraBridgeFactory cassandraBridgeFactory)
+    public CassandraClusterSchemaMonitor(InstanceMetadataFetcher instanceFetcher,
+                                         CdcDatabaseAccessor databaseAccessor,
+                                         SidecarConfiguration sidecarConfiguration,
+                                         CassandraBridgeFactory cassandraBridgeFactory)
     {
 
         this.instanceFetcher = instanceFetcher;
         this.databaseAccessor = databaseAccessor;
         this.sidecarConfiguration = sidecarConfiguration;
-        this.tableSchemaRefreshTime = sidecarConfiguration.serviceConfiguration().cdcConfiguration().tableSchemaRefreshTime();
         this.cassandraBridgeFactory = cassandraBridgeFactory;
     }
 

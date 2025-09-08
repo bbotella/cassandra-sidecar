@@ -63,7 +63,7 @@ import org.apache.cassandra.sidecar.modules.multibindings.TableSchemaMapKeys;
 import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys;
 import org.apache.cassandra.sidecar.routes.RouteBuilder;
 import org.apache.cassandra.sidecar.routes.VertxRoute;
-import org.apache.cassandra.sidecar.tasks.CassandraClusterSchema;
+import org.apache.cassandra.sidecar.tasks.CassandraClusterSchemaMonitor;
 import org.apache.cassandra.sidecar.tasks.CdcRawDirectorySpaceCleaner;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
 import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
@@ -104,7 +104,7 @@ public class CdcModule extends AbstractModule
                                         SidecarConfiguration configuration,
                                         CassandraBridgeFactory cassandraBridgeFactory)
     {
-        return new CassandraClusterSchema(instanceMetadataFetcher, databaseAccessor, configuration, cassandraBridgeFactory);
+        return new CassandraClusterSchemaMonitor(instanceMetadataFetcher, databaseAccessor, configuration, cassandraBridgeFactory);
     }
 
     @Provides

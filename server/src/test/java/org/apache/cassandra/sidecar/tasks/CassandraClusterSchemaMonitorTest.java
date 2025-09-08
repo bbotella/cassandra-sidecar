@@ -66,11 +66,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link CassandraClusterSchema}
+ * Unit tests for {@link CassandraClusterSchemaMonitor}
  */
-class CassandraClusterSchemaTest
+class CassandraClusterSchemaMonitorTest
 {
-    private CassandraClusterSchema clusterSchema;
+    private CassandraClusterSchemaMonitor clusterSchema;
     private InstanceMetadataFetcher mockInstanceFetcher;
     private CdcDatabaseAccessor mockDatabaseAccessor;
     private SidecarConfiguration mockSidecarConfiguration;
@@ -132,7 +132,7 @@ class CassandraClusterSchemaTest
         when(mockDatabaseAccessor.getTableId(any(TableIdentifier.class))).thenReturn(UUID.randomUUID());
         when(mockCassandraBridgeFactory.get(anyString())).thenReturn(mockCassandraBridge);
 
-        clusterSchema = new CassandraClusterSchema(
+        clusterSchema = new CassandraClusterSchemaMonitor(
         mockInstanceFetcher,
         mockDatabaseAccessor,
         mockSidecarConfiguration,
@@ -417,7 +417,7 @@ class CassandraClusterSchemaTest
             when(mockDatabaseAccessor.getTableId(any(TableIdentifier.class))).thenReturn(testTableId);
             when(mockDatabaseAccessor.fullSchema()).thenReturn(INITIAL_SCHEMA);
 
-            Set<CqlTable> result = CassandraClusterSchema.buildCdcTables(
+            Set<CqlTable> result = CassandraClusterSchemaMonitor.buildCdcTables(
             mockDatabaseAccessor,
             tableIdCache,
             mockInstanceFetcher,
