@@ -133,7 +133,7 @@ public class CassandraClusterSchemaMonitor implements PeriodicTask
     {
         if (nodeSettings.partitioner().contains("."))
         {
-            String[] splitPartitionerName = nodeSettings.partitioner().split(".");
+            String[] splitPartitionerName = nodeSettings.partitioner().split("\\.");
             return Partitioner.valueOf(splitPartitionerName[splitPartitionerName.length - 1]);
         }
         return Partitioner.valueOf(nodeSettings.partitioner());
