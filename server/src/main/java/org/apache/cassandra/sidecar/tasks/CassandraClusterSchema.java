@@ -136,7 +136,8 @@ public class CassandraClusterSchema implements PeriodicTask
     {
         if (nodeSettings.partitioner().contains("."))
         {
-            return databaseAccessor.partitioner();
+            String[] splitPartitionerName = nodeSettings.partitioner().split(".");
+            return Partitioner.valueOf(splitPartitionerName[splitPartitionerName.length - 1]);
         }
         return Partitioner.valueOf(nodeSettings.partitioner());
     }
