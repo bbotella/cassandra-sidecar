@@ -34,44 +34,6 @@ import java.util.function.Supplier;
 
 /**
  * Utility class providing byte buffer manipulation and conversion operations for Cassandra Sidecar.
- * <p>
- * This class offers a comprehensive set of static utility methods for working with byte buffers,
- * input streams, and byte arrays in the context of Cassandra data processing and CDC operations.
- * The utilities are designed to handle common byte manipulation tasks including:
- * <ul>
- *   <li>ByteBuffer to byte array conversions with optimal performance</li>
- *   <li>Hexadecimal string representation of binary data</li>
- *   <li>Stream reading operations with full data consumption guarantees</li>
- *   <li>Cassandra-specific composite key splitting and building</li>
- *   <li>Length-prefixed byte buffer operations for data serialization</li>
- *   <li>UTF-8 string encoding and decoding with error handling</li>
- * </ul>
- * <p>
- * Key features include:
- * <ul>
- *   <li><strong>Memory efficiency:</strong> Optimized ByteBuffer handling that avoids
- *       unnecessary copying when dealing with heap vs direct buffers</li>
- *   <li><strong>Thread-safe string decoding:</strong> Thread-local UTF-8 decoder
- *       instances to avoid synchronization overhead</li>
- *   <li><strong>Cassandra compatibility:</strong> Support for Cassandra composite key
- *       formats including static marker handling</li>
- *   <li><strong>Robust I/O:</strong> Stream reading methods that handle partial reads
- *       and provide complete data consumption guarantees</li>
- *   <li><strong>Debugging support:</strong> Hexadecimal representation methods for
- *       binary data inspection and logging</li>
- * </ul>
- * <p>
- * The class is particularly important for CDC operations where efficient byte manipulation
- * is crucial for processing large volumes of change data. It provides the low-level
- * building blocks for serialization, deserialization, and data format conversion
- * operations throughout the sidecar system.
- * <p>
- * All methods in this class are static and thread-safe unless otherwise noted.
- * The class maintains thread-local resources (such as charset decoders) to ensure
- * optimal performance in multi-threaded environments.
- *
- * @see java.nio.ByteBuffer
- * @see java.nio.charset.CharsetDecoder
  */
 public class ByteBufUtils
 {
@@ -80,12 +42,12 @@ public class ByteBufUtils
     private static final int STATIC_MARKER = 0xFFFF;
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
-    public static void skipBytesFully(final DataInput in, final int bytes) throws IOException
+    public static void skipBytesFully(DataInput in, int bytes) throws IOException
     {
         int n = 0;
         while (n < bytes)
         {
-            final int skipped = in.skipBytes(bytes - n);
+            int skipped = in.skipBytes(bytes - n);
             if (skipped == 0)
             {
                 throw new EOFException("EOF after " + n + " bytes out of " + bytes);
@@ -94,10 +56,10 @@ public class ByteBufUtils
         }
     }
 
-    public static byte[] readRemainingBytes(final InputStream in, final int size) throws IOException
+    public static byte[] readRemainingBytes(InputStream in, int size) throws IOException
     {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(size);
-        final byte[] ar = new byte[size];
+        ByteArrayOutputStream out = new ByteArrayOutputStream(size);
+        byte[] ar = new byte[size];
         int len;
         while ((len = in.read(ar)) != -1)
         {
@@ -106,30 +68,30 @@ public class ByteBufUtils
         return out.toByteArray();
     }
 
-    public static byte[] getArray(final ByteBuffer buffer)
+    public static byte[] getArray(ByteBuffer buffer)
     {
-        final int length = buffer.remaining();
+        int length = buffer.remaining();
 
         if (buffer.hasArray())
         {
-            final int boff = buffer.arrayOffset() + buffer.position();
+            int boff = buffer.arrayOffset() + buffer.position();
             return Arrays.copyOfRange(buffer.array(), boff, boff + length);
         }
         // else, DirectByteBuffer.get() is the fastest route
-        final byte[] bytes = new byte[length];
+        byte[] bytes = new byte[length];
         buffer.duplicate().get(bytes);
 
         return bytes;
     }
 
-    private static String toHexString(final byte[] bytes, final int length)
+    private static String toHexString(byte[] bytes, int length)
     {
         return toHexString(bytes, 0, length);
     }
 
-    static String toHexString(final byte[] bytes, final int offset, final int length)
+    static String toHexString(byte[] bytes, int offset, int length)
     {
-        final char[] hexCharacters = new char[length << 1];
+        char[] hexCharacters = new char[length << 1];
 
         int decimalValue;
         for (int i = offset; i < offset + length; i++)
@@ -145,7 +107,7 @@ public class ByteBufUtils
         return new String(hexCharacters);
     }
 
-    public static String toHexString(final ByteBuffer buffer)
+    public static String toHexString(ByteBuffer buffer)
     {
         if (buffer == null)
         {
@@ -154,7 +116,7 @@ public class ByteBufUtils
 
         if (buffer.isReadOnly())
         {
-            final byte[] bytes = new byte[buffer.remaining()];
+            byte[] bytes = new byte[buffer.remaining()];
             buffer.slice().get(bytes);
             return ByteBufUtils.toHexString(bytes, bytes.length);
         }
@@ -164,7 +126,7 @@ public class ByteBufUtils
                                         buffer.remaining());
     }
 
-    public static int readFully(final InputStream in, final byte[] b, final int len) throws IOException
+    public static int readFully(InputStream in, byte[] b, int len) throws IOException
     {
         if (len < 0)
         {
@@ -174,7 +136,7 @@ public class ByteBufUtils
         int n = 0;
         while (n < len)
         {
-            final int count = in.read(b, n, len - n);
+            int count = in.read(b, n, len - n);
             if (count < 0)
             {
                 break;
@@ -186,37 +148,37 @@ public class ByteBufUtils
     }
 
     // changes bb position
-    public static ByteBuffer readBytesWithShortLength(final ByteBuffer bb)
+    public static ByteBuffer readBytesWithShortLength(ByteBuffer bb)
     {
         return readBytes(bb, readShortLength(bb));
     }
 
     // changes bb position
-    static void writeShortLength(final ByteBuffer bb, final int length)
+    static void writeShortLength(ByteBuffer bb, int length)
     {
         bb.put((byte) ((length >> 8) & 0xFF));
         bb.put((byte) (length & 0xFF));
     }
 
     // Doesn't change bb position
-    static int peekShortLength(final ByteBuffer bb, final int position)
+    static int peekShortLength(ByteBuffer bb, int position)
     {
-        final int length = (bb.get(position) & 0xFF) << 8;
+        int length = (bb.get(position) & 0xFF) << 8;
         return length | (bb.get(position + 1) & 0xFF);
     }
 
     // changes bb position
-    static int readShortLength(final ByteBuffer bb)
+    static int readShortLength(ByteBuffer bb)
     {
-        final int length = (bb.get() & 0xFF) << 8;
+        int length = (bb.get() & 0xFF) << 8;
         return length | (bb.get() & 0xFF);
     }
 
     // changes bb position
     @SuppressWarnings("RedundantCast")
-    public static ByteBuffer readBytes(final ByteBuffer bb, final int length)
+    public static ByteBuffer readBytes(ByteBuffer bb, int length)
     {
-        final ByteBuffer copy = bb.duplicate();
+        ByteBuffer copy = bb.duplicate();
         ((Buffer) copy).limit(copy.position() + length);
         ((Buffer) bb).position(bb.position() + length);
         return copy;
@@ -224,19 +186,19 @@ public class ByteBufUtils
 
     public static void skipFully(InputStream is, long len) throws IOException
     {
-        final long skipped = is.skip(len);
+        long skipped = is.skip(len);
         if (skipped != len)
         {
             throw new EOFException("EOF after " + skipped + " bytes out of " + len);
         }
     }
 
-    public static ByteBuffer[] split(final ByteBuffer name, final int numKeys)
+    public static ByteBuffer[] split(ByteBuffer name, int numKeys)
     {
         // Assume all components, we'll trunk the array afterwards if need be, but
         // most names will be complete.
-        final ByteBuffer[] l = new ByteBuffer[numKeys];
-        final ByteBuffer bb = name.duplicate();
+        ByteBuffer[] l = new ByteBuffer[numKeys];
+        ByteBuffer bb = name.duplicate();
         ByteBufUtils.readStatic(bb);
         int i = 0;
         while (bb.remaining() > 0)
@@ -247,14 +209,14 @@ public class ByteBufUtils
         return i == l.length ? l : Arrays.copyOfRange(l, 0, i);
     }
 
-    public static void readStatic(final ByteBuffer bb)
+    public static void readStatic(ByteBuffer bb)
     {
         if (bb.remaining() < 2)
         {
             return;
         }
 
-        final int header = peekShortLength(bb, bb.position());
+        int header = peekShortLength(bb, bb.position());
         if ((header & 0xFFFF) != ByteBufUtils.STATIC_MARKER)
         {
             return;
@@ -263,22 +225,22 @@ public class ByteBufUtils
         readShortLength(bb); // Skip header
     }
 
-    public static ByteBuffer build(final boolean isStatic, final ByteBuffer... buffers)
+    public static ByteBuffer build(boolean isStatic, ByteBuffer... buffers)
     {
         int totalLength = isStatic ? 2 : 0;
-        for (final ByteBuffer bb : buffers)
+        for (ByteBuffer bb : buffers)
         {
             // 2 bytes short length + data length + 1 byte for end-of-component marker
             totalLength += 2 + bb.remaining() + 1;
         }
 
-        final ByteBuffer out = ByteBuffer.allocate(totalLength);
+        ByteBuffer out = ByteBuffer.allocate(totalLength);
         if (isStatic)
         {
             out.putShort((short) STATIC_MARKER);
         }
 
-        for (final ByteBuffer bb : buffers)
+        for (ByteBuffer bb : buffers)
         {
             writeShortLength(out, bb.remaining()); // short len
             out.put(bb.duplicate()); // data
@@ -297,7 +259,7 @@ public class ByteBufUtils
      * @return decoded string
      * @throws CharacterCodingException charset decoding exception
      */
-    public static String string(final ByteBuffer buffer, Supplier<CharsetDecoder> decoderSupplier) throws CharacterCodingException
+    public static String string(ByteBuffer buffer, Supplier<CharsetDecoder> decoderSupplier) throws CharacterCodingException
     {
         if (buffer.remaining() <= 0)
         {
@@ -306,7 +268,7 @@ public class ByteBufUtils
         return decoderSupplier.get().decode(buffer.duplicate()).toString();
     }
 
-    public static String string(final ByteBuffer buffer) throws CharacterCodingException
+    public static String string(ByteBuffer buffer) throws CharacterCodingException
     {
         return string(buffer, UTF8_DECODER_PROVIDER::get);
     }

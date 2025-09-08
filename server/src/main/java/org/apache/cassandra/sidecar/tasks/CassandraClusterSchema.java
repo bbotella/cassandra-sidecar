@@ -56,56 +56,9 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Central schema management component for Cassandra cluster schema monitoring and CDC table tracking.
- * <p>
  * This class provides comprehensive schema management functionality for Cassandra Sidecar, specifically
  * focused on CDC (Change Data Capture) operations. It maintains real-time awareness of schema changes
- * in the Cassandra cluster and manages CDC-enabled table metadata, enabling:
- * <ul>
- *   <li>Continuous monitoring of Cassandra cluster schema changes</li>
- *   <li>Automatic detection and tracking of CDC-enabled tables</li>
- *   <li>Schema change event notification to registered listeners</li>
- *   <li>Table metadata caching and synchronization with CDC bridges</li>
- *   <li>Periodic validation of CDC table configurations</li>
- * </ul>
- * <p>
- * The class operates with two main periodic tasks:
- * <ul>
- *   <li><strong>Schema Refresh (60s interval):</strong> Monitors for schema changes by comparing
- *       full schema snapshots and updates CDC table metadata when changes are detected</li>
- *   <li><strong>Schema Monitor (49s interval):</strong> Validates that CDC-enabled tables
- *       are properly configured in the Cassandra Schema.instance singleton</li>
- * </ul>
- * <p>
- * Key functionalities include:
- * <ul>
- *   <li><strong>CDC Table Discovery:</strong> Automatically identifies and tracks tables with
- *       CDC enabled from the cluster schema</li>
- *   <li><strong>Schema Change Detection:</strong> Compares schema snapshots to detect modifications
- *       and trigger appropriate updates to CDC subsystems</li>
- *   <li><strong>Bridge Integration:</strong> Synchronizes schema information with Cassandra and
- *       CDC bridges for consistent metadata handling</li>
- *   <li><strong>Event Notification:</strong> Provides a listener mechanism for components that
- *       need to react to schema changes</li>
- *   <li><strong>Validation and Monitoring:</strong> Continuously validates CDC table configurations
- *       and reports inconsistencies through metrics</li>
- * </ul>
- * <p>
- * The schema refresh intervals are carefully chosen to balance responsiveness with system load:
- * <ul>
- *   <li>60-second refresh interval for schema change detection</li>
- *   <li>49-second monitor interval (chosen to avoid harmonics with the 60s refresh cycle)</li>
- * </ul>
- * <p>
- * This component is essential for CDC operations as it ensures that CDC consumers always have
- * up-to-date schema information, enabling proper data serialization, deserialization, and
- * processing across schema evolution events.
- * <p>
- * This class is thread-safe and designed as a singleton for dependency injection into CDC
- * and other schema-dependent components.
- *
- * @see org.apache.cassandra.sidecar.db.CdcDatabaseAccessor
- * @see org.apache.cassandra.bridge.CdcBridge
- * @see org.apache.cassandra.spark.data.CqlTable
+ * in the Cassandra cluster and manages CDC-enabled table metadata.
  */
 @Singleton
 public class CassandraClusterSchema implements PeriodicTask
@@ -149,19 +102,20 @@ public class CassandraClusterSchema implements PeriodicTask
 
         try
         {
-            LOGGER.info("Checking for schema changes...");
+            LOGGER.debug("Checking for schema changes...");
             String fullSchemaText = databaseAccessor.fullSchema();
             if (!fullSchemaText.equals(currSchemaText.get()))
             {
                 LOGGER.info("Schema change detected, refreshing CDC tables");
                 currSchemaText.set(fullSchemaText);
-                Set<CqlTable> updatedCdcTables = buildCdcTables(fullSchemaText, databaseAccessor, tableIdCache, instanceFetcher, cassandraBridgeFactory);
+                Set<CqlTable> updatedCdcTables = buildCdcTables(fullSchemaText, databaseAccessor, tableIdCache, instanceFetcher, cassandraBridge);
                 LOGGER.info("Cdc enabled tables tables='{}'", 
                             updatedCdcTables.stream()
                                             .map(m -> String.format("%s.%s", m.keyspace(), m.table()))
                                             .collect(Collectors.joining(",")));
                 cdcTables.set(updatedCdcTables);
-                cdcBridge.updateCdcSchema(updatedCdcTables, databaseAccessor.partitioner(),
+
+                cdcBridge.updateCdcSchema(updatedCdcTables, getPartitioner(nodeSettings),
                                           ((keyspace, table) -> tableIdCache.get(TableIdentifier.of(keyspace, table))));
                 schemaChangeListeners.forEach(Runnable::run);
             }
@@ -178,9 +132,19 @@ public class CassandraClusterSchema implements PeriodicTask
         }
     }
 
+    private Partitioner getPartitioner(NodeSettings nodeSettings)
+    {
+        if (nodeSettings.partitioner().contains("."))
+        {
+            return databaseAccessor.partitioner();
+        }
+        return Partitioner.valueOf(nodeSettings.partitioner());
+    }
+
+    @Override
     public DurationSpec delay()
     {
-        return tableSchemaRefreshTime;
+        return sidecarConfiguration.serviceConfiguration().cdcConfiguration().tableSchemaRefreshTime();
     }
 
     @Override
@@ -200,37 +164,40 @@ public class CassandraClusterSchema implements PeriodicTask
     @Override
     public ScheduleDecision scheduleDecision()
     {
-        boolean shouldSkip = !sidecarConfiguration.serviceConfiguration().schemaKeyspaceConfiguration().isEnabled()
-                             || !sidecarConfiguration.serviceConfiguration().cdcConfiguration().isEnabled();
-        return shouldSkip ? ScheduleDecision.SKIP : ScheduleDecision.EXECUTE;
+        if (sidecarConfiguration.serviceConfiguration().schemaKeyspaceConfiguration().isEnabled() &&
+            sidecarConfiguration.serviceConfiguration().cdcConfiguration().isEnabled())
+        {
+            return ScheduleDecision.EXECUTE;
+        }
+        return ScheduleDecision.SKIP;
     }
 
     @VisibleForTesting
     static Set<CqlTable> buildCdcTables(CdcDatabaseAccessor cdcDatabaseAccessor,
                                         ConcurrentHashMap<TableIdentifier, UUID> tableIdCache,
                                         @NotNull InstanceMetadataFetcher instanceFetcher,
-                                        @NotNull CassandraBridgeFactory cassandraBridgeFactory)
+                                        @NotNull final CassandraBridge cassandraBridge)
     {
         return buildCdcTables(cdcDatabaseAccessor.fullSchema(),
                               cdcDatabaseAccessor.partitioner(),
                               tableIdCache,
                               cdcDatabaseAccessor::getTableId,
                               instanceFetcher,
-                              cassandraBridgeFactory);
+                              cassandraBridge);
     }
 
     private static Set<CqlTable> buildCdcTables(@NotNull String fullSchema,
                                                 @NotNull CdcDatabaseAccessor cdcDatabaseAccessor,
                                                 @NotNull ConcurrentHashMap<TableIdentifier, UUID> tableIdCache,
                                                 @NotNull InstanceMetadataFetcher instanceFetcher,
-                                                @NotNull CassandraBridgeFactory cassandraBridgeFactory)
+                                                @NotNull final CassandraBridge cassandraBridge)
     {
         return buildCdcTables(fullSchema,
                               cdcDatabaseAccessor.partitioner(),
                               tableIdCache,
                               cdcDatabaseAccessor::getTableId,
                               instanceFetcher,
-                              cassandraBridgeFactory);
+                              cassandraBridge);
     }
 
     private static Set<CqlTable> buildCdcTables(@NotNull final String fullSchema,
@@ -238,7 +205,7 @@ public class CassandraClusterSchema implements PeriodicTask
                                                 @NotNull final ConcurrentHashMap<TableIdentifier, UUID> tableIdCache,
                                                 @NotNull final Function<TableIdentifier, UUID> tableIdLoaderFunction,
                                                 @NotNull final InstanceMetadataFetcher instanceFetcher,
-                                                @NotNull final CassandraBridgeFactory cassandraBridgeFactory)
+                                                @NotNull final CassandraBridge cassandraBridge)
     {
         Map<TableIdentifier, String> createStmts = CdcUtil.extractCdcTables(fullSchema);
         Map<String, Set<String>> udtsPerKeyspace = createStmts.keySet()
@@ -252,11 +219,6 @@ public class CassandraClusterSchema implements PeriodicTask
                                                          .stream()
                                                          .collect(Collectors.toMap(Function.identity(),
                                                                                    id -> tableIdCache.computeIfAbsent(id, tableIdLoaderFunction)));
-
-        NodeSettings nodeSettings = instanceFetcher.callOnFirstAvailableInstance(instance-> instance.delegate().nodeSettings());
-
-        // get the bridge
-        CassandraBridge cassandraBridge = cassandraBridgeFactory.get(nodeSettings.releaseVersion());
 
         return createStmts.entrySet().stream()
                           .map(e ->

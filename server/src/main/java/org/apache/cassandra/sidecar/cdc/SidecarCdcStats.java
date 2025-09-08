@@ -22,32 +22,6 @@ package org.apache.cassandra.sidecar.cdc;
 /**
  * Interface for capturing and reporting CDC (Change Data Capture) related statistics and metrics
  * in the Cassandra Sidecar application.
- * <p>
- * This interface provides a comprehensive set of callback methods to capture various CDC lifecycle
- * events, consumer operations, state persistence activities, and error conditions. Implementations
- * of this interface can be used to:
- * <ul>
- *   <li>Monitor CDC publisher and consumer lifecycle events</li>
- *   <li>Track CDC event processing statistics</li>
- *   <li>Measure state persistence performance</li>
- *   <li>Capture configuration and topology changes</li>
- *   <li>Monitor token range ownership changes</li>
- *   <li>Track HTTP API usage for CDC state operations</li>
- * </ul>
- * <p>
- * All methods in this interface provide default empty implementations, allowing implementations
- * to selectively override only the methods relevant to their specific monitoring requirements.
- * This follows the null object pattern to avoid the need for null checks when invoking
- * statistics capture methods.
- * <p>
- * The statistics are organized into several categories:
- * <ul>
- *   <li><strong>Lifecycle stats:</strong> CDC enable/disable, start/stop, restart events</li>
- *   <li><strong>Consumer stats:</strong> Event processing, epoch completion, error handling</li>
- *   <li><strong>State persistence stats:</strong> Kafka flushing, state serialization/deserialization</li>
- *   <li><strong>Configuration stats:</strong> Topology changes, token range ownership</li>
- *   <li><strong>API stats:</strong> HTTP operations for CDC state management</li>
- * </ul>
  */
 public interface SidecarCdcStats
 {

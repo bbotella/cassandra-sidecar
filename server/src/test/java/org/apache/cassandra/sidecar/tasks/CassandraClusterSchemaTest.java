@@ -421,13 +421,12 @@ class CassandraClusterSchemaTest
             mockDatabaseAccessor,
             tableIdCache,
             mockInstanceFetcher,
-            mockCassandraBridgeFactory
+            mockCassandraBridge
             );
 
             assertThat(result).isNotNull();
             verify(mockDatabaseAccessor, times(1)).fullSchema();
             verify(mockDatabaseAccessor, times(1)).partitioner();
-            verify(mockInstanceFetcher, times(1)).callOnFirstAvailableInstance(any());
         }
     }
 

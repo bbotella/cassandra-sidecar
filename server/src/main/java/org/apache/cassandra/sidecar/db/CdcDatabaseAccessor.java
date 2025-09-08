@@ -61,38 +61,9 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Database accessor for CDC (Change Data Capture) state management operations.
- * <p>
  * This class provides specialized database access functionality for managing CDC state persistence
  * and retrieval in Cassandra Sidecar. It extends {@link DatabaseAccessor} to provide CDC-specific
- * operations including:
- * <ul>
- *   <li>Storing CDC state data across token range splits for distributed processing</li>
- *   <li>Loading and merging CDC state from overlapping token ranges</li>
- *   <li>Managing table schema history for CDC-enabled tables</li>
- *   <li>Providing partitioner and metadata access for CDC operations</li>
- * </ul>
- * <p>
- * The accessor handles token range splitting to ensure CDC state is properly distributed
- * across multiple database partitions for scalability. It uses {@link TokenSplitUtil}
- * to determine overlapping splits for both storage and retrieval operations.
- * <p>
- * Key features:
- * <ul>
- *   <li><strong>Token-aware storage:</strong> Automatically distributes CDC state across
- *       appropriate token range splits</li>
- *   <li><strong>State merging:</strong> Combines overlapping CDC state objects into
- *       canonical views during retrieval</li>
- *   <li><strong>Schema management:</strong> Tracks table schema versions for CDC operations</li>
- *   <li><strong>Async operations:</strong> Provides asynchronous database operations for
- *       better performance</li>
- * </ul>
- * <p>
- * This class is thread-safe and designed as a singleton for injection into CDC components
- * that require database access functionality.
- *
- * @see DatabaseAccessor
- * @see CdcStatesSchema
- * @see TokenSplitUtil
+ * operations.
  */
 @SuppressWarnings("resource")
 @Singleton
@@ -102,7 +73,7 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
     private final TableHistorySchema tableHistorySchema;
     private final Provider<TokenSplitUtil> tokenSplitUtilProvider;
     private volatile TokenSplitUtil tokenSplitUtil = null;
-    private volatile InstanceMetadataFetcher instanceMetadataFetcher;
+    private final InstanceMetadataFetcher instanceMetadataFetcher;
     private final CassandraBridgeFactory cassandraBridgeFactory;
 
     @Inject

@@ -27,9 +27,9 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.google.common.base.Preconditions;
 
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
@@ -70,7 +70,7 @@ public class CassandraBridgeFactory
     public CassandraBridge get(@NotNull CassandraVersion version)
     {
         String jarBaseName = version.jarBaseName();
-        Preconditions.checkNotNull(jarBaseName, "Cassandra version " + version + " is not supported");
+        Objects.requireNonNull(jarBaseName, "Cassandra version " + version + " is not supported");
         return cassandraBridges.computeIfAbsent(jarBaseName, this::create);
     }
 
@@ -133,13 +133,8 @@ public class CassandraBridgeFactory
                                }
                            }).toArray(URL[]::new);
 
-        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>()
-        {
-            public ClassLoader run()
-            {
-                return new PostDelegationClassLoader(urls, Thread.currentThread().getContextClassLoader());
-            }
-        });
+        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () ->
+                                                                             new PostDelegationClassLoader(urls, Thread.currentThread().getContextClassLoader()));
     }
 
 }

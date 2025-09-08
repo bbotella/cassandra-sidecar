@@ -38,50 +38,10 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Utility class providing CDC (Change Data Capture) specific operations and file handling.
- * <p>
  * This class offers a comprehensive set of static utility methods for working with CDC files,
  * parsing CDC-related data structures, and extracting schema information for CDC-enabled tables.
  * The utilities are specifically designed to handle Cassandra commit log segments and their
- * associated index files in the CDC context, providing:
- * <ul>
- *   <li>Commit log segment and index file name parsing and validation</li>
- *   <li>CDC index file content parsing and interpretation</li>
- *   <li>Schema extraction for CDC-enabled tables from cluster metadata</li>
- *   <li>File naming convention utilities for CDC log and index files</li>
- *   <li>Table schema cleaning and property filtering operations</li>
- * </ul>
- * <p>
- * Key functionalities include:
- * <ul>
- *   <li><strong>File Management:</strong> Utilities for converting between log and index
- *       file names, validating file naming conventions, and determining file types</li>
- *   <li><strong>Index Parsing:</strong> Robust parsing of CDC index files with retry
- *       logic to handle concurrent access scenarios</li>
- *   <li><strong>Schema Processing:</strong> Extraction and cleaning of table schemas
- *       for CDC-enabled tables, including property filtering and formatting</li>
- *   <li><strong>Pattern Matching:</strong> Comprehensive regex-based validation of
- *       CDC file naming conventions and structure</li>
- * </ul>
- * <p>
- * The class handles Cassandra commit log file naming conventions which follow the pattern:
- * {@code CommitLog-[sequence]-[timestamp].log} with corresponding index files using
- * {@code CommitLog-[sequence]-[timestamp]_cdc.idx} format. It provides utilities to:
- * <ul>
- *   <li>Parse segment IDs from file names</li>
- *   <li>Convert between log and index file names</li>
- *   <li>Validate file naming conventions</li>
- *   <li>Extract metadata from index files</li>
- * </ul>
- * <p>
- * For schema operations, the class can extract CDC-enabled table definitions from
- * cluster schema strings, clean and normalize the schema text, and filter table
- * properties to include only allowed overrides. This is essential for maintaining
- * consistent schema representations across CDC operations.
- * <p>
- * All methods in this class are static and thread-safe. The class cannot be
- * instantiated and serves purely as a utility container for CDC-related operations.
- *
- * @see org.apache.cassandra.spark.utils.TableIdentifier
+ * associated index files in the CDC context.
  */
 public final class CdcUtil
 {
