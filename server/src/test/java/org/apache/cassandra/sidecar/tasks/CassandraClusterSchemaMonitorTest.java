@@ -122,6 +122,7 @@ class CassandraClusterSchemaMonitorTest
         when(mockSchemaKeyspaceConfiguration.isEnabled()).thenReturn(true);
 
         when(mockNodeSettings.releaseVersion()).thenReturn("4.0.0");
+        when(mockNodeSettings.partitioner()).thenReturn("org.apache.cassandra.dht.Murmur3Partitioner");
         // Setup instance metadata fetcher
         when(mockInstanceFetcher.callOnFirstAvailableInstance(any(Function.class)))
         .thenReturn(mockNodeSettings);
