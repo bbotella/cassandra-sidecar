@@ -108,7 +108,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PARTIAL_CONTENT;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.JOB_ID_PATH_PARAM;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.KEYSPACE_PATH_PARAM;
-import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_FILES_API;
+import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_FILES_ROUTE;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.OPERATIONAL_JOB_ID_PATH_PARAM;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.TABLE_PATH_PARAM;
 import static org.apache.cassandra.sidecar.common.http.SidecarHttpHeaderNames.CONTENT_XXHASH32;
@@ -1905,7 +1905,7 @@ abstract class SidecarClientTest
         InstanceFilesListResponse result = client.liveMigrationListInstanceFilesAsync(instance).get();
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(filesListResponse);
-        validateResponseServed(ApiEndpointsV1.LIVE_MIGRATION_FILES_API);
+        validateResponseServed(ApiEndpointsV1.LIVE_MIGRATION_FILES_ROUTE);
     }
 
     @Test
@@ -1920,7 +1920,7 @@ abstract class SidecarClientTest
 
         Path filePath = tempDirectory.resolve("test_file.txt");
         SidecarInstance instance = instances.get(0);
-        String fileUrl = LIVE_MIGRATION_FILES_API + "/data/0/test_file.text";
+        String fileUrl = LIVE_MIGRATION_FILES_ROUTE + "/data/0/test_file.text";
 
         client.liveMigrationStreamFileAsync(instance, fileUrl, filePath.toString()).get();
 
@@ -1938,7 +1938,7 @@ abstract class SidecarClientTest
 
         Path filePath = tempDirectory.resolve("test_file.txt");
         SidecarInstance instance = instances.get(0);
-        String fileUrl = LIVE_MIGRATION_FILES_API + "/data/0/test_file.text";
+        String fileUrl = LIVE_MIGRATION_FILES_ROUTE + "/data/0/test_file.text";
 
         client.liveMigrationStreamFileAsync(instance, fileUrl, filePath.toString()).get();
 
@@ -1955,7 +1955,7 @@ abstract class SidecarClientTest
 
         Path filePath = tempDirectory.resolve("test_file.txt");
         SidecarInstance instance = instances.get(0);
-        String fileUrl = LIVE_MIGRATION_FILES_API + "/data/0/test_file.text";
+        String fileUrl = LIVE_MIGRATION_FILES_ROUTE + "/data/0/test_file.text";
 
         CompletableFuture<Void> result = client.liveMigrationStreamFileAsync(instance, fileUrl, filePath.toString());
 
