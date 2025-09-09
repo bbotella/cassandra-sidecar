@@ -36,12 +36,11 @@ import org.apache.cassandra.sidecar.utils.TokenSplitUtil;
 import org.apache.cassandra.spark.data.partitioner.Partitioner;
 import org.jetbrains.annotations.NotNull;
 
-import static org.apache.cassandra.sidecar.db.CdcDatabaseAccessor.await;
-import static org.apache.cassandra.sidecar.utils.TokenSplitUtil.overlaps;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.apache.cassandra.sidecar.db.CdcDatabaseAccessor.await;
+import static org.apache.cassandra.sidecar.utils.TokenSplitUtil.overlaps;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -366,7 +365,7 @@ public class CdcDatabaseAccessorTests
 
     private static void assertByteBufferEquals(byte[] ar1, byte[] ar2)
     {
-        assertArrayEquals(ar1, ar2);
+        org.junit.jupiter.api.Assertions.assertArrayEquals(ar1, ar2);
     }
 
     /**
