@@ -421,7 +421,6 @@ class CassandraClusterSchemaMonitorTest
             Set<CqlTable> result = CassandraClusterSchemaMonitor.buildCdcTables(
             mockDatabaseAccessor,
             tableIdCache,
-            mockInstanceFetcher,
             mockCassandraBridge
             );
 

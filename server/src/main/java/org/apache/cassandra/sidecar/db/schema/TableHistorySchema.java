@@ -27,56 +27,16 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.cassandra.sidecar.config.SchemaKeyspaceConfiguration;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
+import org.apache.cassandra.sidecar.coordination.ExecuteOnClusterLeaseholderOnly;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Schema definition and management for tracking table schema evolution history.
- * <p>
  * This class extends {@link TableSchema} to provide specialized schema management for storing
- * historical versions of table schemas in Cassandra Sidecar. The table schema history tracking
- * is essential for CDC operations and data consistency, enabling:
- * <ul>
- *   <li>Schema version tracking for CDC-enabled tables across time</li>
- *   <li>Historical schema retrieval for data processing and compatibility checks</li>
- *   <li>Schema evolution auditing and change management</li>
- *   <li>Version-aware data processing in CDC pipelines</li>
- * </ul>
- * <p>
- * The table schema is designed with the following characteristics:
- * <ul>
- *   <li><strong>Partitioning:</strong> Data is partitioned by keyspace ({@code ks}) and 
- *       table name ({@code tb}) to organize schemas by table identity</li>
- *   <li><strong>Clustering:</strong> Ordered by schema version ({@code version}) to enable
- *       chronological access to schema changes</li>
- *   <li><strong>Versioning:</strong> Uses UUID-based versioning for unique schema identification</li>
- *   <li><strong>Timestamping:</strong> Automatic creation timestamp tracking with {@code created_at}</li>
- * </ul>
- * <p>
- * The table structure includes:
- * <pre>{@code
- * CREATE TABLE table_schema_history (
- *   ks text,                    -- Keyspace name
- *   tb text,                    -- Table name
- *   version uuid,               -- Schema version identifier
- *   created_at timeuuid,        -- Schema creation timestamp
- *   table_schema text,          -- Complete table schema DDL
- *   PRIMARY KEY ((ks, tb), version)
- * )
- * }</pre>
- * <p>
- * This schema supports CDC operations by maintaining a complete history of table schemas,
- * allowing CDC consumers to process data with the correct schema version that was active
- * when the data was written. This is crucial for maintaining data integrity across schema
- * evolution in long-running CDC pipelines.
- * <p>
- * This class is thread-safe and designed as a singleton for dependency injection into
- * components that require table schema history access.
- *
- * @see TableSchema
- * @see org.apache.cassandra.sidecar.db.CdcDatabaseAccessor
+ * historical versions of table schemas in Cassandra Sidecar.
  */
 @Singleton
-public class TableHistorySchema extends TableSchema
+public class TableHistorySchema extends TableSchema implements ExecuteOnClusterLeaseholderOnly
 {
     private static final String TABLE_SCHEMA_HISTORY = "table_schema_history";
 
@@ -127,8 +87,8 @@ public class TableHistorySchema extends TableSchema
     protected String createSchemaStatement()
     {
         return String.format("CREATE TABLE IF NOT EXISTS %s.%s (" +
-                             "  ks text," +
-                             "  tb text," +
+                             "  keyspace_name text," +
+                             "  table_name text," +
                              "  version uuid," +
                              "  created_at timeuuid," +
                              "  table_schema text," +

@@ -105,7 +105,7 @@ public class CassandraClusterSchemaMonitor implements PeriodicTask
             {
                 LOGGER.info("Schema change detected, refreshing CDC tables");
                 currSchemaText.set(fullSchemaText);
-                Set<CqlTable> updatedCdcTables = buildCdcTables(fullSchemaText, databaseAccessor, tableIdCache, instanceFetcher, cassandraBridge);
+                Set<CqlTable> updatedCdcTables = buildCdcTables(fullSchemaText, databaseAccessor, tableIdCache, cassandraBridge);
                 LOGGER.info("Cdc enabled tables tables='{}'", 
                             updatedCdcTables.stream()
                                             .map(m -> String.format("%s.%s", m.keyspace(), m.table()))
@@ -173,37 +173,32 @@ public class CassandraClusterSchemaMonitor implements PeriodicTask
     @VisibleForTesting
     static Set<CqlTable> buildCdcTables(CdcDatabaseAccessor cdcDatabaseAccessor,
                                         ConcurrentHashMap<TableIdentifier, UUID> tableIdCache,
-                                        @NotNull InstanceMetadataFetcher instanceFetcher,
                                         @NotNull final CassandraBridge cassandraBridge)
     {
         return buildCdcTables(cdcDatabaseAccessor.fullSchema(),
                               cdcDatabaseAccessor.partitioner(),
                               tableIdCache,
                               cdcDatabaseAccessor::getTableId,
-                              instanceFetcher,
                               cassandraBridge);
     }
 
     private static Set<CqlTable> buildCdcTables(@NotNull String fullSchema,
                                                 @NotNull CdcDatabaseAccessor cdcDatabaseAccessor,
                                                 @NotNull ConcurrentHashMap<TableIdentifier, UUID> tableIdCache,
-                                                @NotNull InstanceMetadataFetcher instanceFetcher,
                                                 @NotNull final CassandraBridge cassandraBridge)
     {
         return buildCdcTables(fullSchema,
                               cdcDatabaseAccessor.partitioner(),
                               tableIdCache,
                               cdcDatabaseAccessor::getTableId,
-                              instanceFetcher,
                               cassandraBridge);
     }
 
-    private static Set<CqlTable> buildCdcTables(@NotNull final String fullSchema,
-                                                @NotNull final Partitioner partitioner,
-                                                @NotNull final ConcurrentHashMap<TableIdentifier, UUID> tableIdCache,
-                                                @NotNull final Function<TableIdentifier, UUID> tableIdLoaderFunction,
-                                                @NotNull final InstanceMetadataFetcher instanceFetcher,
-                                                @NotNull final CassandraBridge cassandraBridge)
+    private static Set<CqlTable> buildCdcTables(@NotNull String fullSchema,
+                                                @NotNull Partitioner partitioner,
+                                                @NotNull ConcurrentHashMap<TableIdentifier, UUID> tableIdCache,
+                                                @NotNull Function<TableIdentifier, UUID> tableIdLoaderFunction,
+                                                @NotNull CassandraBridge cassandraBridge)
     {
         Map<TableIdentifier, String> createStmts = CdcUtil.extractCdcTables(fullSchema);
         Map<String, Set<String>> udtsPerKeyspace = createStmts.keySet()

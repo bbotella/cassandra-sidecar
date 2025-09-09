@@ -29,53 +29,17 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.cassandra.sidecar.config.SchemaKeyspaceConfiguration;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
+import org.apache.cassandra.sidecar.coordination.ExecuteOnClusterLeaseholderOnly;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Schema definition and management for the CDC (Change Data Capture) state persistence table.
- * <p>
  * This class extends {@link TableSchema} to provide specialized schema management for storing
  * and retrieving CDC state data in Cassandra Sidecar. The CDC state table is used to persist
- * the current processing state of CDC consumers across token ranges, enabling:
- * <ul>
- *   <li>State persistence for fault tolerance and resumption after restarts</li>
- *   <li>Distributed processing coordination across multiple CDC consumers</li>
- *   <li>Token range-aware state storage for scalable CDC operations</li>
- *   <li>Time-based data retention through TTL configuration</li>
- * </ul>
- * <p>
- * The table schema is designed with the following key characteristics:
- * <ul>
- *   <li><strong>Partitioning:</strong> Data is partitioned by {@code job_id} and {@code split}
- *       to distribute CDC state across multiple partitions for scalability</li>
- *   <li><strong>Clustering:</strong> Ordered by token range boundaries ({@code start}, {@code end})
- *       to enable efficient range queries</li>
- *   <li><strong>TTL:</strong> Configurable time-to-live (default 30 days) for automatic cleanup
- *       of old CDC state data</li>
- *   <li><strong>Compaction:</strong> Uses TimeWindowCompactionStrategy optimized for time-series
- *       data patterns</li>
- * </ul>
- * <p>
- * The table structure includes:
- * <pre>{@code
- * CREATE TABLE cdc_state_v2 (
- *   job_id text,           -- CDC job identifier
- *   split smallint,        -- Token range split identifier
- *   start varint,          -- Token range start boundary
- *   end varint,            -- Token range end boundary
- *   state blob,            -- Serialized CDC state data
- *   PRIMARY KEY ((job_id, split), start, end)
- * )
- * }</pre>
- * <p>
- * This class is thread-safe and designed as a singleton for dependency injection into
- * components that require CDC state table access.
- *
- * @see TableSchema
- * @see org.apache.cassandra.sidecar.db.CdcDatabaseAccessor
+ * the current processing state of CDC consumers across token ranges.
  */
 @Singleton
-public class CdcStatesSchema extends TableSchema
+public class CdcStatesSchema extends TableSchema implements ExecuteOnClusterLeaseholderOnly
 {
     private static final String CDC_STATE_TABLE_NAME = "cdc_state_v2";
     private static final String CDC_STATE_TABLE_TTL = Long.toString(TimeUnit.DAYS.toSeconds(30));

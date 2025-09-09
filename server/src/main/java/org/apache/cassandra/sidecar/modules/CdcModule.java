@@ -99,7 +99,7 @@ public class CdcModule extends AbstractModule
 
     @ProvidesIntoMap
     @KeyClassMapKey(PeriodicTaskMapKeys.CassandraClusterSchemaTaskKey.class)
-    PeriodicTask cassandraClusterSchema(InstanceMetadataFetcher instanceMetadataFetcher,
+    PeriodicTask cassandraClusterSchemaMonitor(InstanceMetadataFetcher instanceMetadataFetcher,
                                         CdcDatabaseAccessor databaseAccessor,
                                         SidecarConfiguration configuration,
                                         CassandraBridgeFactory cassandraBridgeFactory)
