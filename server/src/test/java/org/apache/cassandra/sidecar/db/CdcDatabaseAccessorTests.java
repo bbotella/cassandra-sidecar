@@ -43,7 +43,6 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.inject.Provider;
-import org.apache.cassandra.bridge.CassandraBridgeFactory;
 import org.apache.cassandra.bridge.TokenRange;
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
@@ -142,11 +141,11 @@ class CdcDatabaseAccessorTests
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
 
         Provider<TokenSplitUtil> tokenSplitUtilProvider = () -> tokenSplitUtil;
-        CassandraBridgeFactory mockCassandraBridgeFactory = mock(CassandraBridgeFactory.class);
 
-        CdcDatabaseAccessor db = new CdcDatabaseAccessor(getMockInstanceMetaDataFetcher(), mockCdcStatesSchema,
-                                                         mockTableHistorySchema, getMockCQLSessionProvider(datastore, mockCdcStatesSchema),
-                                                         tokenSplitUtilProvider, mockCassandraBridgeFactory);
+        CdcDatabaseAccessor db = new CdcDatabaseAccessor(mockCdcStatesSchema,
+                                                         mockTableHistorySchema,
+                                                         getMockCQLSessionProvider(datastore, mockCdcStatesSchema),
+                                                         tokenSplitUtilProvider);
 
         ByteBuffer[] buffers = new ByteBuffer[tokensBeforeShrink.size()];
         for (int i = 0; i < tokensBeforeShrink.size(); i++)
@@ -191,11 +190,11 @@ class CdcDatabaseAccessorTests
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
 
         Provider<TokenSplitUtil> tokenSplitUtilProvider = () -> tokenSplitUtil;
-        CassandraBridgeFactory mockCassandraBridgeFactory = mock(CassandraBridgeFactory.class);
 
-        CdcDatabaseAccessor db = new CdcDatabaseAccessor(getMockInstanceMetaDataFetcher(), mockCdcStatesSchema,
-                                                         mockTableHistorySchema, getMockCQLSessionProvider(datastore, mockCdcStatesSchema),
-                                                         tokenSplitUtilProvider, mockCassandraBridgeFactory);
+        CdcDatabaseAccessor db = new CdcDatabaseAccessor(mockCdcStatesSchema,
+                                                         mockTableHistorySchema,
+                                                         getMockCQLSessionProvider(datastore, mockCdcStatesSchema),
+                                                         tokenSplitUtilProvider);
 
         ByteBuffer[] buffers = new ByteBuffer[tokensBeforeExpansion.size()];
         for (int i = 0; i < tokensBeforeExpansion.size(); i++)

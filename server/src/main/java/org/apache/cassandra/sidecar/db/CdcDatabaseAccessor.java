@@ -21,10 +21,8 @@ package org.apache.cassandra.sidecar.db;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -41,18 +39,11 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
-import org.apache.cassandra.bridge.CassandraBridge;
-import org.apache.cassandra.bridge.CassandraBridgeFactory;
 import org.apache.cassandra.bridge.TokenRange;
-import org.apache.cassandra.cdc.CdcKryoRegister;
-import org.apache.cassandra.cdc.state.CdcState;
-import org.apache.cassandra.sidecar.cdc.SidecarCdcStats;
-import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.db.schema.CdcStatesSchema;
 import org.apache.cassandra.sidecar.db.schema.TableHistorySchema;
 import org.apache.cassandra.sidecar.utils.ByteBufUtils;
-import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.TokenSplitUtil;
 import org.apache.cassandra.spark.data.partitioner.Partitioner;
 import org.apache.cassandra.spark.utils.TableIdentifier;
@@ -73,22 +64,16 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
     private final TableHistorySchema tableHistorySchema;
     private final Provider<TokenSplitUtil> tokenSplitUtilProvider;
     private volatile TokenSplitUtil tokenSplitUtil = null;
-    private final InstanceMetadataFetcher instanceMetadataFetcher;
-    private final CassandraBridgeFactory cassandraBridgeFactory;
 
     @Inject
-    public CdcDatabaseAccessor(InstanceMetadataFetcher instanceMetadataFetcher,
-                               CdcStatesSchema cdcStatesSchema,
+    public CdcDatabaseAccessor(CdcStatesSchema cdcStatesSchema,
                                TableHistorySchema tableHistorySchema,
                                CQLSessionProvider sessionProvider,
-                               Provider<TokenSplitUtil> tokenSplitUtilProvider,
-                               CassandraBridgeFactory cassandraBridgeFactory)
+                               Provider<TokenSplitUtil> tokenSplitUtilProvider)
     {
         super(cdcStatesSchema, sessionProvider);
         this.tableHistorySchema = tableHistorySchema;
         this.tokenSplitUtilProvider = tokenSplitUtilProvider;
-        this.instanceMetadataFetcher = instanceMetadataFetcher;
-        this.cassandraBridgeFactory = cassandraBridgeFactory;
     }
 
     protected TokenSplitUtil tokenSplitUtil()
@@ -142,34 +127,6 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
                      timestamp
                      )))
                      .collect(Collectors.toList());
-    }
-
-    /**
-     * Load cdc state for a given jobId and token range and merge into canonical view
-     *
-     * @param stats SidecarCdcStats to publish metrics
-     * @param jobId Cdc job id
-     * @param range token range
-     * @return merged org.apache.cassandra.cdc.state.CdcState object that merges previous state objects 
-     *         that overlap with token range to given canonical view of Cdc state.
-     */
-    public Optional<CdcState> loadCdcState(SidecarCdcStats stats, String jobId, TokenRange range)
-    {
-        NodeSettings nodeSettings = instanceMetadataFetcher
-                                     .callOnFirstAvailableInstance(instance -> instance.delegate().nodeSettings());
-        CassandraBridge cassandraBridge = cassandraBridgeFactory.get(nodeSettings.releaseVersion());
-        List<Integer> sizes = new ArrayList<>();
-        // deserialize and merge the CDC state objects into canonical view
-        Optional<CdcState> result = loadStateForRange(jobId, range)
-                                           .peek(bytes -> sizes.add(bytes.length))
-                                           .map(o -> CdcState.deserialize(CdcKryoRegister.kryo(), cassandraBridge.compressionUtil(), o))
-                                           .reduce((s1, s2) -> s1.merge(range, s2));
-        int count = sizes.size();
-        int len = sizes.stream().mapToInt(i -> i).sum();
-        LOGGER.debug("Read CDC state from Cassandra jobId={} start={} end={} stateCount={} stateSize={}",
-                     jobId, range.lowerEndpoint(), range.upperEndpoint(), count, len);
-        stats.captureCdcConsumerReadFromState(count, len);
-        return result;
     }
 
     /**

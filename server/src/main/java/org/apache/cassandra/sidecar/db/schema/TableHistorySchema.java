@@ -111,13 +111,13 @@ public class TableHistorySchema extends TableSchema implements ExecuteOnClusterL
     {
         static String insertTableSchema(SchemaKeyspaceConfiguration config)
         {
-            return withTable("INSERT INTO %s.%s (ks, tb, version, created_at, table_schema) " +
+            return withTable("INSERT INTO %s.%s (keyspace_name, table_name, version, created_at, table_schema) " +
                              "VALUES (?, ?, ?, NOW(), ?)", config);
         }
 
         static String selectVersionTableSchema(SchemaKeyspaceConfiguration config)
         {
-            return withTable("SELECT table_schema FROM %s.%s WHERE ks = ? AND tb = ? AND version = ?", config);
+            return withTable("SELECT table_schema FROM %s.%s WHERE keyspace_name = ? AND table_name = ? AND version = ?", config);
         }
 
         private static String withTable(String format, SchemaKeyspaceConfiguration config)
