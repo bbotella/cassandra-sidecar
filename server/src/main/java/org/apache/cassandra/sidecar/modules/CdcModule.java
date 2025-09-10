@@ -100,9 +100,9 @@ public class CdcModule extends AbstractModule
     @ProvidesIntoMap
     @KeyClassMapKey(PeriodicTaskMapKeys.CassandraClusterSchemaTaskKey.class)
     PeriodicTask cassandraClusterSchemaMonitor(InstanceMetadataFetcher instanceMetadataFetcher,
-                                        CdcDatabaseAccessor databaseAccessor,
-                                        SidecarConfiguration configuration,
-                                        CassandraBridgeFactory cassandraBridgeFactory)
+                                               CdcDatabaseAccessor databaseAccessor,
+                                               SidecarConfiguration configuration,
+                                               CassandraBridgeFactory cassandraBridgeFactory)
     {
         return new CassandraClusterSchemaMonitor(instanceMetadataFetcher, databaseAccessor, configuration, cassandraBridgeFactory);
     }
@@ -127,8 +127,8 @@ public class CdcModule extends AbstractModule
     @Provides
     @Singleton
     TokenSplitUtil tokenSplitUtilProvider(TokenSplitConfigAccessor tokenSplitConfigAccessor,
-                                                    CdcConfig cdcConfig,
-                                                    InstanceMetadataFetcher fetcher)
+                                          CdcConfig cdcConfig,
+                                          InstanceMetadataFetcher fetcher)
     {
         return new TokenSplitUtil(tokenSplitConfigAccessor, cdcConfig, fetcher);
     }

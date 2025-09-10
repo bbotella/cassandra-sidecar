@@ -19,7 +19,6 @@
 package org.apache.cassandra.sidecar.handlers.cdc;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +63,7 @@ class StreamCdcSegmentHandlerTest
     private InstancesMetadata instancesMetadata;
 
     @BeforeEach
-    void setUp() throws InterruptedException, IOException
+    void setUp() throws InterruptedException
     {
         Module testOverride = new TestModule();
         Injector injector = Guice.createInjector(Modules.override(SidecarModules.all())

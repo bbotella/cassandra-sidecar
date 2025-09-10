@@ -91,21 +91,6 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
         this.cassandraBridgeFactory = cassandraBridgeFactory;
     }
 
-    @VisibleForTesting
-    public CdcDatabaseAccessor(InstanceMetadataFetcher instanceMetadataFetcher,
-                               CdcStatesSchema cdcStatesSchema,
-                               TableHistorySchema tableHistorySchema,
-                               CQLSessionProvider sessionProvider,
-                               TokenSplitUtil tokenSplitUtil,
-                               CassandraBridgeFactory cassandraBridgeFactory)
-    {
-        super(cdcStatesSchema, sessionProvider);
-        this.tableHistorySchema = tableHistorySchema;
-        this.tokenSplitUtilProvider = () -> tokenSplitUtil;
-        this.instanceMetadataFetcher = instanceMetadataFetcher;
-        this.cassandraBridgeFactory = cassandraBridgeFactory;
-    }
-
     protected TokenSplitUtil tokenSplitUtil()
     {
         // cql connection must be initialized before we can initialize TokenSplitUtil class

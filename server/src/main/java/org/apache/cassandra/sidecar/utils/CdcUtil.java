@@ -22,8 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +53,7 @@ public final class CdcUtil
     private static final String FILENAME_EXTENSION = "(" + IDX_FILE_EXTENSION + "|" + LOG_FILE_EXTENSION + ")";
     static final Pattern SEGMENT_PATTERN = Pattern.compile(FILENAME_PREFIX + "(?:\\d+" + SEPARATOR + ")?" + "(\\d+)" + FILENAME_EXTENSION);
     public static final Pattern IDX_FILE_PATTERN = Pattern.compile(FILENAME_PREFIX + "(?:\\d+" + SEPARATOR + ")?" + "(\\d+)" + IDX_FILE_EXTENSION);
-    public static final List<String> TABLE_PROPERTY_OVERRIDE_ALLOWLIST = 
-            Collections.unmodifiableList(Arrays.asList("min_index_interval", "max_index_interval", "cdc"));
+    public static final List<String> TABLE_PROPERTY_OVERRIDE_ALLOWLIST = List.of("min_index_interval", "max_index_interval", "cdc");
 
     private static final int READ_INDEX_FILE_MAX_RETRY = 5;
 
@@ -115,9 +112,9 @@ public final class CdcUtil
             throw new IOException("Unable to read anything from the CDC segment index file " + indexFile.getName());
         }
 
-        final String lastLine = lines.get(lines.size() - 1);
-        final boolean isCompleted = lastLine.equals(LOG_FILE_COMPLETE_INDICATOR);
-        final long latestPosition = isCompleted ? segmentFileLength : Long.parseLong(lastLine);
+        String lastLine = lines.get(lines.size() - 1);
+        boolean isCompleted = lastLine.equals(LOG_FILE_COMPLETE_INDICATOR);
+        long latestPosition = isCompleted ? segmentFileLength : Long.parseLong(lastLine);
         return new CdcIndex(latestPosition, isCompleted);
     }
 
@@ -132,7 +129,7 @@ public final class CdcUtil
 
     public static long parseSegmentId(String name)
     {
-        final Matcher matcher = SEGMENT_PATTERN.matcher(name);
+        Matcher matcher = SEGMENT_PATTERN.matcher(name);
         if (matcher.matches())
         {
             return Long.parseLong(matcher.group(1));
@@ -159,7 +156,7 @@ public final class CdcUtil
     }
 
     /**
-     * Validate for the cdc (log or index) file name.see {@link SEGMENT_PATTERN} for the format
+     * Validate for the cdc (log or index) file name.see {@link #SEGMENT_PATTERN} for the format
      *
      * @param fileName name of the file
      * @return true if the name is valid; otherwise, false
@@ -197,16 +194,16 @@ public final class CdcUtil
      * @param schemaStr full cluster schema text.
      * @return map of keyspace/table identifier to table create statements.
      */
-    public static Map<TableIdentifier, String> extractCdcTables(@NotNull final String schemaStr)
+    public static Map<TableIdentifier, String> extractCdcTables(@NotNull String schemaStr)
     {
-        final String cleaned = cleanCql(schemaStr);
-        final Pattern pattern = Pattern.compile("CREATE TABLE \"?(\\w+)\"?\\.\"?(\\w+)\"?[^;]*cdc = true[^;]*;");
-        final Matcher matcher = pattern.matcher(cleaned);
-        final Map<TableIdentifier, String> createStmts = new HashMap<>();
+        String cleaned = cleanCql(schemaStr);
+        Pattern pattern = Pattern.compile("CREATE TABLE \"?(\\w+)\"?\\.\"?(\\w+)\"?[^;]*cdc = true[^;]*;");
+        Matcher matcher = pattern.matcher(cleaned);
+        Map<TableIdentifier, String> createStmts = new HashMap<>();
         while (matcher.find())
         {
-            final String keyspace = matcher.group(1);
-            final String table = matcher.group(2);
+            String keyspace = matcher.group(1);
+            String table = matcher.group(2);
             createStmts.put(TableIdentifier.of(keyspace, table), extractCleanedTableSchema(cleaned, keyspace, table));
         }
         return createStmts;
@@ -219,17 +216,17 @@ public final class CdcUtil
                   .replaceAll("\\\\", "");
     }
 
-    public static String extractCleanedTableSchema(@NotNull final String cleaned,
-                                                   @NotNull final String keyspace,
-                                                   @NotNull final String table)
+    public static String extractCleanedTableSchema(@NotNull String cleaned,
+                                                   @NotNull String keyspace,
+                                                   @NotNull String table)
     {
-        final Pattern pattern = Pattern.compile(String.format("CREATE TABLE ?\"?%s?\"?\\.{1}\"?%s\"?[^;]*;", keyspace, table));
-        final Matcher matcher = pattern.matcher(cleaned);
+        Pattern pattern = Pattern.compile(String.format("CREATE TABLE ?\"?%s?\"?\\.{1}\"?%s\"?[^;]*;", keyspace, table));
+        Matcher matcher = pattern.matcher(cleaned);
         if (matcher.find())
         {
-            final String fullSchema = cleaned.substring(matcher.start(0), matcher.end(0));
+            String fullSchema = cleaned.substring(matcher.start(0), matcher.end(0));
             String tableOnly = removeTableProps(fullSchema);
-            final String quotedTableName = String.format("\"%s\"", table);
+            String quotedTableName = String.format("\"%s\"", table);
             if (tableOnly.contains(quotedTableName))
             {
                 // remove quoted table name from schema
@@ -255,7 +252,7 @@ public final class CdcUtil
         throw new RuntimeException(String.format("Could not find schema for table: %s.%s", keyspace, table));
     }
 
-    private static String removeTableProps(@NotNull final String schema)
+    private static String removeTableProps(@NotNull String schema)
     {
         int pos = schema.indexOf('(');
         int count = 1;
@@ -284,8 +281,8 @@ public final class CdcUtil
     @VisibleForTesting
     static String extractClustering(String schemaStr)
     {
-        final Pattern pattern = Pattern.compile("CLUSTERING ORDER BY \\([^)]*");
-        final Matcher matcher = pattern.matcher(schemaStr);
+        Pattern pattern = Pattern.compile("CLUSTERING ORDER BY \\([^)]*");
+        Matcher matcher = pattern.matcher(schemaStr);
         if (matcher.find())
         {
             return schemaStr.substring(matcher.start(0), matcher.end(0) + 1);
@@ -295,10 +292,10 @@ public final class CdcUtil
 
     static List<String> extractOverrideProperties(String schemaStr, List<String> properties)
     {
-        final List<String> overrideTableProps = new ArrayList<>();
+        List<String> overrideTableProps = new ArrayList<>();
         if (properties.isEmpty()) return overrideTableProps;
-        final Pattern pattern = Pattern.compile("(" + properties.stream().collect(Collectors.joining("|")) + ") = (\\w+)");
-        final Matcher matcher = pattern.matcher(schemaStr);
+        Pattern pattern = Pattern.compile("(" + properties.stream().collect(Collectors.joining("|")) + ") = (\\w+)");
+        Matcher matcher = pattern.matcher(schemaStr);
 
         while (matcher.find())
         {

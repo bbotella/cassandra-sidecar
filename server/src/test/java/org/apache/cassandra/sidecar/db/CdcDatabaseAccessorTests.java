@@ -54,11 +54,9 @@ import org.apache.cassandra.sidecar.utils.TokenSplitUtil;
 import org.apache.cassandra.spark.data.partitioner.Partitioner;
 import org.jetbrains.annotations.NotNull;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.apache.cassandra.sidecar.db.CdcDatabaseAccessor.await;
 import static org.apache.cassandra.sidecar.utils.TokenSplitUtil.overlaps;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -69,39 +67,39 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link CdcDatabaseAccessor}
  */
-public class CdcDatabaseAccessorTests
+class CdcDatabaseAccessorTests
 {
     @Test
-    public void testDataStoreBasic()
+    void testDataStoreBasic()
     {
         MockCdcStateV2 datastore = new MockCdcStateV2();
         String jobId = UUID.randomUUID().toString();
         ByteBuffer buf1 = ByteBuffer.wrap(new byte[]{ 'a', 'b', 'c' });
         ByteBuffer buf2 = ByteBuffer.wrap(new byte[]{ 'e', 'f', 'g' });
-        assertTrue(datastore.isEmpty());
-        assertTrue(datastore.select(jobId, 0).isEmpty());
+        assertThat(datastore.isEmpty()).isTrue();
+        assertThat(datastore.select(jobId, 0)).isEmpty();
         datastore.insert(jobId, 0, BigInteger.ZERO, BigInteger.TEN, buf1);
-        assertFalse(datastore.isEmpty());
+        assertThat(datastore.isEmpty()).isFalse();
         assertByteBufferEquals(buf1, datastore.selectBuffers(jobId, 0).stream().findFirst().orElseThrow());
 
-        assertFalse(datastore.select(jobId, 0).isEmpty());
-        assertFalse(datastore.select(jobId, 0).isEmpty());
-        assertTrue(datastore.select(jobId, 1).isEmpty());
-        assertTrue(datastore.select(jobId, 1).isEmpty());
+        assertThat(datastore.select(jobId, 0)).isNotEmpty();
+        assertThat(datastore.select(jobId, 0)).isNotEmpty();
+        assertThat(datastore.select(jobId, 1)).isEmpty();
+        assertThat(datastore.select(jobId, 1)).isEmpty();
         datastore.insert(jobId, 0, BigInteger.ZERO, BigInteger.valueOf(100), buf2);
-        assertEquals(2, datastore.select(jobId, 0).size());
+        assertThat(datastore.select(jobId, 0)).hasSize(2);
     }
 
     @ParameterizedTest
     @ValueSource(ints = { 3, 4, 8, 16, 32, 64, 128, 256, 512, 1024 })
-    public void testDataStore(int numNodes)
+    void testDataStore(int numNodes)
     {
         Partitioner partitioner = Partitioner.Murmur3Partitioner;
         MockCdcStateV2 datastore = new MockCdcStateV2();
         String jobId = UUID.randomUUID().toString();
         List<BigInteger> tokens = TokenSplitUtil.splitTokens(numNodes, partitioner);
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
-        assertTrue(datastore.isEmpty());
+        assertThat(datastore.isEmpty()).isTrue();
 
         // write state and verify we can read back
         ByteBuffer[] buffers = new ByteBuffer[tokens.size()];
@@ -114,10 +112,10 @@ public class CdcDatabaseAccessorTests
             buffers[i] = buf;
             int[] splits = tokenSplitUtil.findOverlappingSplitIds(partitioner, range);
 
-            Arrays.stream(splits).forEach(split -> assertTrue(datastore.select(jobId, split).isEmpty()));
+            Arrays.stream(splits).forEach(split -> assertThat(datastore.select(jobId, split)).isEmpty());
             Arrays.stream(splits).forEach(split -> datastore.insert(jobId, split, lower, upper, buf));
         }
-        assertEquals(numNodes, datastore.store.size());
+        assertThat(datastore.store).hasSize(numNodes);
 
         for (int i = 0; i < tokens.size(); i++)
         {
@@ -132,7 +130,7 @@ public class CdcDatabaseAccessorTests
 
     @ParameterizedTest
     @ValueSource(ints = { 4, 8, 32, 128, 1024 })
-    public void testShrink(int numNodes)
+    void testShrink(int numNodes)
     {
         Partitioner partitioner = Partitioner.Murmur3Partitioner;
         MockCdcStateV2 datastore = new MockCdcStateV2();
@@ -143,13 +141,12 @@ public class CdcDatabaseAccessorTests
         List<BigInteger> tokensAfterShrink = TokenSplitUtil.splitTokens(numNodes / 2, partitioner);
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
 
-        Provider<TokenSplitUtil> mockTokenSplitUtilProvider = mock(Provider.class);
-        when(mockTokenSplitUtilProvider.get()).thenReturn(tokenSplitUtil);
+        Provider<TokenSplitUtil> tokenSplitUtilProvider = () -> tokenSplitUtil;
         CassandraBridgeFactory mockCassandraBridgeFactory = mock(CassandraBridgeFactory.class);
 
         CdcDatabaseAccessor db = new CdcDatabaseAccessor(getMockInstanceMetaDataFetcher(), mockCdcStatesSchema,
                                                          mockTableHistorySchema, getMockCQLSessionProvider(datastore, mockCdcStatesSchema),
-                                                         mockTokenSplitUtilProvider, mockCassandraBridgeFactory);
+                                                         tokenSplitUtilProvider, mockCassandraBridgeFactory);
 
         ByteBuffer[] buffers = new ByteBuffer[tokensBeforeShrink.size()];
         for (int i = 0; i < tokensBeforeShrink.size(); i++)
@@ -160,13 +157,13 @@ public class CdcDatabaseAccessorTests
             buffers[i] = randomBytes(i);
             int[] splits = tokenSplitUtil.findOverlappingSplitIds(partitioner, range);
 
-            Arrays.stream(splits).forEach(split -> assertTrue(datastore.select(jobId, split).isEmpty()));
+            Arrays.stream(splits).forEach(split -> assertThat(datastore.select(jobId, split)).isEmpty());
             await(db.storeStateAsync(jobId, range, buffers[i], System.currentTimeMillis()).stream());
             List<byte[]> arrays = db.loadStateForRange(jobId, range).collect(Collectors.toList());
-            assertEquals(1, arrays.size());
+            assertThat(arrays).hasSize(1);
             assertByteBufferEquals(buffers[i], arrays.get(0));
         }
-        assertEquals(numNodes, datastore.store.size());
+        assertThat(datastore.store).hasSize(numNodes);
 
         for (int i = 0; i < tokensAfterShrink.size(); i++)
         {
@@ -174,7 +171,7 @@ public class CdcDatabaseAccessorTests
             BigInteger upper = i == tokensAfterShrink.size() - 1 ? partitioner.maxToken() : tokensAfterShrink.get(i + 1);
             TokenRange range = TokenRange.openClosed(lower, upper);
             List<byte[]> arrays = db.loadStateForRange(jobId, range).collect(Collectors.toList());
-            assertEquals(2, arrays.size());
+            assertThat(arrays).hasSize(2);
             assertByteBufferEquals(buffers[i * 2], arrays.get(0));
             assertByteBufferEquals(buffers[(i * 2) + 1], arrays.get(1));
         }
@@ -182,7 +179,7 @@ public class CdcDatabaseAccessorTests
 
     @ParameterizedTest
     @ValueSource(ints = { 4, 8, 32, 128, 1024 })
-    public void testExpand(int numNodes)
+    void testExpand(int numNodes)
     {
         Partitioner partitioner = Partitioner.Murmur3Partitioner;
         MockCdcStateV2 datastore = new MockCdcStateV2();
@@ -193,14 +190,12 @@ public class CdcDatabaseAccessorTests
         List<BigInteger> tokensAfterExpansion = TokenSplitUtil.splitTokens(numNodes * 2, partitioner);
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
 
-        Provider<TokenSplitUtil> mockTokenSplitUtilProvider = mock(Provider.class);
-        when(mockTokenSplitUtilProvider.get()).thenReturn(tokenSplitUtil);
+        Provider<TokenSplitUtil> tokenSplitUtilProvider = () -> tokenSplitUtil;
         CassandraBridgeFactory mockCassandraBridgeFactory = mock(CassandraBridgeFactory.class);
-
 
         CdcDatabaseAccessor db = new CdcDatabaseAccessor(getMockInstanceMetaDataFetcher(), mockCdcStatesSchema,
                                                          mockTableHistorySchema, getMockCQLSessionProvider(datastore, mockCdcStatesSchema),
-                                                         mockTokenSplitUtilProvider, mockCassandraBridgeFactory);
+                                                         tokenSplitUtilProvider, mockCassandraBridgeFactory);
 
         ByteBuffer[] buffers = new ByteBuffer[tokensBeforeExpansion.size()];
         for (int i = 0; i < tokensBeforeExpansion.size(); i++)
@@ -211,13 +206,13 @@ public class CdcDatabaseAccessorTests
             buffers[i] = randomBytes(i);
             int[] splits = tokenSplitUtil.findOverlappingSplitIds(partitioner, range);
 
-            Arrays.stream(splits).forEach(split -> assertTrue(datastore.select(jobId, split).isEmpty()));
+            Arrays.stream(splits).forEach(split -> assertThat(datastore.select(jobId, split)).isEmpty());
             await(db.storeStateAsync(jobId, range, buffers[i], System.currentTimeMillis()).stream());
             List<byte[]> arrays = db.loadStateForRange(jobId, range).collect(Collectors.toList());
-            assertEquals(1, arrays.size());
+            assertThat(arrays).hasSize(1);
             assertByteBufferEquals(buffers[i], arrays.get(0));
         }
-        assertEquals(numNodes, datastore.store.size());
+        assertThat(datastore.store).hasSize(numNodes);
 
         for (int i = 0; i < tokensAfterExpansion.size(); i++)
         {
@@ -225,27 +220,27 @@ public class CdcDatabaseAccessorTests
             BigInteger upper = i == tokensAfterExpansion.size() - 1 ? partitioner.maxToken() : tokensAfterExpansion.get(i + 1);
             TokenRange range = TokenRange.openClosed(lower, upper);
             List<byte[]> arrays = db.loadStateForRange(jobId, range).collect(Collectors.toList());
-            assertEquals(1, arrays.size());
+            assertThat(arrays).hasSize(1);
             assertByteBufferEquals(buffers[i / 2], arrays.get(0));
         }
     }
 
     @Test
-    public void testOverlaps()
+    void testOverlaps()
     {
-        assertTrue(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN)));
-        assertFalse(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.ZERO, BigInteger.ZERO)));
-        assertFalse(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.TEN, BigInteger.TEN)));
-        assertTrue(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.ONE, BigInteger.TWO)));
-        assertTrue(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(3), BigInteger.valueOf(8))));
-        assertTrue(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(-5), BigInteger.valueOf(5))));
-        assertTrue(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(-5), BigInteger.TEN)));
-        assertTrue(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(-5), BigInteger.valueOf(15))));
-        assertTrue(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(5), BigInteger.valueOf(15))));
-        assertTrue(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(5), BigInteger.TEN)));
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN))).isTrue();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.ZERO, BigInteger.ZERO))).isFalse();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.TEN, BigInteger.TEN))).isFalse();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.ONE, BigInteger.TWO))).isTrue();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(3), BigInteger.valueOf(8)))).isTrue();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(-5), BigInteger.valueOf(5)))).isTrue();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(-5), BigInteger.TEN))).isTrue();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(-5), BigInteger.valueOf(15)))).isTrue();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(5), BigInteger.valueOf(15)))).isTrue();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(5), BigInteger.TEN))).isTrue();
 
-        assertFalse(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(-5), BigInteger.valueOf(-1))));
-        assertFalse(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(11), BigInteger.valueOf(15))));
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(-5), BigInteger.valueOf(-1)))).isFalse();
+        assertThat(overlaps(TokenRange.openClosed(BigInteger.ZERO, BigInteger.TEN), TokenRange.openClosed(BigInteger.valueOf(11), BigInteger.valueOf(15)))).isFalse();
     }
 
     // test utils

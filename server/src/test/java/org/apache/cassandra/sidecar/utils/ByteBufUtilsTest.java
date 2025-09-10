@@ -28,24 +28,23 @@ import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for {@link ByteBufUtils}
  */
-@SuppressWarnings("UnstableApiUsage")
-public class ByteBufUtilsTest
+class ByteBufUtilsTest
 {
     @Test
-    public void testSkipBytesFully() throws IOException
+    void testSkipBytesFully() throws IOException
     {
         testSkipBytesFully("abc".getBytes(StandardCharsets.UTF_8));
         testSkipBytesFully("abcdefghijklm".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
-    public void testReadRemainingBytes() throws IOException
+    void testReadRemainingBytes() throws IOException
     {
         testReadRemainingBytes("");
         testReadRemainingBytes("abc");
@@ -53,7 +52,7 @@ public class ByteBufUtilsTest
     }
 
     @Test
-    public void testGetArray()
+    void testGetArray()
     {
         testGetArray("");
         testGetArray("abc");
@@ -61,40 +60,40 @@ public class ByteBufUtilsTest
     }
 
     @Test
-    public void testHexString()
+    void testHexString()
     {
-        assertEquals("00000000000001F4", ByteBufUtils.toHexString((ByteBuffer) ByteBuffer.allocate(8).putLong(500L).flip()));
-        assertEquals("616263", ByteBufUtils.toHexString(ByteBuffer.wrap(new byte[]{ 'a', 'b', 'c' })));
-        assertEquals("000000000588C164", ByteBufUtils.toHexString((ByteBuffer) ByteBuffer.allocate(8).putLong(92848484L).asReadOnlyBuffer().flip()));
-        assertEquals("null", ByteBufUtils.toHexString(null));
+        assertThat(ByteBufUtils.toHexString(ByteBuffer.allocate(8).putLong(500L).flip())).isEqualTo("00000000000001F4");
+        assertThat(ByteBufUtils.toHexString(ByteBuffer.wrap(new byte[]{ 'a', 'b', 'c' }))).isEqualTo("616263");
+        assertThat(ByteBufUtils.toHexString(ByteBuffer.allocate(8).putLong(92848484L).asReadOnlyBuffer().flip())).isEqualTo("000000000588C164");
+        assertThat(ByteBufUtils.toHexString(null)).isEqualTo("null");
 
-        assertEquals("616263", ByteBufUtils.toHexString(new byte[]{ 'a', 'b', 'c' }, 0, 3));
-        assertEquals("63", ByteBufUtils.toHexString(new byte[]{ 'a', 'b', 'c' }, 2, 1));
+        assertThat(ByteBufUtils.toHexString(new byte[]{ 'a', 'b', 'c' }, 0, 3)).isEqualTo("616263");
+        assertThat(ByteBufUtils.toHexString(new byte[]{ 'a', 'b', 'c' }, 2, 1)).isEqualTo("63");
     }
 
-    private static void testGetArray(final String str)
+    private static void testGetArray(String str)
     {
-        assertEquals(str, new String(ByteBufUtils.getArray(ByteBuffer.wrap(str.getBytes())), StandardCharsets.UTF_8));
+        assertThat(new String(ByteBufUtils.getArray(ByteBuffer.wrap(str.getBytes())), StandardCharsets.UTF_8)).isEqualTo(str);
     }
 
-    private static void testReadRemainingBytes(final String str) throws IOException
+    private static void testReadRemainingBytes(String str) throws IOException
     {
-        assertEquals(str, new String(ByteBufUtils.readRemainingBytes(new ByteArrayInputStream(str.getBytes()), str.length()), StandardCharsets.UTF_8));
+        assertThat(new String(ByteBufUtils.readRemainingBytes(new ByteArrayInputStream(str.getBytes()), str.length()), StandardCharsets.UTF_8)).isEqualTo(str);
     }
 
-    private static void testSkipBytesFully(final byte[] ar) throws IOException
+    private static void testSkipBytesFully(byte[] ar) throws IOException
     {
-        final int len = ar.length;
-        final ByteArrayDataInput in = ByteStreams.newDataInput(ar, 0);
+        int len = ar.length;
+        ByteArrayDataInput in = ByteStreams.newDataInput(ar, 0);
         ByteBufUtils.skipBytesFully(in, 1);
         ByteBufUtils.skipBytesFully(in, len - 2);
-        assertEquals(ar[len - 1], in.readByte());
+        assertThat(in.readByte()).isEqualTo(ar[len - 1]);
         try
         {
             ByteBufUtils.skipBytesFully(in, 1);
             fail("EOFException should have been thrown");
         }
-        catch (final EOFException ignore)
+        catch (EOFException ignore)
         {
         }
     }

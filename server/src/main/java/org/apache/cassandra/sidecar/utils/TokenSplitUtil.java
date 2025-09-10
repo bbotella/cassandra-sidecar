@@ -43,9 +43,9 @@ import org.apache.cassandra.sidecar.db.TokenSplitConfigAccessor;
 import org.apache.cassandra.spark.data.partitioner.Partitioner;
 
 /**
- * Util class that divides token range into fixed number of splits to help distribute load. 
- * The number of splits should be proportional to the cluster size, so that small clusters 
- * store state in a small number of partitions, and large clusters store state across a 
+ * Util class that divides token range into fixed number of splits to help distribute load.
+ * The number of splits should be proportional to the cluster size, so that small clusters
+ * store state in a small number of partitions, and large clusters store state across a
  * larger number of partitions.
  */
 @Singleton
@@ -88,17 +88,15 @@ public class TokenSplitUtil
             return Integer.parseInt(config.get(NUM_SPLITS_KEY));
         }
 
-
         int maxDcSize = fetcher.callOnFirstAvailableInstance(instanceMetadata -> instanceMetadata.delegate().metadata())
-                                .getAllHosts()
-                                .stream()
-                                .filter(host -> host.getDatacenter().equals(cdcConfig.datacenter()))
+                               .getAllHosts()
+                               .stream()
+                               .filter(host -> host.getDatacenter().equals(cdcConfig.datacenter()))
                                .collect(Collectors.groupingBy(Host::getDatacenter, Collectors.toList()))
-                        .values().stream()
-                        .mapToInt(List::size)
-                        .max()
-                        .orElseThrow(() -> new RuntimeException("Problem"));
-
+                               .values().stream()
+                               .mapToInt(List::size)
+                               .max()
+                               .orElseThrow(() -> new RuntimeException("Unable to map "));
 
         int numSplits = (int) Math.ceil((double) maxDcSize / 2);
         LOGGER.info("Initializing token split maxDcSize={} numSplits={}", maxDcSize, numSplits);
@@ -196,5 +194,4 @@ public class TokenSplitUtil
         }
         return pos;
     }
-
 }
