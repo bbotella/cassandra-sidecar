@@ -1,5 +1,6 @@
 0.3.0
 -----
+ * Implementation of CassandraClusterSchemaMonitor (CASSSIDECAR-245)
  * Sidecar endpoint for vending statistics related to compaction (CASSSIDECAR-329)
  * Update logging dependencies (CASSSIDECAR-337)
 
