@@ -35,7 +35,7 @@ import org.apache.cassandra.sidecar.exceptions.ConfigurationException;
 public class SchemaKeyspaceConfigurationImpl implements SchemaKeyspaceConfiguration
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(SchemaKeyspaceConfigurationImpl.class);
-    public static final boolean DEFAULT_IS_ENABLED = false;
+    public static final boolean DEFAULT_IS_ENABLED = true;
     public static final String DEFAULT_KEYSPACE = "sidecar_internal";
     public static final String DEFAULT_REPLICATION_STRATEGY = "SimpleStrategy";
     public static final int DEFAULT_REPLICATION_FACTOR = 1;
@@ -161,7 +161,7 @@ public class SchemaKeyspaceConfigurationImpl implements SchemaKeyspaceConfigurat
      */
     public static class Builder implements DataObjectBuilder<Builder, SchemaKeyspaceConfigurationImpl>
     {
-        private boolean isEnabled = DEFAULT_IS_ENABLED;
+        private boolean isEnabled = true;
         private String keyspace = DEFAULT_KEYSPACE;
         private String replicationStrategy = DEFAULT_REPLICATION_STRATEGY;
         private int replicationFactor = DEFAULT_REPLICATION_FACTOR;

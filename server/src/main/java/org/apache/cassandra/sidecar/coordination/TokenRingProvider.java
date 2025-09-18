@@ -19,7 +19,6 @@
 
 package org.apache.cassandra.sidecar.coordination;
 
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -28,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +37,7 @@ import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.common.server.cluster.locator.Partitioner;
 import org.apache.cassandra.sidecar.common.server.cluster.locator.Partitioners;
+import org.apache.cassandra.sidecar.common.server.cluster.locator.TokenRange;
 import org.apache.cassandra.sidecar.common.server.dns.DnsResolver;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.jetbrains.annotations.Nullable;
@@ -68,7 +67,7 @@ public abstract class TokenRingProvider
      * @param dc          data center
      * @return map of token ranges per Cassandra instance IP
      */
-    protected abstract Map<String, List<Range<BigInteger>>> getAllTokenRanges(Partitioner partitioner, @Nullable String dc);
+    protected abstract Map<String, List<TokenRange>> getAllTokenRanges(Partitioner partitioner, @Nullable String dc);
 
     /**
      * Gets primary token ranges of the given sidecar instance.
@@ -77,7 +76,7 @@ public abstract class TokenRingProvider
      * @param dc       data center
      * @return primary token ranges for the SidecarInstance
      */
-    public abstract Map<String, List<Range<BigInteger>>> getPrimaryRanges(SidecarInstance instance, String dc);
+    public abstract Map<String, List<TokenRange>> getPrimaryRanges(SidecarInstance instance, String dc);
 
     /**
      * Gets primary token ranges for local cassandra instances.
@@ -85,7 +84,7 @@ public abstract class TokenRingProvider
      * @param dc optionally filter by DC.
      * @return token ranges per local Cassandra instance
      */
-    public Map<String, List<Range<BigInteger>>> getPrimaryTokenRanges(@Nullable String dc)
+    public Map<String, List<TokenRange>> getPrimaryTokenRanges(@Nullable String dc)
     {
         Set<String> instanceIpsManagedBySidecar = instanceIpsManagedBySidecar();
         if (instanceIpsManagedBySidecar.isEmpty())

@@ -92,7 +92,7 @@ public class TableHistorySchema extends TableSchema implements ExecuteOnClusterL
                              "  version uuid," +
                              "  created_at timeuuid," +
                              "  table_schema text," +
-                             "  PRIMARY KEY ((ks, tb), version)" +
+                             "  PRIMARY KEY ((keyspace_name, table_name), version)" +
                              ")",
                              keyspaceConfig.keyspace(), TABLE_SCHEMA_HISTORY);
     }

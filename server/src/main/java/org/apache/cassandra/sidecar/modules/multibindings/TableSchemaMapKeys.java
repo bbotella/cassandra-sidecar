@@ -32,4 +32,6 @@ public interface TableSchemaMapKeys
     interface SystemAuthSchemaKey extends ClassKey {}
     interface SystemViewsSchemaKey extends ClassKey {}
     interface SystemViewsClientsSchemaKey extends ClassKey {}
+    interface TableHistorySchemaKey extends ClassKey {}
+    interface CdcStatesSchemaKey extends ClassKey {}
 }
