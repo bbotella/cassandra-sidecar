@@ -18,39 +18,68 @@
 
 package org.apache.cassandra.sidecar.modules;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.datastax.driver.core.Host;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.ProvidesIntoMap;
+import io.vertx.core.Vertx;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import org.apache.cassandra.bridge.CassandraBridgeFactory;
+import org.apache.cassandra.cdc.api.SchemaSupplier;
+import org.apache.cassandra.cdc.avro.CqlToAvroSchemaConverter;
+import org.apache.cassandra.cdc.msg.CdcEvent;
+import org.apache.cassandra.cdc.sidecar.CdcSidecarInstancesProvider;
+import org.apache.cassandra.cdc.sidecar.ClusterConfigProvider;
+import org.apache.cassandra.cdc.sidecar.SidecarCdcClient;
+import org.apache.cassandra.cdc.stats.CdcStats;
+import org.apache.cassandra.cdc.stats.ICdcStats;
+import org.apache.cassandra.sidecar.cdc.CachingSchemaStore;
+import org.apache.cassandra.sidecar.cdc.CdcAvroSerializer;
 import org.apache.cassandra.sidecar.cdc.CdcConfig;
 import org.apache.cassandra.sidecar.cdc.CdcConfigImpl;
+import org.apache.cassandra.sidecar.cdc.CdcDynamicSidecarInstancesProvider;
 import org.apache.cassandra.sidecar.cdc.CdcLogCache;
+import org.apache.cassandra.sidecar.cdc.CdcPublisher;
+import org.apache.cassandra.sidecar.cdc.CdcSchemaSupplier;
 import org.apache.cassandra.sidecar.cdc.SidecarCdcStats;
+import org.apache.cassandra.sidecar.cdc.SidecarCqlToAvroSchemaConverter;
 import org.apache.cassandra.sidecar.client.SidecarInstancesProvider;
 import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
 import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
 import org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload;
 import org.apache.cassandra.sidecar.common.response.ListCdcSegmentsResponse;
+import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
+import org.apache.cassandra.sidecar.config.SidecarClientConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
+import org.apache.cassandra.sidecar.coordination.CassandraClientTokenRingProvider;
 import org.apache.cassandra.sidecar.coordination.DynamicSidecarInstancesProvider;
 import org.apache.cassandra.sidecar.coordination.InnerDcTokenAdjacentPeerProvider;
 import org.apache.cassandra.sidecar.coordination.SidecarHttpHealthProvider;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthMonitorTask;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthProvider;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerProvider;
+import org.apache.cassandra.sidecar.coordination.TokenRingProvider;
 import org.apache.cassandra.sidecar.db.CdcConfigAccessor;
 import org.apache.cassandra.sidecar.db.CdcDatabaseAccessor;
 import org.apache.cassandra.sidecar.db.KafkaConfigAccessor;
 import org.apache.cassandra.sidecar.db.TokenSplitConfigAccessor;
+import org.apache.cassandra.sidecar.db.VirtualTablesDatabaseAccessor;
+import org.apache.cassandra.sidecar.db.schema.CdcStatesSchema;
 import org.apache.cassandra.sidecar.db.schema.ConfigsSchema;
 import org.apache.cassandra.sidecar.db.schema.SystemViewsSchema;
+import org.apache.cassandra.sidecar.db.schema.TableHistorySchema;
 import org.apache.cassandra.sidecar.db.schema.TableSchema;
 import org.apache.cassandra.sidecar.handlers.cdc.AllServiceConfigHandler;
 import org.apache.cassandra.sidecar.handlers.cdc.DeleteServiceConfigHandler;
@@ -64,12 +93,15 @@ import org.apache.cassandra.sidecar.modules.multibindings.VertxRouteMapKeys;
 import org.apache.cassandra.sidecar.routes.RouteBuilder;
 import org.apache.cassandra.sidecar.routes.VertxRoute;
 import org.apache.cassandra.sidecar.tasks.CassandraClusterSchemaMonitor;
+import org.apache.cassandra.sidecar.tasks.CdcConfigRefresherNotifierTask;
 import org.apache.cassandra.sidecar.tasks.CdcRawDirectorySpaceCleaner;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
-import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.SidecarClientProvider;
 import org.apache.cassandra.sidecar.utils.TokenSplitUtil;
+import org.apache.cassandra.spark.data.partitioner.CassandraInstance;
+import org.apache.cassandra.spark.data.partitioner.Partitioner;
+import org.apache.kafka.common.serialization.Serializer;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -82,6 +114,9 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 @Path("/")
 public class CdcModule extends AbstractModule
 {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CdcModule.class);
+
     @ProvidesIntoMap
     @KeyClassMapKey(PeriodicTaskMapKeys.SidecarPeerHealthMonitorTaskKey.class)
     PeriodicTask sidecarPeerHealthMonitorTask(SidecarPeerHealthMonitorTask task)
@@ -97,24 +132,39 @@ public class CdcModule extends AbstractModule
         return cleanerTask;
     }
 
-    @ProvidesIntoMap
-    @KeyClassMapKey(PeriodicTaskMapKeys.CassandraClusterSchemaTaskKey.class)
-    PeriodicTask cassandraClusterSchemaMonitor(InstanceMetadataFetcher instanceMetadataFetcher,
-                                               CdcDatabaseAccessor databaseAccessor,
-                                               SidecarConfiguration configuration,
-                                               CassandraBridgeFactory cassandraBridgeFactory)
+    @Provides
+    @Singleton
+    CassandraClusterSchemaMonitor cassandraClusterSchemaMonitorInstance(InstanceMetadataFetcher instanceMetadataFetcher,
+                                                                         CdcDatabaseAccessor databaseAccessor,
+                                                                         SidecarConfiguration configuration,
+                                                                         CassandraBridgeFactory cassandraBridgeFactory)
     {
         return new CassandraClusterSchemaMonitor(instanceMetadataFetcher, databaseAccessor, configuration, cassandraBridgeFactory);
     }
 
+    @ProvidesIntoMap
+    @KeyClassMapKey(PeriodicTaskMapKeys.CassandraClusterSchemaTaskKey.class)
+    PeriodicTask cassandraClusterSchemaMonitor(CassandraClusterSchemaMonitor monitor)
+    {
+        // Wire the singleton instance into the periodic tasks map
+        return monitor;
+    }
+
     @Provides
     @Singleton
-    CdcConfig cdcConfig(SidecarConfiguration sidecarConfiguration,
-                        CdcConfigAccessor cdcConfigAccessor,
-                        KafkaConfigAccessor kafkaConfigAccessor,
-                        PeriodicTaskExecutor periodicTaskExecutor)
+    CqlToAvroSchemaConverter cqlToAvroSchemaConverter(InstanceMetadataFetcher instanceMetadataFetcher,
+                                                      CassandraBridgeFactory cassandraBridgeFactory)
     {
-        return new CdcConfigImpl(sidecarConfiguration, cdcConfigAccessor, kafkaConfigAccessor, periodicTaskExecutor);
+
+        return new SidecarCqlToAvroSchemaConverter(instanceMetadataFetcher, cassandraBridgeFactory);
+    }
+
+    @Provides
+    @Singleton
+    CdcConfig cdcConfig(Vertx vertx,
+                        CdcConfigAccessor cdcConfigAccessor)
+    {
+        return new CdcConfigImpl(vertx, cdcConfigAccessor);
     }
 
     @Provides
@@ -256,6 +306,13 @@ public class CdcModule extends AbstractModule
 
     @Provides
     @Singleton
+    public CdcSidecarInstancesProvider cdcSidecarInstancesProvider(InstancesMetadata instancesMetadata, ServiceConfiguration serviceConfiguration)
+    {
+        return new CdcDynamicSidecarInstancesProvider(instancesMetadata, serviceConfiguration);
+    }
+
+    @Provides
+    @Singleton
     public SidecarInstancesProvider sidecarInstancesProvider(InstancesMetadata instancesMetadata, ServiceConfiguration serviceConfiguration)
     {
         return new DynamicSidecarInstancesProvider(instancesMetadata, serviceConfiguration);
@@ -268,5 +325,157 @@ public class CdcModule extends AbstractModule
         return new SidecarCdcStats()
         {
         };
+    }
+
+    @Provides
+    @Singleton
+    public Serializer<CdcEvent> getSerializer(CachingSchemaStore schemaStore,
+                                              InstanceMetadataFetcher instanceMetadataFetcher,
+                                              CassandraBridgeFactory cassandraBridgeFactory)
+    {
+        return new CdcAvroSerializer(schemaStore, instanceMetadataFetcher, cassandraBridgeFactory);
+    }
+
+    @Provides
+    @Singleton
+    public SchemaSupplier schemaSupplier(InstanceMetadataFetcher instanceMetadataFetcher,
+                                         CassandraBridgeFactory cassandraBridgeFactory,
+                                         CdcDatabaseAccessor cdcDatabaseAccessor)
+    {
+        return new CdcSchemaSupplier(instanceMetadataFetcher, cassandraBridgeFactory, cdcDatabaseAccessor);
+    }
+
+    @Provides
+    @Singleton
+    public ClusterConfigProvider clusterConfigProvider(InstanceMetadataFetcher instanceMetadataFetcher, CassandraBridgeFactory cassandraBridgeFactory)
+    {
+        return new ClusterConfigProvider()
+        {
+            public String dc()
+            {
+                NodeSettings nodeSettings = instanceMetadataFetcher.callOnFirstAvailableInstance(instance-> instance.delegate().nodeSettings());
+                return nodeSettings.datacenter();
+            }
+
+            public Set<CassandraInstance> getCluster()
+            {
+                Set<Host> hosts = instanceMetadataFetcher.callOnFirstAvailableInstance(instance ->
+                                                                                       instance.delegate().metadata().getAllHosts());
+                return hosts.stream()
+                            .filter(host -> host.getListenAddress() != null)
+                            .flatMap(host -> host.getTokens().stream()
+                                                 .map(token -> new CassandraInstance(
+                                                 token.toString(),
+                                                 host.getEndPoint().resolve().getHostName(),
+                                                 host.getDatacenter()
+                                                 ))
+                            ).collect(Collectors.toSet());
+            }
+
+            public Partitioner partitioner()
+            {
+                NodeSettings nodeSettings = instanceMetadataFetcher.callOnFirstAvailableInstance(instance-> instance.delegate().nodeSettings());
+                String[] parts = nodeSettings.partitioner().split("\\.");
+                return Partitioner.valueOf(parts[parts.length - 1]);
+            }
+        };
+    }
+
+    @Provides
+    @Singleton
+    public ICdcStats cdcStats()
+    {
+        return new CdcStats()
+        {
+        };
+    }
+
+    @Provides
+    @Singleton
+    public TokenRingProvider tokenRingProvider(InstancesMetadata instancesMetadata, InstanceMetadataFetcher instanceMetadataFetcher, ServiceConfiguration configuration)
+    {
+        return new CassandraClientTokenRingProvider(instancesMetadata, instanceMetadataFetcher, configuration.dnsResolver());
+    }
+
+    @Provides
+    @Singleton
+    public SidecarCdcClient.ClientConfig clientConfig(SidecarConfiguration sidecarConfiguration)
+    {
+        SidecarClientConfiguration sidecarClientConfiguration = sidecarConfiguration.sidecarClientConfiguration();
+        return SidecarCdcClient.ClientConfig.create(sidecarConfiguration.serviceConfiguration().port(),
+                                                    sidecarClientConfiguration.maxRetries(),
+                                                    sidecarClientConfiguration.retryDelay().toIntMillis());
+    }
+
+    @Provides
+    @Singleton
+    public TableSchema virtualTablesDatabaseAccessor(ServiceConfiguration configuration)
+    {
+        return new CdcStatesSchema(configuration);
+    }
+
+    @ProvidesIntoMap
+    @KeyClassMapKey(PeriodicTaskMapKeys.CdcPublisherTaskKey.class)
+    PeriodicTask cdcPublisherTask(Vertx vertx,
+                                  SidecarConfiguration sidecarConfiguration,
+                                  ExecutorPools executorPools,
+                                  ClusterConfigProvider clusterConfigProvider,
+                                  SchemaSupplier schemaSupplier,
+                                  CdcSidecarInstancesProvider sidecarInstancesProvider,
+                                  SidecarCdcClient.ClientConfig clientConfig,
+                                  InstanceMetadataFetcher instanceMetadataFetcher,
+                                  CdcConfig conf,
+                                  CdcDatabaseAccessor databaseAccessor,
+                                  ICdcStats cdcStats,
+                                  TokenRingProvider tokenRingProvider,
+                                  VirtualTablesDatabaseAccessor virtualTables,
+                                  SidecarCdcStats sidecarCdcStats,
+                                  Serializer<CdcEvent> avroSerializer)
+    {
+        return new CdcPublisher(vertx,
+                                sidecarConfiguration,
+                                executorPools,
+                                clusterConfigProvider,
+                                schemaSupplier,
+                                sidecarInstancesProvider,
+                                clientConfig,
+                                instanceMetadataFetcher,
+                                conf,
+                                databaseAccessor,
+                                cdcStats,
+                                tokenRingProvider,
+                                virtualTables,
+                                sidecarCdcStats,
+                                avroSerializer);
+    }
+
+    @Singleton
+    @ProvidesIntoMap
+    @KeyClassMapKey(PeriodicTaskMapKeys.CdcConfigRefresherNotifierKey.class)
+    PeriodicTask cdcConfigRefresherNotifier(Vertx vertx,
+                                            SidecarConfiguration sidecarConfiguration,
+                                    KafkaConfigAccessor kafkaConfigAccessor,
+                                    CdcConfigAccessor cdcConfigAccessor)
+    {
+        return new CdcConfigRefresherNotifierTask(vertx,
+                                                  sidecarConfiguration,
+                                                  kafkaConfigAccessor,
+                                                  cdcConfigAccessor);
+    }
+
+    @Singleton
+    @ProvidesIntoMap
+    @KeyClassMapKey(TableSchemaMapKeys.TableHistorySchemaKey.class)
+    TableSchema tableHistorySchema(SidecarConfiguration configuration)
+    {
+        return new TableHistorySchema(configuration.serviceConfiguration());
+    }
+
+    @Singleton
+    @ProvidesIntoMap
+    @KeyClassMapKey(TableSchemaMapKeys.CdcStatesSchemaKey.class)
+    TableSchema cdcStatesSchema(SidecarConfiguration configuration)
+    {
+        return new CdcStatesSchema(configuration.serviceConfiguration());
     }
 }

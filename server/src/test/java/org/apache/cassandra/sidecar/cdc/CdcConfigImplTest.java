@@ -39,7 +39,6 @@ import org.apache.cassandra.sidecar.coordination.ClusterLease;
 import org.apache.cassandra.sidecar.db.CdcConfigAccessor;
 import org.apache.cassandra.sidecar.db.KafkaConfigAccessor;
 import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
-import org.apache.cassandra.sidecar.tasks.ScheduleDecision;
 
 import static org.apache.cassandra.testing.utils.AssertionUtils.loopAssert;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,8 +81,7 @@ class CdcConfigImplTest
         KafkaConfigAccessor kafkaConfigAccessor = mockKafkaConfigAccessor();
         when(cdcConfigAccessor.isAvailable()).thenReturn(false);
 
-        CdcConfigImpl cdcConfig =
-                new CdcConfigImpl(mockSidecarConfiguration(), cdcConfigAccessor, kafkaConfigAccessor, executor);
+        CdcConfigImpl cdcConfig = new CdcConfigImpl(vertx, cdcConfigAccessor);
         assertThat(cdcConfig.isConfigReady()).isFalse();
     }
 
@@ -93,8 +91,7 @@ class CdcConfigImplTest
         CdcConfigAccessor cdcConfigAccessor = mockCdcConfigAccessor();
         KafkaConfigAccessor kafkaConfigAccessor = mockKafkaConfigAccessor();
         when(cdcConfigAccessor.getConfig().getConfigs()).thenReturn(Map.of("k1", "v1"));
-        CdcConfigImpl cdcConfig =
-                new CdcConfigImpl(mockSidecarConfiguration(), cdcConfigAccessor, kafkaConfigAccessor, executor);
+        CdcConfigImpl cdcConfig = new CdcConfigImpl(vertx, cdcConfigAccessor);
         assertThat(cdcConfig.isConfigReady()).isFalse();
     }
 
@@ -104,8 +101,7 @@ class CdcConfigImplTest
         CdcConfigAccessor cdcConfigAccessor = mockCdcConfigAccessor();
         KafkaConfigAccessor kafkaConfigAccessor = mockKafkaConfigAccessor();
         when(cdcConfigAccessor.getConfig().getConfigs()).thenReturn(Map.of("k1", "v1"));
-        CdcConfigImpl cdcConfig =
-                new CdcConfigImpl(mockSidecarConfiguration(), cdcConfigAccessor, kafkaConfigAccessor, executor);
+        CdcConfigImpl cdcConfig = new CdcConfigImpl(vertx, cdcConfigAccessor);
         assertThat(cdcConfig.isConfigReady()).isFalse();
     }
 
@@ -114,8 +110,7 @@ class CdcConfigImplTest
     {
         CdcConfigAccessor cdcConfigAccessor = mockCdcConfigAccessor();
         KafkaConfigAccessor kafkaConfigAccessor = mockKafkaConfigAccessor();
-        CdcConfigImpl cdcConfig =
-                new CdcConfigImpl(mockSidecarConfiguration(), cdcConfigAccessor, kafkaConfigAccessor, executor);
+        CdcConfigImpl cdcConfig = new CdcConfigImpl(vertx, cdcConfigAccessor);
         assertThat(cdcConfig.datacenter()).isEqualTo(null);
         assertThat(cdcConfig.env()).isEqualTo("");
         assertThat(cdcConfig.kafkaTopic()).isNull();
@@ -139,8 +134,7 @@ class CdcConfigImplTest
         when(kafkaConfigAccessor.getConfig().getConfigs())
                 .thenReturn(Map.of("k1", "v1"));
 
-        CdcConfigImpl cdcConfig =
-                new CdcConfigImpl(mockSidecarConfiguration(), cdcConfigAccessor, kafkaConfigAccessor, executor);
+        CdcConfigImpl cdcConfig = new CdcConfigImpl(vertx, cdcConfigAccessor);
         loopAssert(5, ()-> assertThat(cdcConfig.isConfigReady()).isTrue());
         assertThat(cdcConfig.datacenter()).isEqualTo("DC1");
         assertThat(cdcConfig.env()).isEqualTo("if");
@@ -161,8 +155,7 @@ class CdcConfigImplTest
                 "log_only", "false"));
         when(kafkaConfigAccessor.getConfig().getConfigs()).thenReturn(Map.of("topic", "topic1"));
 
-        CdcConfigImpl cdcConfig =
-                new CdcConfigImpl(mockSidecarConfiguration(), cdcConfigAccessor, kafkaConfigAccessor, executor);
+        CdcConfigImpl cdcConfig = new CdcConfigImpl(vertx, cdcConfigAccessor);
         cdcConfig.registerConfigChangeListener(listener);
 
         // do not wait the periodic task execution, we force running it immediately.
@@ -187,23 +180,6 @@ class CdcConfigImplTest
         cdcConfig.forceExecuteNotifier();
         cdcConfig.forceExecuteNotifier();
         verify(listener, times(2)).run();
-    }
-
-    @Test
-    void testNotifierIsSkippedWhenCdcIsDisabled()
-    {
-        CdcConfigAccessor cdcConfigAccessor = mockCdcConfigAccessor();
-        when(cdcConfigAccessor.isAvailable()).thenReturn(true);
-
-        KafkaConfigAccessor kafkaConfigAccessor = mockKafkaConfigAccessor();
-        CdcConfiguration cdcConfiguration = mockCdcConfiguration();
-        when(cdcConfiguration.isEnabled()).thenReturn(false);
-
-        CdcConfigImpl cdcConfig =
-                new CdcConfigImpl(mockSidecarConfiguration(), cdcConfigAccessor, kafkaConfigAccessor, executor);
-        assertThat(cdcConfig.configRefreshNotifier().scheduleDecision())
-                .isEqualTo(ScheduleDecision.SKIP)
-                .describedAs("When sidecarSchema is enabled but cdc is disabled, the refresh notifier should skip");
     }
 
     private CdcConfigAccessor mockCdcConfigAccessor()

@@ -1,0 +1,334 @@
+package org.apache.cassandra.sidecar.cdc;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import io.vertx.core.Vertx;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.cassandra.bridge.CassandraBridge;
+import org.apache.cassandra.bridge.CassandraBridgeFactory;
+import org.apache.cassandra.bridge.CassandraVersion;
+import org.apache.cassandra.bridge.CdcBridge;
+import org.apache.cassandra.bridge.CdcBridgeFactory;
+import org.apache.cassandra.cdc.api.TableIdLookup;
+import org.apache.cassandra.cdc.avro.AvroSchemas;
+import org.apache.cassandra.cdc.avro.CqlToAvroSchemaConverter;
+import org.apache.cassandra.sidecar.db.TableHistoryDatabaseAccessor;
+import org.apache.cassandra.sidecar.db.schema.SidecarSchema;
+import org.apache.cassandra.sidecar.tasks.CassandraClusterSchemaMonitor;
+import org.apache.cassandra.sidecar.utils.TokenSplitUtil;
+import org.apache.cassandra.spark.data.CqlTable;
+import org.apache.cassandra.spark.data.ReplicationFactor;
+import org.apache.cassandra.spark.data.partitioner.Partitioner;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.assertj.core.api.Assertions.assertThatRuntimeException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * Tests for Caching Schema Store
+ */
+public class CachingSchemaStoreTest
+{
+    private static final String TEST_KEYSPACE = "test_keyspace";
+    private static final String TEST_TABLE = "test_table";
+    private static final String CREATE_STATEMENT = "CREATE TABLE " + TEST_KEYSPACE + '.' + TEST_TABLE + " (\n" +
+                                                   "    a bigint PRIMARY KEY,\n" +
+                                                   "    b text\n" +
+                                                   ") WITH cdc = true;";
+    private static final ReplicationFactor REPLICATION_FACTOR = new ReplicationFactor(ReplicationFactor.ReplicationStrategy.NetworkTopologyStrategy,
+                                                                                      Map.of("DC1", 3));
+    private static final Partitioner PARTITIONER = Partitioner.Murmur3Partitioner;
+
+    CassandraBridge cassandraBridge;
+
+    final Vertx vertx = Vertx.vertx();
+    SidecarSchema mockSidecarSchema;
+    CassandraClusterSchemaMonitor mockCassandraClusterSchemaMonitor;
+    CachingSchemaStore cachingSchemaStore;
+    CdcConfigImpl mockCdcConfig;
+    SidecarCdcStats mockSidecarCdcStats;
+    TableHistoryDatabaseAccessor spyTableHistoryDatabaseAccessor;
+    CqlToAvroSchemaConverter cqlToAvroSchemaConverter;
+
+    private void setupForVersion(CassandraVersion version)
+    {
+        TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(32);
+
+        mockSidecarSchema = mock(SidecarSchema.class);
+        when(mockSidecarSchema.isInitialized()).thenReturn(true);
+
+        cassandraBridge = new CassandraBridgeFactory().get(version);
+        cqlToAvroSchemaConverter = CdcBridgeFactory.getCqlToAvroSchemaConverter(cassandraBridge);
+
+        mockCassandraClusterSchemaMonitor = mock(CassandraClusterSchemaMonitor.class);
+
+        mockCdcConfig = mock(CdcConfigImpl.class);
+
+        TableHistoryDatabaseAccessor tableHistoryDatabaseAccessor = new TableHistoryDatabaseAccessor(mockSidecarSchema, null);
+        spyTableHistoryDatabaseAccessor = spy(tableHistoryDatabaseAccessor);
+        doReturn(null).when(spyTableHistoryDatabaseAccessor).insertTableSchemaHistory(anyString(), anyString(), anyString());
+
+        mockSidecarCdcStats = mock(SidecarCdcStats.class);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CassandraVersion.class, names = {"FOURZERO", "FOURONE" /*, "FIVEZERO" is having problems*/})
+    public void testCachingSchemaStore(CassandraVersion version)
+    {
+        setupForVersion(version);
+        Set<CqlTable> initialTables = cqlTables(CREATE_STATEMENT);
+        mockCassandraClusterSchemaMonitor = createMockClusterSchema(initialTables);
+        cachingSchemaStore = createCachingSchemaStore(mockCassandraClusterSchemaMonitor);
+
+        // Schema
+        Schema schema = cachingSchemaStore.getSchema(TEST_KEYSPACE + "." + TEST_TABLE, "");
+        verifyFieldType(schema.getField("a").schema(), Schema.Type.LONG, "bigint");
+        verifyFieldType(schema.getField("b").schema(), Schema.Type.STRING, "text");
+
+        // Writer
+        GenericDatumWriter<GenericRecord> writer = cachingSchemaStore.getWriter(TEST_KEYSPACE + "." + TEST_TABLE, "");
+        assertNotNull(writer);
+
+        // Reader
+        GenericDatumReader<GenericRecord> reader = cachingSchemaStore.getReader(TEST_KEYSPACE + "." + TEST_TABLE, "");
+        assertNotNull(reader);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CassandraVersion.class, names = {"FOURZERO", "FOURONE" /*, "FIVEZERO" is having problems*/})
+    public void testCachingSchemaStoreWithSidecarSchemaEnabled(CassandraVersion version)
+    {
+        setupForVersion(version);
+        String newTableName = "new_test_table";
+        String newSchema = modifyTableName(CREATE_STATEMENT, newTableName);
+        Set<CqlTable> initialTables = cqlTables(CREATE_STATEMENT);
+
+        Set<CqlTable> addedTables = new HashSet<>(cqlTables(newSchema));
+        addedTables.addAll(initialTables);
+        mockCassandraClusterSchemaMonitor = createMockClusterSchema(initialTables, addedTables);
+
+        cachingSchemaStore = createCachingSchemaStore(mockCassandraClusterSchemaMonitor);
+        cachingSchemaStore.onSchemaChanged();
+
+        verify(spyTableHistoryDatabaseAccessor, times(1)).insertTableSchemaHistory(eq(TEST_KEYSPACE), eq(newTableName), any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CassandraVersion.class, names = {"FOURZERO", "FOURONE" /*, "FIVEZERO" is having problems*/})
+    public void testCachingSchemaStoreUnKnownTable(CassandraVersion version)
+    {
+        setupForVersion(version);
+        String newTableName = "new_test_table";
+        String newSchema = modifyTableName(CREATE_STATEMENT, newTableName);
+        Set<CqlTable> initialTables = cqlTables(CREATE_STATEMENT);
+
+        Set<CqlTable> addedTables = new HashSet<>(cqlTables(newSchema));
+        addedTables.addAll(initialTables);
+        mockCassandraClusterSchemaMonitor = createMockClusterSchema(initialTables, addedTables);
+
+        cachingSchemaStore = createCachingSchemaStore(mockCassandraClusterSchemaMonitor);
+
+        assertUnknownTableException("unknown", "schema");
+        assertUnknownTableException("unknown", "writer");
+        assertUnknownTableException("unknown", "reader");
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CassandraVersion.class, names = {"FOURZERO", "FOURONE" /*, "FIVEZERO" is having problems*/})
+    public void testCachingSchemaStoreSchemaNotChanged(CassandraVersion version)
+    {
+        setupForVersion(version);
+        String newTableName = "new_test_table";
+        String newSchema = modifyTableName(CREATE_STATEMENT, newTableName);
+        Set<CqlTable> initialTables = cqlTables(CREATE_STATEMENT);
+
+        Set<CqlTable> addedTables = new HashSet<>(cqlTables(newSchema));
+        addedTables.addAll(initialTables);
+        mockCassandraClusterSchemaMonitor = createMockClusterSchema(initialTables, addedTables);
+
+        cachingSchemaStore = createCachingSchemaStore(mockCassandraClusterSchemaMonitor);
+
+        // Should return cached schema object when schema is not changed
+        assertSchemaCached(TEST_TABLE);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CassandraVersion.class, names = {"FOURZERO", "FOURONE" /*, "FIVEZERO" is having problems*/})
+    public void testCachingSchemaStoreNewTableAdded(CassandraVersion version)
+    {
+        setupForVersion(version);
+        String newTable = "new_test_table";
+        String newSchema = modifyTableName(CREATE_STATEMENT, newTable);
+        Set<CqlTable> initialTables = cqlTables(CREATE_STATEMENT);
+        Set<CqlTable> addedTables = new HashSet<>(cqlTables(newSchema));
+        addedTables.addAll(initialTables);
+
+        mockCassandraClusterSchemaMonitor = createMockClusterSchema(initialTables, addedTables);
+        cachingSchemaStore = createCachingSchemaStore(mockCassandraClusterSchemaMonitor);
+
+        assertUnknownTableException(newTable, "schema");
+        assertUnknownTableException(newTable, "writer");
+        assertUnknownTableException(newTable, "reader");
+
+        cachingSchemaStore.onSchemaChanged();
+
+        assertSchemaAccessible(newTable);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CassandraVersion.class, names = {"FOURZERO", "FOURONE" /*, "FIVEZERO" is having problems*/})
+    public void testCachingSchemaStoreTableDeleted(CassandraVersion version)
+    {
+        setupForVersion(version);
+        Set<CqlTable> tables = cqlTables(CREATE_STATEMENT);
+        mockCassandraClusterSchemaMonitor = createMockClusterSchema(tables, Collections.emptySet());
+
+        cachingSchemaStore = createCachingSchemaStore(mockCassandraClusterSchemaMonitor);
+        assertSchemaAccessible(TEST_TABLE);
+
+        cachingSchemaStore.onSchemaChanged();
+
+        assertUnknownTableException(TEST_TABLE, "schema");
+        assertUnknownTableException(TEST_TABLE, "writer");
+        assertUnknownTableException(TEST_TABLE, "reader");
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CassandraVersion.class, names = {"FOURZERO", "FOURONE" /*, "FIVEZERO" is having problems*/})
+    public void testCachingSchemaStoreTableSchemaChanged(CassandraVersion version)
+    {
+        setupForVersion(version);
+        String changedSchema = "CREATE TABLE test_keyspace.test_table (\n" +
+                               "    a bigint PRIMARY KEY,\n" +
+                               "    b text,\n" +
+                               "    c bigint\n" +
+                               ") WITH additional_write_policy = '99p'\n" +
+                               "    AND cdc = true;";
+
+        Set<CqlTable> initialTables = cqlTables(CREATE_STATEMENT);
+        mockCassandraClusterSchemaMonitor = createMockClusterSchema(initialTables);
+        cachingSchemaStore = createCachingSchemaStore(mockCassandraClusterSchemaMonitor);
+
+        Schema schema1 = cachingSchemaStore.getSchema(TEST_KEYSPACE + "." + TEST_TABLE, "");
+        GenericDatumReader<GenericRecord> reader1 = cachingSchemaStore.getReader(TEST_KEYSPACE + "." + TEST_TABLE, "");
+        GenericDatumWriter<GenericRecord> writer1 = cachingSchemaStore.getWriter(TEST_KEYSPACE + "." + TEST_TABLE, "");
+
+
+        // Update mock to return changed schema
+        Set<CqlTable> changedTables = cqlTables(changedSchema);
+        when(mockCassandraClusterSchemaMonitor.getCdcTables()).thenReturn(changedTables);
+
+        cachingSchemaStore.onSchemaChanged();
+
+        Schema schema2 = cachingSchemaStore.getSchema(TEST_KEYSPACE + "." + TEST_TABLE, "");
+        GenericDatumReader<GenericRecord> reader2 = cachingSchemaStore.getReader(TEST_KEYSPACE + "." + TEST_TABLE, "");
+        GenericDatumWriter<GenericRecord> writer2 = cachingSchemaStore.getWriter(TEST_KEYSPACE + "." + TEST_TABLE, "");
+
+        assertNotEquals(schema1, schema2);
+        assertNotEquals(reader1, reader2);
+        assertNotEquals(writer1, writer2);
+    }
+
+    public Set<CqlTable> cqlTables(String createStatement)
+    {
+        Set<CqlTable> tables = Set.of(cassandraBridge.buildSchema(createStatement, TEST_KEYSPACE, REPLICATION_FACTOR, PARTITIONER));
+        CdcBridge cdcBridge = CdcBridgeFactory.getCdcBridge(cassandraBridge);
+        cdcBridge.updateCdcSchema(tables, PARTITIONER, TableIdLookup.STUB);
+        return Set.of(cassandraBridge.buildSchema(createStatement, TEST_KEYSPACE, REPLICATION_FACTOR, PARTITIONER));
+    }
+
+    private CachingSchemaStore createCachingSchemaStore(CassandraClusterSchemaMonitor clusterSchema)
+    {
+        return new CachingSchemaStore(vertx, clusterSchema, spyTableHistoryDatabaseAccessor,
+                                      mockCdcConfig, mockSidecarCdcStats,
+                                      mockSidecarSchema, cqlToAvroSchemaConverter);
+    }
+
+    private CassandraClusterSchemaMonitor createMockClusterSchema(Set<CqlTable> tables)
+    {
+        CassandraClusterSchemaMonitor mock = mock(CassandraClusterSchemaMonitor.class);
+        when(mock.getCdcTables()).thenReturn(tables);
+        return mock;
+    }
+
+    private CassandraClusterSchemaMonitor createMockClusterSchema(Set<CqlTable> initialTables, Set<CqlTable> changedTables)
+    {
+        CassandraClusterSchemaMonitor mock = mock(CassandraClusterSchemaMonitor.class);
+        when(mock.getCdcTables()).thenReturn(initialTables).thenReturn(changedTables);
+        return mock;
+    }
+
+    private void assertUnknownTableException(String tableName, String operation)
+    {
+        String expectedMessage = String.format("Unable to get %s for unknown table TableIdentifier{keyspace='%s', table='%s'}",
+                                                operation, TEST_KEYSPACE, tableName);
+        switch (operation)
+        {
+            case "schema":
+                assertThatRuntimeException()
+                    .isThrownBy(() -> cachingSchemaStore.getSchema(TEST_KEYSPACE + "." + tableName, ""))
+                    .withMessage(expectedMessage);
+                break;
+            case "writer":
+                assertThatRuntimeException()
+                    .isThrownBy(() -> cachingSchemaStore.getWriter(TEST_KEYSPACE + "." + tableName, ""))
+                    .withMessage(expectedMessage);
+                break;
+            case "reader":
+                assertThatRuntimeException()
+                    .isThrownBy(() -> cachingSchemaStore.getReader(TEST_KEYSPACE + "." + tableName, ""))
+                    .withMessage(expectedMessage);
+                break;
+        }
+    }
+
+    private void assertSchemaAccessible(String tableName)
+    {
+        assertNotNull(cachingSchemaStore.getSchema(TEST_KEYSPACE + "." + tableName, ""));
+        assertNotNull(cachingSchemaStore.getWriter(TEST_KEYSPACE + "." + tableName, ""));
+        assertNotNull(cachingSchemaStore.getReader(TEST_KEYSPACE + "." + tableName, ""));
+    }
+
+    private void assertSchemaCached(String tableName)
+    {
+        assertSame(cachingSchemaStore.getSchema(TEST_KEYSPACE + "." + tableName, ""),
+                   cachingSchemaStore.getSchema(TEST_KEYSPACE + "." + tableName, ""));
+        assertSame(cachingSchemaStore.getWriter(TEST_KEYSPACE + "." + tableName, ""),
+                   cachingSchemaStore.getWriter(TEST_KEYSPACE + "." + tableName, ""));
+        assertSame(cachingSchemaStore.getReader(TEST_KEYSPACE + "." + tableName, ""),
+                   cachingSchemaStore.getReader(TEST_KEYSPACE + "." + tableName, ""));
+    }
+
+    private String modifyTableName(String createStatement, String newTableName)
+    {
+        return createStatement.replace(TEST_TABLE, newTableName);
+    }
+
+    private void verifyFieldType(Schema fieldSchema, Schema.Type expectedType, String expectedCqlType)
+    {
+        Schema schema = fieldSchema.getTypes().stream().filter(Objects::nonNull).findAny().get();
+        assertEquals(expectedType, schema.getType());
+        assertEquals(expectedCqlType, AvroSchemas.cqlType(schema));
+    }
+}

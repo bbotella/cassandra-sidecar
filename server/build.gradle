@@ -80,6 +80,8 @@ configurations {
     containerTestImplementation.extendsFrom testImplementation
 }
 
+apply from: "${project.rootDir}/gradle/common/java11Options.gradle"
+
 dependencies {
     compileOnly('org.jetbrains:annotations:23.0.0')
     testCompileOnly('org.jetbrains:annotations:23.0.0')
@@ -144,7 +146,13 @@ dependencies {
     implementation("jakarta.ws.rs:jakarta.ws.rs-api:${project.jakartaWsRsVersion}")
 
     implementation(group: "org.apache.cassandra", name: "cassandra-analytics-common", version: "${[project.analyticsVersion]}")
+    implementation(group: "org.apache.cassandra", name: "cassandra-analytics-core_spark3_2.12", version: "${[project.analyticsVersion]}")
+    implementation(group: "org.apache.cassandra", name: "cassandra-analytics-cdc-codec_spark3_2.12", version: "${[project.analyticsVersion]}")
+    implementation(group: "org.apache.cassandra", name: "cassandra-avro-converter_spark3_2.12", version: "${[project.analyticsVersion]}")
     implementation(group: "org.apache.cassandra", name: "cassandra-analytics-cdc_spark3_2.12", version: "${[project.analyticsVersion]}")
+    implementation(group: "org.apache.cassandra", name: "cassandra-analytics-cdc-sidecar_spark3_2.12", version: "${[project.analyticsVersion]}")
+
+    implementation "org.apache.kafka:kafka-clients:${project.kafkaClientVersion}"
     implementation "com.esotericsoftware:kryo-shaded:${kryoVersion}"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${project.junitVersion}"
@@ -194,10 +202,16 @@ dependencies {
 }
 
 test {
+    if (JavaVersion.current().isJava11Compatible()) {
+        jvmArgs(project.ext.JDK11_OPTIONS)
+        println("JVM arguments for $project.name are $allJvmArgs")
+    }
+
     systemProperty "vertxweb.environment", "dev"
     systemProperty "vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.SLF4JLogDelegateFactory"
     // There is no native lib (JNR) for getting time for testing
     systemProperty "com.datastax.driver.USE_NATIVE_CLOCK", "false"
+
     // ordinarily we don't need integration tests
     // see the integrationTest task
     useJUnitPlatform()
@@ -216,7 +230,6 @@ test {
 }
 
 apply from: "${project.rootDir}/gradle/common/integrationTestTask.gradle"
-apply from: "${project.rootDir}/gradle/common/java11Options.gradle"
 
 tasks.register("containerTest", Test) {
     if (JavaVersion.current().isJava11Compatible()) {

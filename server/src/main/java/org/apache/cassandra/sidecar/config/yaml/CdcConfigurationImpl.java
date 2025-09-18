@@ -37,7 +37,7 @@ public class CdcConfigurationImpl implements CdcConfiguration
     public static final String CONFIGURATION_REFRESH_TIME_PROPERTY = "config_refresh_time";
     public static final String TABLE_SCHEMA_REFRESH_TIME_PROPERTY = "table_schema_refresh_time";
     public static final String SEGMENT_HARD_LINK_CACHE_EXPIRY_PROPERTY = "segment_hardlink_cache_expiry";
-    public static final boolean DEFAULT_IS_ENABLED = false;
+    public static final boolean DEFAULT_IS_ENABLED = true;
     public static final MillisecondBoundConfiguration DEFAULT_CDC_CONFIG_REFRESH_TIME =
             MillisecondBoundConfiguration.parse("30s");
     public static final SecondBoundConfiguration DEFAULT_TABLE_SCHEMA_REFRESH_TIME =

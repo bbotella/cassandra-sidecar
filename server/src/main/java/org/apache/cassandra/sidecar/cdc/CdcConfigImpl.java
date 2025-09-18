@@ -17,36 +17,29 @@
  */
 package org.apache.cassandra.sidecar.cdc;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.vertx.core.Promise;
+import io.vertx.core.Handler;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
 import org.apache.cassandra.sidecar.common.server.ThrowingRunnable;
-import org.apache.cassandra.sidecar.common.server.utils.DurationSpec;
 import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
-import org.apache.cassandra.sidecar.config.CdcConfiguration;
-import org.apache.cassandra.sidecar.config.SchemaKeyspaceConfiguration;
-import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.db.CdcConfigAccessor;
-import org.apache.cassandra.sidecar.db.KafkaConfigAccessor;
-import org.apache.cassandra.sidecar.tasks.PeriodicTask;
-import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
-import org.apache.cassandra.sidecar.tasks.ScheduleDecision;
+import org.apache.cassandra.sidecar.tasks.CdcConfigRefresherNotifierTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CDC_CONFIGURATION_CHANGED;
+import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CDC_CONFIG_MAPPINGS_CHANGED;
 
 /**
  * Implementation of the interface {@link CdcConfig}, an in-memory representation holding
@@ -55,40 +48,35 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 public class CdcConfigImpl implements CdcConfig
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CdcConfigImpl.class);
     private static final int DEFAULT_MAX_WATERMARKER_SIZE = 400000;
     private static final String DEFAULT_JOB_ID = "test-job-id";
     private static final int DEFAULT_MAX_COMMITLOGS_PER_INSTANCE = 4;
     private static final int DEFAULT_MAX_RECORD_BYTE_SIZE = -1;
     public static final int DEFAULT_WATERMARK_WINDOW = 259200;
-    private final SchemaKeyspaceConfiguration schemaKeyspaceConfiguration;
-    private final CdcConfiguration cdcConfiguration;
+    private final Vertx vertx;
     private final CdcConfigAccessor cdcConfigAccessor;
-    private final KafkaConfigAccessor kafkaConfigAccessor;
-    private final List<ThrowingRunnable> configChangeListeners = Collections.synchronizedList(new ArrayList<>());
-    private final ConfigRefreshNotifier configRefreshNotifier;
-    private volatile Map<String, String> kafkaConfigMappings = Map.of();
-    private volatile Map<String, String> cdcConfigMappings = Map.of();
+
+    private Map<String, String> kafkaConfigMappings = Map.of();
+    private Map<String, String> cdcConfigMappings = Map.of();
 
     @Inject
-    public CdcConfigImpl(SidecarConfiguration sidecarConfiguration,
-                         CdcConfigAccessor cdcConfigAccessor,
-                         KafkaConfigAccessor kafkaConfigAccessor,
-                         PeriodicTaskExecutor periodicTaskExecutor)
+    public CdcConfigImpl(Vertx vertx,
+                         CdcConfigAccessor cdcConfigAccessor)
     {
-        this.schemaKeyspaceConfiguration = sidecarConfiguration.serviceConfiguration().schemaKeyspaceConfiguration();
-        this.cdcConfiguration = sidecarConfiguration.serviceConfiguration().cdcConfiguration();
+        this.vertx = vertx;
         this.cdcConfigAccessor = cdcConfigAccessor;
-        this.kafkaConfigAccessor = kafkaConfigAccessor;
 
-        if (this.schemaKeyspaceConfiguration.isEnabled())
+        vertx.eventBus().localConsumer(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), new ConfigMappingsChanged());
+    }
+
+    private class ConfigMappingsChanged implements Handler<Message<Object>>
+    {
+        public void handle(Message<Object> event)
         {
-            this.configRefreshNotifier = new ConfigRefreshNotifier();
-            periodicTaskExecutor.schedule(configRefreshNotifier);
-        }
-        else
-        {
-            this.configRefreshNotifier = null;
+            CdcConfigRefresherNotifierTask.ConfigMappings configMappings = (CdcConfigRefresherNotifierTask.ConfigMappings) event.body();
+            kafkaConfigMappings = configMappings.getKafkaConfigMappings();
+            cdcConfigMappings = configMappings.getCdcConfigMappings();
+            vertx.eventBus().publish(ON_CDC_CONFIGURATION_CHANGED.address(), "Cdc Configuration Changed");
         }
     }
 
@@ -110,6 +98,8 @@ public class CdcConfigImpl implements CdcConfig
     @Override
     public boolean isConfigReady()
     {
+        kafkaConfigs();
+        cdcConfigs();
         return cdcConfigAccessor.isAvailable()
                 && !kafkaConfigMappings.isEmpty()
                 && !cdcConfigMappings.isEmpty();
@@ -247,7 +237,7 @@ public class CdcConfigImpl implements CdcConfig
      */
     public void registerConfigChangeListener(ThrowingRunnable listener)
     {
-        this.configChangeListeners.add(listener);
+//        this.configRefreshNotifier.registerConfigChangeListener(listener);
     }
 
     private Map<String, Object> getAuthConfigs()
@@ -258,82 +248,11 @@ public class CdcConfigImpl implements CdcConfig
     @VisibleForTesting
     void forceExecuteNotifier()
     {
-        if (configRefreshNotifier != null &&
-                configRefreshNotifier.scheduleDecision() == ScheduleDecision.EXECUTE)
-        {
-            configRefreshNotifier.execute(Promise.promise());
-        }
-    }
-
-    @VisibleForTesting
-    ConfigRefreshNotifier configRefreshNotifier()
-    {
-        return configRefreshNotifier;
-    }
-
-    class ConfigRefreshNotifier implements PeriodicTask
-    {
-        @Override
-        public DurationSpec delay()
-        {
-            return cdcConfiguration.cdcConfigRefreshTime();
-        }
-
-        @Override
-        public void execute(Promise<Void> promise)
-        {
-            for (ThrowingRunnable listener : configChangeListeners)
-            {
-                try
-                {
-                    listener.run();
-                }
-                catch (Throwable e)
-                {
-                    LOGGER.error("There was an error with callback {}", listener, e);
-                }
-            }
-            promise.tryComplete();
-        }
-
-        // skip if any of the following condition is true
-        // - sidecar schema not enabled or cdc not enabled
-        // - both configs have not changed
-        @Override
-        public ScheduleDecision scheduleDecision()
-        {
-            if (!schemaKeyspaceConfiguration.isEnabled() || !cdcConfiguration.isEnabled())
-            {
-                LOGGER.trace("Skipping config refreshing");
-                return ScheduleDecision.SKIP;
-            }
-
-            Map<String, String> newKafkaConfigMappings;
-            Map<String, String> newCdcConfigMappings;
-            try
-            {
-                newKafkaConfigMappings = kafkaConfigAccessor.getConfig().getConfigs();
-                newCdcConfigMappings = cdcConfigAccessor.getConfig().getConfigs();
-            }
-            catch (Throwable e)
-            {
-                LOGGER.error("Failed to access cdc/kafka configs", e);
-                return ScheduleDecision.SKIP;
-            }
-
-            boolean shouldSkip = true;
-            if (!newKafkaConfigMappings.equals(kafkaConfigMappings))
-            {
-                shouldSkip = false;
-                kafkaConfigMappings = newKafkaConfigMappings;
-            }
-            if (!newCdcConfigMappings.equals(cdcConfigMappings))
-            {
-                shouldSkip = false;
-                cdcConfigMappings = newCdcConfigMappings;
-            }
-            return shouldSkip ? ScheduleDecision.SKIP : ScheduleDecision.EXECUTE;
-        }
+//        if (configRefreshNotifier != null &&
+//                configRefreshNotifier.scheduleDecision() == ScheduleDecision.EXECUTE)
+//        {
+//            configRefreshNotifier.execute(Promise.promise());
+//        }
     }
 
     enum ConfigKeys

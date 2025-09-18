@@ -194,6 +194,8 @@ startScripts {
     }
 }
 
+apply from: "${project.rootDir}/gradle/common/java11Options.gradle"
+
 run {
     def confFile = System.getProperty("sidecar.config", "file:" + File.separator + File.separator + "$projectDir/conf/sidecar.yaml")
     println "Sidecar configuration file $confFile"
@@ -201,6 +203,7 @@ run {
                "-Dsidecar.config=" + confFile,
                "-Dlogback.configurationFile=./conf/logback.xml",
                "-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory"]
+    jvmArgs += project.ext.JDK11_OPTIONS
 }
 
 distributions {

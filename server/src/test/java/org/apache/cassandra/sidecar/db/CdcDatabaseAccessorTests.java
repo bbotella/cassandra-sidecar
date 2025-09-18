@@ -47,7 +47,7 @@ import org.apache.cassandra.bridge.TokenRange;
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.db.schema.CdcStatesSchema;
-import org.apache.cassandra.sidecar.db.schema.TableHistorySchema;
+import org.apache.cassandra.sidecar.db.schema.SidecarSchema;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.TokenSplitUtil;
 import org.apache.cassandra.spark.data.partitioner.Partitioner;
@@ -134,18 +134,18 @@ class CdcDatabaseAccessorTests
         Partitioner partitioner = Partitioner.Murmur3Partitioner;
         MockCdcStateV2 datastore = new MockCdcStateV2();
         String jobId = UUID.randomUUID().toString();
+        SidecarSchema mockSidecarSchema = mock(SidecarSchema.class, RETURNS_DEEP_STUBS);
         CdcStatesSchema mockCdcStatesSchema = mock(CdcStatesSchema.class, RETURNS_DEEP_STUBS);
-        TableHistorySchema mockTableHistorySchema = mock(TableHistorySchema.class, RETURNS_DEEP_STUBS);
         List<BigInteger> tokensBeforeShrink = TokenSplitUtil.splitTokens(numNodes, partitioner);
         List<BigInteger> tokensAfterShrink = TokenSplitUtil.splitTokens(numNodes / 2, partitioner);
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
 
         Provider<TokenSplitUtil> tokenSplitUtilProvider = () -> tokenSplitUtil;
 
-        CdcDatabaseAccessor db = new CdcDatabaseAccessor(mockCdcStatesSchema,
-                                                         mockTableHistorySchema,
+        CdcDatabaseAccessor db = new CdcDatabaseAccessor(mockSidecarSchema,
                                                          getMockCQLSessionProvider(datastore, mockCdcStatesSchema),
-                                                         tokenSplitUtilProvider);
+                                                         tokenSplitUtilProvider,
+                                                         getMockInstanceMetaDataFetcher());
 
         ByteBuffer[] buffers = new ByteBuffer[tokensBeforeShrink.size()];
         for (int i = 0; i < tokensBeforeShrink.size(); i++)
@@ -183,18 +183,18 @@ class CdcDatabaseAccessorTests
         Partitioner partitioner = Partitioner.Murmur3Partitioner;
         MockCdcStateV2 datastore = new MockCdcStateV2();
         String jobId = UUID.randomUUID().toString();
+        SidecarSchema mockSidecarSchema = mock(SidecarSchema.class, RETURNS_DEEP_STUBS);
         CdcStatesSchema mockCdcStatesSchema = mock(CdcStatesSchema.class, RETURNS_DEEP_STUBS);
-        TableHistorySchema mockTableHistorySchema = mock(TableHistorySchema.class, RETURNS_DEEP_STUBS);
         List<BigInteger> tokensBeforeExpansion = TokenSplitUtil.splitTokens(numNodes, partitioner);
         List<BigInteger> tokensAfterExpansion = TokenSplitUtil.splitTokens(numNodes * 2, partitioner);
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
 
         Provider<TokenSplitUtil> tokenSplitUtilProvider = () -> tokenSplitUtil;
 
-        CdcDatabaseAccessor db = new CdcDatabaseAccessor(mockCdcStatesSchema,
-                                                         mockTableHistorySchema,
+        CdcDatabaseAccessor db = new CdcDatabaseAccessor(mockSidecarSchema,
                                                          getMockCQLSessionProvider(datastore, mockCdcStatesSchema),
-                                                         tokenSplitUtilProvider);
+                                                         tokenSplitUtilProvider,
+                                                         getMockInstanceMetaDataFetcher());
 
         ByteBuffer[] buffers = new ByteBuffer[tokensBeforeExpansion.size()];
         for (int i = 0; i < tokensBeforeExpansion.size(); i++)

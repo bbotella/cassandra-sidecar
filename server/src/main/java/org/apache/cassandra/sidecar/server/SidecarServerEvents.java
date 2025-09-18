@@ -113,6 +113,10 @@ public enum SidecarServerEvents
      * has lost the cluster-wide lease.
      */
     ON_SIDECAR_GLOBAL_LEASE_LOST,
+
+    ON_CDC_CONFIGURATION_CHANGED,
+    ON_CDC_CACHE_WARMED_UP,
+    ON_CDC_CONFIG_MAPPINGS_CHANGED,
     ;
 
     public String address()
