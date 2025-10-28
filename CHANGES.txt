@@ -1,5 +1,6 @@
 0.3.0
 -----
+ * Sidecar endpoint for draining a node (CASSSIDECAR-342)
  * Avoid resuming stream early during SSTable upload (CASSSIDECAR-359)
  * Add cache for Authorization layer (CASSSIDECAR-357)
  * Avoid creating objects in the CassandraAdapter implementation (CASSSIDECAR-355)
