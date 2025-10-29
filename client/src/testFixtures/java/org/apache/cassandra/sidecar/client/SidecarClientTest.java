@@ -87,6 +87,8 @@ import org.apache.cassandra.sidecar.common.response.LifecycleInfoResponse;
 import org.apache.cassandra.sidecar.common.response.ListCdcSegmentsResponse;
 import org.apache.cassandra.sidecar.common.response.ListOperationalJobsResponse;
 import org.apache.cassandra.sidecar.common.response.ListSnapshotFilesResponse;
+import org.apache.cassandra.sidecar.common.response.LiveMigrationStatus;
+import org.apache.cassandra.sidecar.common.response.LiveMigrationStatus.MigrationState;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.common.response.OperationalJobResponse;
 import org.apache.cassandra.sidecar.common.response.RingResponse;
@@ -112,6 +114,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.PARTIAL_CONTENT;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.JOB_ID_PATH_PARAM;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.KEYSPACE_PATH_PARAM;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_FILES_ROUTE;
+import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.LIVE_MIGRATION_STATUS_ROUTE;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.OPERATIONAL_JOB_ID_PATH_PARAM;
 import static org.apache.cassandra.sidecar.common.ApiEndpointsV1.TABLE_PATH_PARAM;
 import static org.apache.cassandra.sidecar.common.http.SidecarHttpHeaderNames.CONTENT_XXHASH32;
@@ -2029,6 +2032,41 @@ abstract class SidecarClientTest
             assertThat(request.getMethod()).isEqualTo("PUT");
             assertThat(requestBody).isEqualTo("{\"state\":\"stop\"}");
         });
+    }
+
+    @Test
+    void testLiveMigrationStatusRequest() throws InterruptedException, ExecutionException
+    {
+        MockResponse response = new MockResponse();
+        response.setResponseCode(200);
+        response.setBody("{\"state\":\"COMPLETED\",\"endTime\":1}");
+        enqueue(response);
+
+        SidecarInstance instance = instances.get(0);
+
+        CompletableFuture<LiveMigrationStatus> result = client.liveMigrationStatus(instance);
+
+        LiveMigrationStatus liveMigrationStatus = result.get();
+
+        assertThat(result.isCompletedExceptionally()).isFalse();
+        assertThat(liveMigrationStatus).isEqualTo(new LiveMigrationStatus(MigrationState.COMPLETED, 1L));
+        validateResponseServed(LIVE_MIGRATION_STATUS_ROUTE);
+    }
+
+    @Test
+    void testLiveMigrationStatusRouteReturnedBadRequest() throws InterruptedException, ExecutionException
+    {
+        MockResponse response = new MockResponse();
+        response.setResponseCode(400);
+        enqueue(response);
+
+        SidecarInstance instance = instances.get(0);
+
+        CompletableFuture<LiveMigrationStatus> result = client.liveMigrationStatus(instance);
+
+        assertThatExceptionOfType(ExecutionException.class).isThrownBy(result::get);
+        assertThat(result.isCompletedExceptionally()).isTrue();
+        validateResponseServed(LIVE_MIGRATION_STATUS_ROUTE);
     }
 
     private void enqueue(MockResponse response)
