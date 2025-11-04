@@ -1,6 +1,5 @@
 0.3.0
 -----
- * Remove duplicated caffeine dependency (CASSSIDECAR-362)
  * Upgrade caffeine dependency (CASSSIDECAR-332)
  * Add Live Migration Status endpoint to persist Live Migration status and for safety (CASSSIDECAR-345)
  * Sidecar endpoint for draining a node (CASSSIDECAR-342)
