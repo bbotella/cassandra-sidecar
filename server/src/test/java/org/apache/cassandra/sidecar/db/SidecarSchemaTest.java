@@ -223,7 +223,7 @@ public class SidecarSchemaTest
 
             "INSERT INTO sidecar_internal.table_schema_history (keyspace_name, table_name, version, created_at, table_schema) VALUES (?, ?, ?, NOW(), ?)",
             "SELECT table_schema FROM sidecar_internal.table_schema_history WHERE keyspace_name = ? AND table_name = ? AND version = ?",
-            
+
             "INSERT INTO sidecar_internal.cdc_state_v2 (job_id, split, start, end, state) VALUES (?, ?, ?, ?, ?) USING TIMESTAMP ?",
             "SELECT start, end, state FROM sidecar_internal.cdc_state_v2 WHERE job_id = ? AND split = ?"
             );
