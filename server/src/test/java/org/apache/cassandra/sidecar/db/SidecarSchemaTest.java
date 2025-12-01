@@ -133,7 +133,7 @@ public class SidecarSchemaTest
     {
         sidecarSchemaInitializer.execute(Promise.promise());
         loopAssert(10, 500, () -> {
-            assertThat(interceptedExecStmts.size()).isEqualTo(7);
+            assertThat(interceptedExecStmts.size()).isEqualTo(9);
             assertThat(interceptedExecStmts.get(0)).as("Create keyspace should be executed the first")
                                                    .contains("CREATE KEYSPACE IF NOT EXISTS sidecar_internal");
             assertThat(interceptedExecStmts).as("Create table should be executed for job table")
@@ -144,6 +144,14 @@ public class SidecarSchemaTest
                                             .anyMatch(stmt -> stmt.contains("CREATE TABLE IF NOT EXISTS sidecar_internal.restore_range_v1"));
             assertThat(interceptedExecStmts).as("Create table should be executed for role_permissions_v1 table")
                                             .anyMatch(stmt -> stmt.contains("CREATE TABLE IF NOT EXISTS sidecar_internal.role_permissions_v1"));
+            assertThat(interceptedExecStmts).as("Create table should be executed for table_schema_history table")
+                                            .anyMatch(stmt -> stmt.contains("CREATE TABLE IF NOT EXISTS sidecar_internal.table_schema_history"));
+            assertThat(interceptedExecStmts).as("Create table should be executed for cdc_state_v2 table")
+                                            .anyMatch(stmt -> stmt.contains("CREATE TABLE IF NOT EXISTS sidecar_internal.cdc_state_v2"));
+            assertThat(interceptedExecStmts).as("Create table should be executed for configs table")
+                                            .anyMatch(stmt -> stmt.contains("CREATE TABLE IF NOT EXISTS sidecar_internal.configs"));
+            assertThat(interceptedExecStmts).as("Create table should be executed for sidecar_lease_v1 table")
+                                            .anyMatch(stmt -> stmt.contains("CREATE TABLE IF NOT EXISTS sidecar_internal.sidecar_lease_v1"));
 
             List<String> expectedPrepStatements = Arrays.asList(
             "INSERT INTO sidecar_internal.restore_job_v5 (  created_at,  job_id,  keyspace_name,  table_name,  " +
@@ -211,7 +219,13 @@ public class SidecarSchemaTest
 
             "SELECT * FROM system_views.clients",
 
-            "SELECT username, COUNT(*) AS connection_count FROM system_views.clients"
+            "SELECT username, COUNT(*) AS connection_count FROM system_views.clients",
+
+            "INSERT INTO sidecar_internal.table_schema_history (keyspace_name, table_name, version, created_at, table_schema) VALUES (?, ?, ?, NOW(), ?)",
+            "SELECT table_schema FROM sidecar_internal.table_schema_history WHERE keyspace_name = ? AND table_name = ? AND version = ?",
+            
+            "INSERT INTO sidecar_internal.cdc_state_v2 (job_id, split, start, end, state) VALUES (?, ?, ?, ?, ?) USING TIMESTAMP ?",
+            "SELECT start, end, state FROM sidecar_internal.cdc_state_v2 WHERE job_id = ? AND split = ?"
             );
 
             assertThat(interceptedPrepStmts).as("Intercepted statements match expected statements")

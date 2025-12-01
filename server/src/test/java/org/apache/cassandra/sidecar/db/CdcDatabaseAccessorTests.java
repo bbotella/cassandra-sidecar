@@ -134,8 +134,9 @@ class CdcDatabaseAccessorTests
         Partitioner partitioner = Partitioner.Murmur3Partitioner;
         MockCdcStateV2 datastore = new MockCdcStateV2();
         String jobId = UUID.randomUUID().toString();
-        SidecarSchema mockSidecarSchema = mock(SidecarSchema.class, RETURNS_DEEP_STUBS);
+        SidecarSchema mockSidecarSchema = mock(SidecarSchema.class);
         CdcStatesSchema mockCdcStatesSchema = mock(CdcStatesSchema.class, RETURNS_DEEP_STUBS);
+        when(mockSidecarSchema.tableSchema(CdcStatesSchema.class)).thenReturn(mockCdcStatesSchema);
         List<BigInteger> tokensBeforeShrink = TokenSplitUtil.splitTokens(numNodes, partitioner);
         List<BigInteger> tokensAfterShrink = TokenSplitUtil.splitTokens(numNodes / 2, partitioner);
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
@@ -183,8 +184,9 @@ class CdcDatabaseAccessorTests
         Partitioner partitioner = Partitioner.Murmur3Partitioner;
         MockCdcStateV2 datastore = new MockCdcStateV2();
         String jobId = UUID.randomUUID().toString();
-        SidecarSchema mockSidecarSchema = mock(SidecarSchema.class, RETURNS_DEEP_STUBS);
+        SidecarSchema mockSidecarSchema = mock(SidecarSchema.class);
         CdcStatesSchema mockCdcStatesSchema = mock(CdcStatesSchema.class, RETURNS_DEEP_STUBS);
+        when(mockSidecarSchema.tableSchema(CdcStatesSchema.class)).thenReturn(mockCdcStatesSchema);
         List<BigInteger> tokensBeforeExpansion = TokenSplitUtil.splitTokens(numNodes, partitioner);
         List<BigInteger> tokensAfterExpansion = TokenSplitUtil.splitTokens(numNodes * 2, partitioner);
         TokenSplitUtil tokenSplitUtil = new TokenSplitUtil(numNodes);
