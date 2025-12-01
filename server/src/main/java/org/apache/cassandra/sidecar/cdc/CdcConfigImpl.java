@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -30,7 +29,6 @@ import io.vertx.core.Handler;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
-import org.apache.cassandra.sidecar.common.server.ThrowingRunnable;
 import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 import org.apache.cassandra.sidecar.db.CdcConfigAccessor;
@@ -230,29 +228,9 @@ public class CdcConfigImpl implements CdcConfig
         return aInt != null ? Integer.valueOf(aInt) : orDefault.get();
     }
 
-    /**
-     * Adds a listener to service config changes
-     *
-     * @param listener The listener to call
-     */
-    public void registerConfigChangeListener(ThrowingRunnable listener)
-    {
-//        this.configRefreshNotifier.registerConfigChangeListener(listener);
-    }
-
     private Map<String, Object> getAuthConfigs()
     {
         return new HashMap<>();
-    }
-
-    @VisibleForTesting
-    void forceExecuteNotifier()
-    {
-//        if (configRefreshNotifier != null &&
-//                configRefreshNotifier.scheduleDecision() == ScheduleDecision.EXECUTE)
-//        {
-//            configRefreshNotifier.execute(Promise.promise());
-//        }
     }
 
     enum ConfigKeys

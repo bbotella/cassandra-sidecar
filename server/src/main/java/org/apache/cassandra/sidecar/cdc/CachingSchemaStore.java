@@ -76,12 +76,6 @@ public class CachingSchemaStore implements SchemaStore
         this.cdcConfig = cdcConfig;
         this.sidecarCdcStats = sidecarCdcStats;
 
-        ThrowingRunnable configChangeCallback = () -> {
-            LOGGER.info("Services configuration changed. Reloading publisher...");
-            loadPublisher();
-            publishSchemas();
-        };
-        this.cdcConfig.registerConfigChangeListener(configChangeCallback);
         configureSidecarServerEventListeners();
     }
 
