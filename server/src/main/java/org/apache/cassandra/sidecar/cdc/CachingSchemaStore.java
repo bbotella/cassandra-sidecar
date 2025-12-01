@@ -45,7 +45,6 @@ import org.apache.cassandra.cdc.kafka.KafkaOptions;
 import org.apache.cassandra.cdc.schemastore.SchemaStore;
 import org.apache.cassandra.cdc.schemastore.SchemaStorePublisherFactory;
 import org.apache.cassandra.cdc.schemastore.TableSchemaPublisher;
-import org.apache.cassandra.sidecar.common.server.ThrowingRunnable;
 import org.apache.cassandra.sidecar.db.TableHistoryDatabaseAccessor;
 import org.apache.cassandra.sidecar.db.schema.SidecarSchema;
 import org.apache.cassandra.sidecar.tasks.CassandraClusterSchemaMonitor;
