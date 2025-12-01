@@ -152,8 +152,6 @@ public class ClusterTopologyMonitor implements PeriodicTask
         }
     }
 
-    // periodic task
-
     /**
      * Returns the delay between topology refresh cycles.
      */
@@ -183,8 +181,6 @@ public class ClusterTopologyMonitor implements PeriodicTask
             promise.complete();
         }
     }
-
-    // internal methods
 
     /**
      * Refreshes topology information for all datacenters and publishes change events.

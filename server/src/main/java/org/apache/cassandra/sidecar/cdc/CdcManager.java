@@ -133,7 +133,6 @@ public class CdcManager
         return consumers;
     }
 
-
     SidecarCdc loadOrBuildCdcConsumer(Integer instanceId,
                                       ClusterConfigProvider clusterConfigProvider,
                                       EventConsumer eventConsumer,
@@ -170,7 +169,6 @@ public class CdcManager
     {
         consumers.forEach(SidecarCdc::stop);
     }
-
 
     private Integer getInstanceId(String instanceIp)
     {

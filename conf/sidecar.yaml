@@ -21,7 +21,7 @@
 #
 cassandra_instances:
   - id: 1
-    host: localhost
+    host: localhost1
     port: 9042
 
     # The instance's storage directory as defined per the cassandra.storagedir property
@@ -42,13 +42,11 @@ cassandra_instances:
 
     # Directory where Cassandra stores mutations. If not set, the default directory is
     # <storage_dir>/cdc_raw.
-    cdc_dir: /Users/bernardobotellacorbi/Documents/dev/cassandra_trunk/data/cdc_raw
-#    cdc_dir: /var/lib/cassandra/cdc_raw
+    cdc_dir: /var/lib/cassandra/cdc_raw
 
     # Directory where Cassandra stores the commit logs. If not set, the default directory
     # is <storage_dir>/commitlog
-    commitlog_dir: /Users/bernardobotellacorbi/Documents/dev/cassandra_trunk/data/commitlog
-#    commitlog_dir: /var/lib/cassandra/commitlog
+    commitlog_dir: /var/lib/cassandra/commitlog
 
     # Directory where Cassandra stores hints. If not set, the default directory is
     # <storage_dir>/hints.
@@ -63,14 +61,14 @@ cassandra_instances:
     # first of the data directories specified by data_file_directories.
     # local_system_data_file_dir:
 
-    jmx_host: localhost
+    jmx_host: 127.0.0.1
     jmx_port: 7199
     jmx_ssl_enabled: false
 #    jmx_role:
 #    jmx_role_password:
 
 sidecar:
-  host: localhost
+  host: 0.0.0.0
   port: 9043
   request_idle_timeout: 5m
   request_timeout: 5m
@@ -123,7 +121,7 @@ sidecar:
     max_retries: 3
     retry_delay: 200ms
   schema:
-    is_enabled: true
+    is_enabled: false
     keyspace: sidecar_internal
     replication_strategy: SimpleStrategy
     replication_factor: 1
@@ -304,7 +302,7 @@ access_control:
 
 driver_parameters:
   contact_points:
-    - "localhost:9042"
+    - "127.0.0.1:9042"
   username: cassandra
   password: cassandra
   ssl:
@@ -350,8 +348,8 @@ sidecar_client:
   #max_retries: 5                            # The amount of retries the client will attempt a request
   #retry_delay: 500ms                        # The initial delay between the retries the client will attempt a request
   #max_retry_delay: 10s                      # The max delay between the retries the client will attempt a request
-  ssl:                                      # if ssl is enabled, this is the ssl configuration used for the sidecar client
-    enabled: false
+  #ssl:                                      # if ssl is enabled, this is the ssl configuration used for the sidecar client
+  #  enabled: false
   #  keystore:
   #    type: PKCS12                          # Keystore type
   #    path: path/to/client/keystore.p12     # Path to the client keystore file

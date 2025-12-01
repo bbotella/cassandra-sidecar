@@ -87,8 +87,8 @@ public abstract class AbstractHandler<T> implements Handler<RoutingContext>
         try
         {
             requestParams = extractParamsOrThrow(context);
-//            logger.debug("{} received request={}, remoteAddress={}, instance={}",
-//                         this.getClass().getSimpleName(), requestParams, remoteAddress, host);
+            logger.debug("{} received request={}, remoteAddress={}, instance={}",
+                         this.getClass().getSimpleName(), requestParams, remoteAddress, host);
             handleInternal(context, request, host, remoteAddress, requestParams);
         }
         catch (Exception exception)
