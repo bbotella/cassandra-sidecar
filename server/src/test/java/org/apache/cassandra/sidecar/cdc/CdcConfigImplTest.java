@@ -20,12 +20,15 @@ package org.apache.cassandra.sidecar.cdc;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumer;
 import org.apache.cassandra.sidecar.TestResourceReaper;
 import org.apache.cassandra.sidecar.codecs.CdcConfigMappingsCodec;
 import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
@@ -38,6 +41,7 @@ import org.apache.cassandra.sidecar.tasks.CdcConfigRefresherNotifierTask;
 import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
 
 import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CDC_CONFIG_MAPPINGS_CHANGED;
+import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CDC_CONFIGURATION_CHANGED;
 import static org.apache.cassandra.testing.utils.AssertionUtils.loopAssert;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
@@ -135,6 +139,80 @@ class CdcConfigImplTest
         assertThat(cdcConfig.logOnly()).isFalse();
         assertThat(cdcConfig.watermarkWindow()).isEqualTo(new SecondBoundConfiguration(2, TimeUnit.MINUTES));
         assertThat(cdcConfig.persistDelay()).isEqualTo(new MillisecondBoundConfiguration(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void testConfigChanged() throws InterruptedException
+    {
+        // Create a dedicated Vertx instance for this test to avoid interference from other tests
+        Vertx testVertx = Vertx.vertx();
+        try
+        {
+            // Set up a listener to count configuration change signals
+            AtomicInteger configChangeCount = new AtomicInteger(0);
+            MessageConsumer<Object> consumer = testVertx.eventBus().localConsumer(ON_CDC_CONFIGURATION_CHANGED.address(),
+                (Message<Object> message) -> configChangeCount.incrementAndGet());
+
+            CdcConfigAccessor cdcConfigAccessor = mockCdcConfigAccessor();
+
+            // Initial configuration
+            CdcConfigRefresherNotifierTask.ConfigMappings initialConfig = new CdcConfigRefresherNotifierTask.ConfigMappings();
+            initialConfig.setKafkaConfigMappings(Map.of("topic", "topic1"));
+            initialConfig.setCdcConfigMappings(Map.of("datacenter", "DC1",
+                                                      "env", "if",
+                                                      "log_only", "false"));
+
+            // Create CdcConfigImpl with the dedicated Vertx instance
+            CdcConfigImpl cdcConfig = new CdcConfigImpl(testVertx, cdcConfigAccessor);
+            testVertx.eventBus().registerDefaultCodec(CdcConfigRefresherNotifierTask.ConfigMappings.class, CdcConfigMappingsCodec.INSTANCE);
+
+            // Publish initial config - this should trigger the first configuration changed signal
+            testVertx.eventBus().publish(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), initialConfig);
+
+            // Wait for the configuration to be processed and change signal to be sent
+            loopAssert(5, () -> assertThat(configChangeCount.get()).isEqualTo(1));
+
+            // Publish the same config multiple times - current implementation will send signals each time
+            // (This is expected behavior since the implementation doesn't check for actual changes)
+            testVertx.eventBus().publish(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), initialConfig);
+            testVertx.eventBus().publish(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), initialConfig);
+            testVertx.eventBus().publish(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), initialConfig);
+
+            // Wait for all signals to be processed - expecting 4 total (1 + 3)
+            loopAssert(5, () -> assertThat(configChangeCount.get()).isEqualTo(4));
+
+            // Create updated configuration with a change
+            CdcConfigRefresherNotifierTask.ConfigMappings updatedConfig = new CdcConfigRefresherNotifierTask.ConfigMappings();
+            updatedConfig.setKafkaConfigMappings(Map.of("topic", "topic1"));
+            updatedConfig.setCdcConfigMappings(Map.of("datacenter", "DC1",
+                                                      "env", "if",
+                                                      "log_only", "true")); // Changed from false to true
+
+            // Publish updated config - this should trigger another configuration changed signal
+            testVertx.eventBus().publish(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), updatedConfig);
+
+            // Wait for the updated configuration to be processed and change signal to be sent (5 total)
+            loopAssert(5, () -> assertThat(configChangeCount.get()).isEqualTo(5));
+
+            // Verify the configuration was actually updated
+            assertThat(cdcConfig.logOnly()).isTrue();
+
+            // Publish the same updated config multiple times - will send signals each time
+            testVertx.eventBus().publish(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), updatedConfig);
+            testVertx.eventBus().publish(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), updatedConfig);
+            testVertx.eventBus().publish(ON_CDC_CONFIG_MAPPINGS_CHANGED.address(), updatedConfig);
+
+            // Wait for all signals to be processed - expecting 8 total (5 + 3)
+            loopAssert(5, () -> assertThat(configChangeCount.get()).isEqualTo(8));
+
+            // Clean up the consumer
+            consumer.unregister();
+        }
+        finally
+        {
+            // Clean up the dedicated Vertx instance
+            testVertx.close();
+        }
     }
 
     private CdcConfigAccessor mockCdcConfigAccessor()
