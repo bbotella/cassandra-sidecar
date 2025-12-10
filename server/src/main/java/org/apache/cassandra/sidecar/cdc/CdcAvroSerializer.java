@@ -25,7 +25,7 @@ import org.apache.cassandra.cdc.schemastore.SchemaStore;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 
 /**
- * Taking a schema, this class serializes a CDC into AVRO format
+ * Serializer to convert Cassandra CDC events into Avro GenericRecord objects.
  */
 public class CdcAvroSerializer extends AvroGenericRecordSerializer
 {

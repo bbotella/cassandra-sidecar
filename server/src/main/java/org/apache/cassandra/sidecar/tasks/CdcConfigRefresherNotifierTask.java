@@ -53,7 +53,7 @@ public class CdcConfigRefresherNotifierTask implements PeriodicTask
     private final KafkaConfigAccessor kafkaConfigAccessor;
     private final Vertx vertx;
     private final List<ThrowingRunnable> configChangeListeners = Collections.synchronizedList(new ArrayList<>());
-    public ConfigMappings configMappings = new ConfigMappings();
+    private final ConfigMappings configMappings = new ConfigMappings();
 
     @Inject
     public CdcConfigRefresherNotifierTask(Vertx vertx,

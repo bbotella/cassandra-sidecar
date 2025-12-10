@@ -45,7 +45,31 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Class providing the schema for CDC
+ * Supplies schema information for CDC (Change Data Capture) enabled tables in a Cassandra cluster.
+ *
+ * <p>This class is responsible for:
+ * <ul>
+ *   <li>Retrieving and parsing the complete schema from Cassandra instances</li>
+ *   <li>Identifying tables that have CDC enabled</li>
+ *   <li>Building {@link CqlTable} representations with appropriate metadata</li>
+ *   <li>Caching table IDs to optimize repeated lookups</li>
+ *   <li>Extracting User Defined Types (UDTs) and replication factors</li>
+ *   <li>Updating the CDC bridge with schema information</li>
+ * </ul>
+ *
+ * <p>The schema supplier works by:
+ * <ol>
+ *   <li>Fetching the full schema export from any available Cassandra instance</li>
+ *   <li>Parsing CREATE TABLE statements to identify CDC-enabled tables</li>
+ *   <li>Extracting keyspace-specific UDTs and replication settings</li>
+ *   <li>Building complete {@link CqlTable} objects with partitioner information</li>
+ *   <li>Coordinating with the CDC bridge to maintain schema consistency</li>
+ * </ol>
+ *
+ * @see SchemaSupplier
+ * @see CqlTable
+ * @see CdcUtil
+ * @see CassandraBridge
  */
 @Singleton
 public class CdcSchemaSupplier implements SchemaSupplier

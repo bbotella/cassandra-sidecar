@@ -56,7 +56,8 @@ import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_SERVER_
 import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_SIDECAR_SCHEMA_INITIALIZED;
 
 /**
- * Schemas cache to be used by CDC event serialization.
+ * Schemas cache to be used by CDC event serialization. It contains a map of table schemas
+ * using TableIdentifier as key.
  */
 @Singleton
 public class CachingSchemaStore implements SchemaStore
@@ -68,9 +69,12 @@ public class CachingSchemaStore implements SchemaStore
     private final TableHistoryDatabaseAccessor tableHistoryDatabaseAccessor;
     private final Vertx vertx;
     private final CdcConfigImpl cdcConfig;
-    @Nullable volatile TableSchemaPublisher publisher;
+    @Nullable private volatile TableSchemaPublisher publisher;
     private final CqlToAvroSchemaConverter cqlToAvroSchemaConverter;
     private final SidecarCdcStats sidecarCdcStats;
+
+    private static final String METADATA_NAME_KEY = "name";
+    private static final String METADATA_NAMESPACE_KEY = "namespace";
 
     @Inject
     CachingSchemaStore(Vertx vertx,
@@ -98,13 +102,7 @@ public class CachingSchemaStore implements SchemaStore
 
     private void loadPublisher()
     {
-        KafkaOptions kafkaOptions = new KafkaOptions()
-        {
-            public Map<String, Object> kafkaConfigs()
-            {
-                return cdcConfig.kafkaConfigs();
-            }
-        };
+        KafkaOptions kafkaOptions = () -> cdcConfig.kafkaConfigs();
         this.publisher = SchemaStorePublisherFactory.DEFAULT.buildPublisher(kafkaOptions);
     }
 
@@ -143,8 +141,8 @@ public class CachingSchemaStore implements SchemaStore
                 {
                     Schema schema = cqlToAvroSchemaConverter.convert(cqlTable);
                     TableSchemaPublisher.SchemaPublishMetadata metadata = new TableSchemaPublisher.SchemaPublishMetadata();
-                    metadata.put("name", cqlTable.table());
-                    metadata.put("namespace", cqlTable.keyspace());
+                    metadata.put(METADATA_NAME_KEY, cqlTable.table());
+                    metadata.put(METADATA_NAMESPACE_KEY, cqlTable.keyspace());
                     publisher.publishSchema(schema.toString(false), metadata);
                     sidecarCdcStats.capturePublishedSchema();
                 }
@@ -222,12 +220,6 @@ public class CachingSchemaStore implements SchemaStore
             LOGGER.warn("Unknown table for getting reader keyspace={} table={}", tableIdentifier.keyspace(), tableIdentifier.table());
             throw new RuntimeException("Unable to get reader for unknown table " + tableIdentifier);
         }).schemaUuid;
-    }
-
-    public Map<String, Schema> getSchemas()
-    {
-        return avroSchemasCache.values().stream()
-                               .collect(Collectors.toMap(e -> e.schema.getNamespace(), e -> e.schema));
     }
 
     private Map<TableIdentifier, SchemaCacheEntry> createSchemaCache(Set<CqlTable> cdcTables)

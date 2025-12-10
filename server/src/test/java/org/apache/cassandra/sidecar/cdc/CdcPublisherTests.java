@@ -41,6 +41,7 @@ import org.apache.cassandra.sidecar.concurrent.TaskExecutorPool;
 import org.apache.cassandra.sidecar.config.KeyStoreConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.SslConfiguration;
+import org.apache.cassandra.sidecar.coordination.RangeManager;
 import org.apache.cassandra.sidecar.coordination.TokenRingProvider;
 import org.apache.cassandra.sidecar.db.CdcDatabaseAccessor;
 import org.apache.cassandra.sidecar.db.VirtualTablesDatabaseAccessor;
@@ -87,6 +88,8 @@ public class CdcPublisherTests
     private SidecarCdcStats sidecarCdcStats;
     @Mock
     private Serializer<CdcEvent> avroSerializer;
+    @Mock
+    private RangeManager rangeManager;
 
     private SidecarConfiguration sidecarConfiguration;
     private CdcConfig cdcConfig;
@@ -119,10 +122,10 @@ public class CdcPublisherTests
             cdcConfig,
             databaseAccessor,
             cdcStats,
-            tokenRingProvider,
             virtualTables,
             sidecarCdcStats,
-            avroSerializer
+            avroSerializer,
+            rangeManager
         );
     }
 

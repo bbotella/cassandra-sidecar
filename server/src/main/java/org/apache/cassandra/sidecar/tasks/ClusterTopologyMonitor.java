@@ -176,7 +176,6 @@ public class ClusterTopologyMonitor implements PeriodicTask
     @Override
     public DurationSpec delay()
     {
-//        return MillisecondBoundConfiguration.parse(sidecarConfiguration.serviceConfiguration().refreshClusterTopology());
         return MillisecondBoundConfiguration.parse("1000");
     }
 
@@ -207,9 +206,9 @@ public class ClusterTopologyMonitor implements PeriodicTask
     {
         for (String dc : tokenRingProvider.dcs())
         {
-            @Nullable final Map<String, List<TokenRange>> prev = perDcRanges.get(dc);
+            Map<String, List<TokenRange>> prev = perDcRanges.get(dc);
 
-            final Map<String, List<TokenRange>> curr = tokenRingProvider.getPrimaryTokenRanges(dc);
+            Map<String, List<TokenRange>> curr = tokenRingProvider.getPrimaryTokenRanges(dc);
             if (!curr.equals(prev) && changeInInstanceTopology(prev, curr) && update(dc, prev, curr))
             {
                 LOGGER.info("Publishing ON_DC_TOPOLOGY_CHANGE event");

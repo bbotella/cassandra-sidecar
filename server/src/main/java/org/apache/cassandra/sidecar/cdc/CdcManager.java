@@ -54,7 +54,26 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Class handling CDC iterators
+ * Manages the lifecycle and coordination of CDC (Change Data Capture) consumers for processing
+ * Cassandra change events across distributed token ranges.
+ *
+ * <p>This class is responsible for:
+ * <ul>
+ *   <li>Building and configuring {@link SidecarCdc} consumers based on owned token ranges</li>
+ *   <li>Deduplicating consumers by instance ID and token range to prevent duplicate processing</li>
+ *   <li>Managing consumer lifecycle (start/stop operations)</li>
+ *   <li>Integrating with various providers for cluster configuration, schema, and instance metadata</li>
+ *   <li>Coordinating with the range manager to determine token ownership</li>
+ * </ul>
+ *
+ * <p>The CDC consumers created by this manager process change events from Cassandra commit logs
+ * and forward them to configured event consumers (such as Kafka producers) while maintaining
+ * state persistence and proper token range distribution across the cluster.
+ *
+ * @see SidecarCdc
+ * @see EventConsumer
+ * @see RangeManager
+ * @see CdcConfig
  */
 public class CdcManager
 {

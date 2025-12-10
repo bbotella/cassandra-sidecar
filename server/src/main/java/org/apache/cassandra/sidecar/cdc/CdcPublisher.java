@@ -53,9 +53,7 @@ import org.apache.cassandra.sidecar.concurrent.TaskExecutorPool;
 import org.apache.cassandra.sidecar.config.KeyStoreConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.SslConfiguration;
-import org.apache.cassandra.sidecar.coordination.ContentionFreeRangeManager;
 import org.apache.cassandra.sidecar.coordination.RangeManager;
-import org.apache.cassandra.sidecar.coordination.TokenRingProvider;
 import org.apache.cassandra.sidecar.db.CdcDatabaseAccessor;
 import org.apache.cassandra.sidecar.db.VirtualTablesDatabaseAccessor;
 import org.apache.cassandra.sidecar.tasks.PeriodicTask;
@@ -74,9 +72,22 @@ import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_SERVER_
 @Singleton
 public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
 {
-    static final Logger LOGGER = LoggerFactory.getLogger(CdcPublisher.class);
-    static final long INITIALIZATION_LOOP_DELAY_MILLIS = 1000;
-    private final Vertx vertx;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CdcPublisher.class);
+    private static final long INITIALIZATION_LOOP_DELAY_MILLIS = 1000;
+
+    // SSL Configuration Keys
+    private static final String SSL_ENABLED_KEY = "enabled";
+    private static final String SSL_PREFER_OPENSSL_KEY = "preferOpenSSL";
+    private static final String SSL_CLIENT_AUTH_KEY = "clientAuth";
+    private static final String SSL_CIPHER_SUITES_KEY = "cipherSuites";
+    private static final String SSL_SECURE_TRANSPORT_PROTOCOLS_KEY = "secureTransportProtocols";
+    private static final String SSL_HANDSHAKE_TIMEOUT_KEY = "handshakeTimeout";
+    private static final String SSL_KEYSTORE_PATH_KEY = "keystorePath";
+    private static final String SSL_KEYSTORE_PASSWORD_KEY = "keystorePassword";
+    private static final String SSL_KEYSTORE_TYPE_KEY = "keystoreType";
+    private static final String SSL_TRUSTSTORE_PATH_KEY = "truststorePath";
+    private static final String SSL_TRUSTSTORE_PASSWORD_KEY = "truststorePassword";
+    private static final String SSL_TRUSTSTORE_TYPE_KEY = "truststoreType";
     private final TaskExecutorPool executorPools;
     private final CdcConfig conf;
     private volatile boolean isRunning = false;
@@ -86,7 +97,6 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     private final VirtualTablesDatabaseAccessor virtualTables;
     private final SidecarCdcStats sidecarCdcStats;
     private RangeManager rangeManager;
-    private final TokenRingProvider tokenRingProvider;
     private final SchemaSupplier schemaSupplier;
     private final CdcSidecarInstancesProvider sidecarInstancesProvider;
     private final InstanceMetadataFetcher instanceMetadataFetcher;
@@ -95,7 +105,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     private final ICdcStats cdcStats;
     private final SidecarConfiguration sidecarConfiguration;
     private CdcManager cdcManager;
-    Serializer<CdcEvent> avroSerializer;
+    private Serializer<CdcEvent> avroSerializer;
 
     @Inject
     public CdcPublisher(Vertx vertx,
@@ -109,18 +119,15 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
                         CdcConfig conf,
                         CdcDatabaseAccessor databaseAccessor,
                         ICdcStats cdcStats,
-                        TokenRingProvider tokenRingProvider,
                         VirtualTablesDatabaseAccessor virtualTables,
                         SidecarCdcStats sidecarCdcStats,
-                        Serializer<CdcEvent> avroSerializer)
+                        Serializer<CdcEvent> avroSerializer,
+                        RangeManager rangeManager)
     {
-        this.vertx = vertx;
-
         this.sidecarCdcStats = sidecarCdcStats;
         this.executorPools = executorPools.internal();
         this.conf = conf;
         this.databaseAccessor = databaseAccessor;
-        this.tokenRingProvider = tokenRingProvider;
         this.virtualTables = virtualTables;
 
         this.schemaSupplier = schemaSupplier;
@@ -131,6 +138,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
         this.cdcStats = cdcStats;
         this.sidecarConfiguration = sidecarConfiguration;
         this.avroSerializer = avroSerializer;
+        this.rangeManager = rangeManager;
         vertx.eventBus().localConsumer(RangeManager.RangeManagerEvents.ON_TOKEN_RANGE_CHANGED.address(), this);
         vertx.eventBus().localConsumer(RangeManager.LeadershipEvents.ON_TOKEN_RANGE_GAINED.address(), this);
         vertx.eventBus().localConsumer(RangeManager.LeadershipEvents.ON_TOKEN_RANGE_LOST.address(), this);
@@ -150,27 +158,27 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
 
         Map<String, String> sslConfigMap = new HashMap<>();
 
-        sslConfigMap.put("enabled", sslConfiguration.enabled() + "");
-        sslConfigMap.put("preferOpenSSL", sslConfiguration.preferOpenSSL() + "");
-        sslConfigMap.put("clientAuth", sslConfiguration.clientAuth());
-        sslConfigMap.put("cipherSuites", String.join(",", sslConfiguration.cipherSuites()));
-        sslConfigMap.put("secureTransportProtocols", String.join(",", sslConfiguration.secureTransportProtocols()));
-        sslConfigMap.put("handshakeTimeout", sslConfiguration.handshakeTimeout().toString());
+        sslConfigMap.put(SSL_ENABLED_KEY, sslConfiguration.enabled() + "");
+        sslConfigMap.put(SSL_PREFER_OPENSSL_KEY, sslConfiguration.preferOpenSSL() + "");
+        sslConfigMap.put(SSL_CLIENT_AUTH_KEY, sslConfiguration.clientAuth());
+        sslConfigMap.put(SSL_CIPHER_SUITES_KEY, String.join(",", sslConfiguration.cipherSuites()));
+        sslConfigMap.put(SSL_SECURE_TRANSPORT_PROTOCOLS_KEY, String.join(",", sslConfiguration.secureTransportProtocols()));
+        sslConfigMap.put(SSL_HANDSHAKE_TIMEOUT_KEY, sslConfiguration.handshakeTimeout().toString());
 
         if (sslConfiguration.isKeystoreConfigured())
         {
             KeyStoreConfiguration keystore = sslConfiguration.keystore();
-            sslConfigMap.put("keystorePath", keystore.path());
-            sslConfigMap.put("keystorePassword", keystore.password());
-            sslConfigMap.put("keystoreType", keystore.type());
+            sslConfigMap.put(SSL_KEYSTORE_PATH_KEY, keystore.path());
+            sslConfigMap.put(SSL_KEYSTORE_PASSWORD_KEY, keystore.password());
+            sslConfigMap.put(SSL_KEYSTORE_TYPE_KEY, keystore.type());
         }
 
         if (sslConfiguration.isTrustStoreConfigured())
         {
             KeyStoreConfiguration truststore = sslConfiguration.truststore();
-            sslConfigMap.put("truststorePath", truststore.path());
-            sslConfigMap.put("truststorePassword", truststore.password());
-            sslConfigMap.put("truststoreType", truststore.type());
+            sslConfigMap.put(SSL_TRUSTSTORE_PATH_KEY, truststore.path());
+            sslConfigMap.put(SSL_TRUSTSTORE_PASSWORD_KEY, truststore.password());
+            sslConfigMap.put(SSL_TRUSTSTORE_TYPE_KEY, truststore.type());
         }
 
         SslConfig sslConfig = SslConfig.create(sslConfigMap);
@@ -283,21 +291,15 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     {
         try
         {
-            if (this.rangeManager == null)
-            {
-                this.rangeManager = new ContentionFreeRangeManager(vertx, tokenRingProvider);
-            }
             String localDc = rangeManager.getLocalDcSafe();
             if (conf.datacenter() != null && !conf.datacenter().isEmpty() && !conf.datacenter().equals(localDc))
             {
                 LOGGER.info("Cdc not enabled in this DC localDc={} cdcDc={}", localDc, conf.datacenter());
-                return;
             }
             else if (virtualTables.isCdcOnRepairEnabled())
             {
                 LOGGER.warn("Cannot run CDC while cdc on repair is enabled, disable cdc_on_repair_enabled in the yaml file.");
                 sidecarCdcStats.captureCdcOnRepairEnabled();
-                return;
             }
             else if (conf.cdcEnabled())
             {
