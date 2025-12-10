@@ -19,6 +19,7 @@
 package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.ProvidesIntoMap;
@@ -375,14 +376,6 @@ public class CdcModule extends AbstractModule
         return new CdcStatesSchema(configuration);
     }
 
-    @Provides
-    @Singleton
-    public RangeManager rangeManager(Vertx vertx,
-                                     TokenRingProvider tokenRingProvider)
-    {
-        return new ContentionFreeRangeManager(vertx, tokenRingProvider);
-    }
-
     @ProvidesIntoMap
     @KeyClassMapKey(PeriodicTaskMapKeys.CdcPublisherTaskKey.class)
     PeriodicTask cdcPublisherTask(Vertx vertx,
@@ -395,11 +388,11 @@ public class CdcModule extends AbstractModule
                                   InstanceMetadataFetcher instanceMetadataFetcher,
                                   CdcConfig conf,
                                   CdcDatabaseAccessor databaseAccessor,
+                                  TokenRingProvider tokenRingProvider,
                                   ICdcStats cdcStats,
                                   VirtualTablesDatabaseAccessor virtualTables,
                                   SidecarCdcStats sidecarCdcStats,
-                                  Serializer<CdcEvent> avroSerializer,
-                                  RangeManager rangeManager)
+                                  Serializer<CdcEvent> avroSerializer)
     {
         return new CdcPublisher(vertx,
                                 sidecarConfiguration,
@@ -415,7 +408,7 @@ public class CdcModule extends AbstractModule
                                 virtualTables,
                                 sidecarCdcStats,
                                 avroSerializer,
-                                rangeManager);
+                                () -> new ContentionFreeRangeManager(vertx, tokenRingProvider));
     }
 
     @Singleton

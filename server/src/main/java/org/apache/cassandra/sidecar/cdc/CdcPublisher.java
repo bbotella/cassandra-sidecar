@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -96,7 +97,6 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     private final CdcDatabaseAccessor databaseAccessor;
     private final VirtualTablesDatabaseAccessor virtualTables;
     private final SidecarCdcStats sidecarCdcStats;
-    private RangeManager rangeManager;
     private final SchemaSupplier schemaSupplier;
     private final CdcSidecarInstancesProvider sidecarInstancesProvider;
     private final InstanceMetadataFetcher instanceMetadataFetcher;
@@ -106,6 +106,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     private final SidecarConfiguration sidecarConfiguration;
     private CdcManager cdcManager;
     private Serializer<CdcEvent> avroSerializer;
+    private Provider<RangeManager> rangeManagerProvider;
 
     @Inject
     public CdcPublisher(Vertx vertx,
@@ -122,7 +123,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
                         VirtualTablesDatabaseAccessor virtualTables,
                         SidecarCdcStats sidecarCdcStats,
                         Serializer<CdcEvent> avroSerializer,
-                        RangeManager rangeManager)
+                        Provider<RangeManager> rangeManagerProvider)
     {
         this.sidecarCdcStats = sidecarCdcStats;
         this.executorPools = executorPools.internal();
@@ -138,7 +139,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
         this.cdcStats = cdcStats;
         this.sidecarConfiguration = sidecarConfiguration;
         this.avroSerializer = avroSerializer;
-        this.rangeManager = rangeManager;
+        this.rangeManagerProvider = rangeManagerProvider;
         vertx.eventBus().localConsumer(RangeManager.RangeManagerEvents.ON_TOKEN_RANGE_CHANGED.address(), this);
         vertx.eventBus().localConsumer(RangeManager.LeadershipEvents.ON_TOKEN_RANGE_GAINED.address(), this);
         vertx.eventBus().localConsumer(RangeManager.LeadershipEvents.ON_TOKEN_RANGE_LOST.address(), this);
@@ -224,7 +225,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
         cdcManager = new CdcManager(eventConsumer(conf, avroSerializer),
                                     schemaSupplier,
                                     conf,
-                                    rangeManager,
+                                    rangeManagerProvider.get(),
                                     instanceMetadataFetcher,
                                     clusterConfigProvider,
                                     sidecarInstancesProvider,
@@ -291,7 +292,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     {
         try
         {
-            String localDc = rangeManager.getLocalDcSafe();
+            String localDc = rangeManagerProvider.get().getLocalDcSafe();
             if (conf.datacenter() != null && !conf.datacenter().isEmpty() && !conf.datacenter().equals(localDc))
             {
                 LOGGER.info("Cdc not enabled in this DC localDc={} cdcDc={}", localDc, conf.datacenter());

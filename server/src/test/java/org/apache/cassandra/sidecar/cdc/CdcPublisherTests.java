@@ -26,6 +26,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.google.inject.Provider;
 import io.vertx.core.Vertx;
 import org.apache.cassandra.cdc.api.EventConsumer;
 import org.apache.cassandra.cdc.api.SchemaSupplier;
@@ -42,7 +43,6 @@ import org.apache.cassandra.sidecar.config.KeyStoreConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.SslConfiguration;
 import org.apache.cassandra.sidecar.coordination.RangeManager;
-import org.apache.cassandra.sidecar.coordination.TokenRingProvider;
 import org.apache.cassandra.sidecar.db.CdcDatabaseAccessor;
 import org.apache.cassandra.sidecar.db.VirtualTablesDatabaseAccessor;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
@@ -81,15 +81,13 @@ public class CdcPublisherTests
     @Mock
     private ICdcStats cdcStats;
     @Mock
-    private TokenRingProvider tokenRingProvider;
-    @Mock
     private VirtualTablesDatabaseAccessor virtualTables;
     @Mock
     private SidecarCdcStats sidecarCdcStats;
     @Mock
     private Serializer<CdcEvent> avroSerializer;
     @Mock
-    private RangeManager rangeManager;
+    private Provider<RangeManager> rangeManager;
 
     private SidecarConfiguration sidecarConfiguration;
     private CdcConfig cdcConfig;
