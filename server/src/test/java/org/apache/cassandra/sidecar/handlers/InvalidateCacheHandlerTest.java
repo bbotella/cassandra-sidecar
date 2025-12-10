@@ -30,7 +30,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -79,15 +78,11 @@ public class InvalidateCacheHandlerTest
     IdentityToRoleCache mockIdentityToRoleCache = mock(IdentityToRoleCache.class);
     RoleAuthorizationsCache mockRoleAuthorizationsCache = mock(RoleAuthorizationsCache.class);
     SuperUserCache mockSuperUserCache = mock(SuperUserCache.class);
-    AsyncCache<AuthorizationCacheKey, Future<Boolean>> mockEndpointAuthorizationCache = mock(AsyncCache.class);
-    Cache<AuthorizationCacheKey, Future<Boolean>> mockSyncCache = mock(Cache.class);
+    Cache<AuthorizationCacheKey, Future<Boolean>> mockEndpointAuthorizationCache = mock(Cache.class);
 
     @BeforeEach
     void before() throws InterruptedException
     {
-        // Stub the AsyncCache.synchronous() to return the sync cache mock
-        when(mockEndpointAuthorizationCache.synchronous()).thenReturn(mockSyncCache);
-
         Injector injector;
         Module testOverride = Modules.override(new TestModule())
                                      .with(new InvalidateCacheTestModule());
