@@ -40,8 +40,8 @@ import org.apache.cassandra.sidecar.db.CdcConfigAccessor;
 import org.apache.cassandra.sidecar.tasks.CdcConfigRefresherNotifierTask;
 import org.apache.cassandra.sidecar.tasks.PeriodicTaskExecutor;
 
-import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CDC_CONFIG_MAPPINGS_CHANGED;
 import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CDC_CONFIGURATION_CHANGED;
+import static org.apache.cassandra.sidecar.server.SidecarServerEvents.ON_CDC_CONFIG_MAPPINGS_CHANGED;
 import static org.apache.cassandra.testing.utils.AssertionUtils.loopAssert;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
