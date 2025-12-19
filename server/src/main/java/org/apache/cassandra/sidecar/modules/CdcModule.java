@@ -19,7 +19,6 @@
 package org.apache.cassandra.sidecar.modules;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.ProvidesIntoMap;
@@ -61,7 +60,6 @@ import org.apache.cassandra.sidecar.coordination.CassandraClientTokenRingProvide
 import org.apache.cassandra.sidecar.coordination.ContentionFreeRangeManager;
 import org.apache.cassandra.sidecar.coordination.DynamicSidecarInstancesProvider;
 import org.apache.cassandra.sidecar.coordination.InnerDcTokenAdjacentPeerProvider;
-import org.apache.cassandra.sidecar.coordination.RangeManager;
 import org.apache.cassandra.sidecar.coordination.SidecarHttpHealthProvider;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthMonitorTask;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthProvider;
