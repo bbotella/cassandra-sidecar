@@ -295,6 +295,22 @@ public class CdcManagerTest
         assertThat(consumers).hasSize(1);
     }
 
+    @Test
+    void testResolveToSameAddressTrue()
+    {
+        String address1 = "127.0.0.1";
+        String address2 = "localhost";
+        assertThat(CdcManager.resolveToSameAddress(address1, address2)).isTrue();
+    }
+
+    @Test
+    void testResolveToSameAddressFalse()
+    {
+        String address1 = "127.0.0.1";
+        String address2 = "127.0.0.2";
+        assertThat(CdcManager.resolveToSameAddress(address1, address2)).isFalse();
+    }
+
     // Helper methods
 
     private TokenRange mockTokenRange(BigInteger start, BigInteger end)

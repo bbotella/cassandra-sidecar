@@ -105,8 +105,8 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     private final ICdcStats cdcStats;
     private final SidecarConfiguration sidecarConfiguration;
     private CdcManager cdcManager;
-    private Serializer<CdcEvent> avroSerializer;
-    private Provider<RangeManager> rangeManagerProvider;
+    private final Serializer<CdcEvent> avroSerializer;
+    private final Provider<RangeManager> rangeManagerProvider;
 
     @Inject
     public CdcPublisher(Vertx vertx,

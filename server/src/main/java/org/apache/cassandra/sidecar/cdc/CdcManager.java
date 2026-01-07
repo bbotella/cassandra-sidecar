@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,7 +128,7 @@ public class CdcManager
         }
 
         // NEW: Deduplicate by (instanceId, tokenRange) to prevent duplicate consumers
-        Map<String, SidecarCdc> uniqueConsumers = new HashMap<>();
+        Map<String, SidecarCdc> uniqueConsumers = new HashMap<>(ownedRanges.values().stream().mapToInt(Set::size).sum());
 
         ownedRanges.entrySet().stream()
                    .flatMap(entry ->
@@ -163,8 +162,7 @@ public class CdcManager
                                         throw new RuntimeException(e);
                                     }
                                 });
-                            }))
-                   .collect(Collectors.toList());
+                            }));
 
         consumers = new ArrayList<>(uniqueConsumers.values());
         return consumers;
@@ -211,10 +209,10 @@ public class CdcManager
     {
         for (InstanceMetadata instance : instanceFetcher.allLocalInstances())
         {
-            String configuredHost = instance.ipAddress();
+            String configuredIpAddress = instance.ipAddress();
 
             // Option 1a: Normalize both to InetAddress and compare
-            if (resolveToSameAddress(instanceIp, configuredHost))
+            if (resolveToSameAddress(instanceIp, configuredIpAddress))
             {
                 return instance.id();
             }
@@ -223,18 +221,18 @@ public class CdcManager
         return -1;
     }
 
-    private boolean resolveToSameAddress(String host1, String host2)
+    public static boolean resolveToSameAddress(String address1, String address2)
     {
         try
         {
-            InetAddress addr1 = InetAddress.getByName(host1);
-            InetAddress addr2 = InetAddress.getByName(host2);
+            InetAddress addr1 = InetAddress.getByName(address1);
+            InetAddress addr2 = InetAddress.getByName(address2);
             return addr1.equals(addr2);
         }
         catch (UnknownHostException e)
         {
             LOGGER.warn("Could not resolve hostname: {}", e.getMessage());
-            return host1.equals(host2); // Fallback to string comparison
+            return address1.equals(address2); // Fallback to string comparison
         }
     }
 

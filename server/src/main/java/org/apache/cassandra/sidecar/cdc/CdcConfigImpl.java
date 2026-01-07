@@ -54,8 +54,8 @@ public class CdcConfigImpl implements CdcConfig
     private final Vertx vertx;
     private final CdcConfigAccessor cdcConfigAccessor;
 
-    private Map<String, String> kafkaConfigMappings = Map.of();
-    private Map<String, String> cdcConfigMappings = Map.of();
+    private volatile Map<String, String> kafkaConfigMappings = Map.of();
+    private volatile Map<String, String> cdcConfigMappings = Map.of();
 
     @Inject
     public CdcConfigImpl(Vertx vertx,

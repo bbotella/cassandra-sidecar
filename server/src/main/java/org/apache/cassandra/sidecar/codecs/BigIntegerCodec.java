@@ -55,7 +55,7 @@ public class BigIntegerCodec implements MessageCodec<BigInteger, BigInteger>
      */
     public BigInteger decodeFromWire(int pos, Buffer buf)
     {
-        return decodeFromWire(new MutableInt(pos), buf);
+        return new BigInteger(CommonCodecs.BYTE_ARRAY.decodeFromWire(pos, buf));
     }
 
     /**
