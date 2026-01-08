@@ -42,11 +42,11 @@ cassandra_instances:
 
     # Directory where Cassandra stores mutations. If not set, the default directory is
     # <storage_dir>/cdc_raw.
-    cdc_dir: /var/lib/cassandra/cdc_raw
+    #cdc_dir: /var/lib/cassandra/cdc_raw
 
     # Directory where Cassandra stores the commit logs. If not set, the default directory
     # is <storage_dir>/commitlog
-    commitlog_dir: /var/lib/cassandra/commitlog
+    #commitlog_dir: /var/lib/cassandra/commitlog
 
     # Directory where Cassandra stores hints. If not set, the default directory is
     # <storage_dir>/hints.
