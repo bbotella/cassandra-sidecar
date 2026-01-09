@@ -96,7 +96,10 @@ public class CachingSchemaStore implements SchemaStore
         this.cdcConfig = cdcConfig;
         this.sidecarCdcStats = sidecarCdcStats;
 
-        configureSidecarServerEventListeners();
+        if (cdcConfig.cdcEnabled())
+        {
+            configureSidecarServerEventListeners();
+        }
     }
 
     private void loadPublisher()
