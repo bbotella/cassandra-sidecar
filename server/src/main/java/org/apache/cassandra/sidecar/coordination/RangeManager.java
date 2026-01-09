@@ -142,12 +142,7 @@ public abstract class RangeManager implements Handler<Message<Object>>
         }
         catch (IllegalStateException ise)
         {
-            if (ise.getMessage().contains("Already a default codec registered"))
-            {
-                // TODO: do not register codec in the constructor when OSS; All codecs should be managed in a central repository
-                // ignore
-            }
-            else
+            if (!ise.getMessage().contains("Already a default codec registered"))
             {
                 throw ise;
             }
