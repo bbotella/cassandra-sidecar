@@ -142,12 +142,16 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
         this.sidecarConfiguration = sidecarConfiguration;
         this.avroSerializer = avroSerializer;
         this.rangeManagerProvider = rangeManagerProvider;
-        vertx.eventBus().localConsumer(RangeManager.RangeManagerEvents.ON_TOKEN_RANGE_CHANGED.address(), this);
-        vertx.eventBus().localConsumer(RangeManager.LeadershipEvents.ON_TOKEN_RANGE_GAINED.address(), this);
-        vertx.eventBus().localConsumer(RangeManager.LeadershipEvents.ON_TOKEN_RANGE_LOST.address(), this);
-        vertx.eventBus().localConsumer(ON_SERVER_STOP.address(), this);
-        vertx.eventBus().localConsumer(ON_CDC_CACHE_WARMED_UP.address(), this);
-        vertx.eventBus().localConsumer(ON_CDC_CONFIGURATION_CHANGED.address(), new ConfigChangedHandler());
+
+        if (conf.cdcEnabled())
+        {
+            vertx.eventBus().localConsumer(RangeManager.RangeManagerEvents.ON_TOKEN_RANGE_CHANGED.address(), this);
+            vertx.eventBus().localConsumer(RangeManager.LeadershipEvents.ON_TOKEN_RANGE_GAINED.address(), this);
+            vertx.eventBus().localConsumer(RangeManager.LeadershipEvents.ON_TOKEN_RANGE_LOST.address(), this);
+            vertx.eventBus().localConsumer(ON_SERVER_STOP.address(), this);
+            vertx.eventBus().localConsumer(ON_CDC_CACHE_WARMED_UP.address(), this);
+            vertx.eventBus().localConsumer(ON_CDC_CONFIGURATION_CHANGED.address(), new ConfigChangedHandler());
+        }
     }
 
     public SecretsProvider secretsProvider()
