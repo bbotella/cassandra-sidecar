@@ -85,7 +85,6 @@ public class CachingSchemaStore implements SchemaStore
                        SidecarSchema sidecarSchema,
                        CqlToAvroSchemaConverter cqlToAvroSchemaConverter)
     {
-        super();
         this.cassandraClusterSchemaMonitor = cassandraClusterSchemaMonitor;
         this.tableHistoryDatabaseAccessor = tableHistoryDatabaseAccessor;
         this.sidecarSchema = sidecarSchema;
@@ -102,7 +101,11 @@ public class CachingSchemaStore implements SchemaStore
 
     private void loadPublisher()
     {
-        KafkaOptions kafkaOptions = () -> cdcConfig.kafkaConfigs();
+        KafkaOptions kafkaOptions = cdcConfig::kafkaConfigs;
+        if (this.publisher != null)
+        {
+            this.publisher.close();
+        }
         this.publisher = SchemaStorePublisherFactory.DEFAULT.buildPublisher(kafkaOptions);
     }
 
@@ -171,9 +174,9 @@ public class CachingSchemaStore implements SchemaStore
                 }
                 return v;
             });
-            loadPublisher();
-            publishSchemas();
         }
+        loadPublisher();
+        publishSchemas();
         // Remove any old schema entries for deleted tables, this operation can be done in the end as this is
         // only for removing stale entries and no one is going to use these entries once the table is removed.
         // This doesn't have to be an atomic operation.

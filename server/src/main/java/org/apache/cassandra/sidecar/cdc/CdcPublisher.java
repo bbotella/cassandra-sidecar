@@ -107,6 +107,8 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     private CdcManager cdcManager;
     private final Serializer<CdcEvent> avroSerializer;
     private final Provider<RangeManager> rangeManagerProvider;
+    KafkaProducer<String, byte[]> producer;
+    KafkaPublisher kafkaPublisher;
 
     @Inject
     public CdcPublisher(Vertx vertx,
@@ -189,8 +191,16 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     public EventConsumer eventConsumer(CdcConfig conf,
                                        Serializer<CdcEvent> avroSerializer)
     {
-        KafkaProducer<String, byte[]> producer = new KafkaProducer<>(conf.kafkaConfigs());
-        KafkaPublisher kafkaPublisher = new KafkaPublisher(TopicSupplier.staticTopicSupplier(conf.kafkaTopic()),
+        if (this.producer != null)
+        {
+            this.producer.close();
+        }
+        if (this.kafkaPublisher != null)
+        {
+            this.kafkaPublisher.close();
+        }
+        this.producer = new KafkaProducer<>(conf.kafkaConfigs());
+        this.kafkaPublisher = new KafkaPublisher(TopicSupplier.staticTopicSupplier(conf.kafkaTopic()),
                                                            producer,
                                                            avroSerializer,
                                                            conf.maxRecordSizeBytes(),

@@ -164,7 +164,7 @@ public class CdcManager
                                     }
                                 });
                             }))
-                   .collect(Collectors.toList());;
+                   .collect(Collectors.toList());
 
         consumers = new ArrayList<>(uniqueConsumers.values());
         return consumers;

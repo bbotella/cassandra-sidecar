@@ -114,8 +114,22 @@ public enum SidecarServerEvents
      */
     ON_SIDECAR_GLOBAL_LEASE_LOST,
 
+    /**
+     * The {@link io.vertx.core.eventbus.EventBus} address where events will be published when the CDC
+     * (Change Data Capture) configuration has been changed or updated.
+     */
     ON_CDC_CONFIGURATION_CHANGED,
+
+    /**
+     * The {@link io.vertx.core.eventbus.EventBus} address where events will be published when the CDC
+     * cache has been warmed up and is ready for use.
+     */
     ON_CDC_CACHE_WARMED_UP,
+
+    /**
+     * The {@link io.vertx.core.eventbus.EventBus} address where events will be published when the CDC
+     * configuration mappings have been changed or reloaded.
+     */
     ON_CDC_CONFIG_MAPPINGS_CHANGED,
     ;
 

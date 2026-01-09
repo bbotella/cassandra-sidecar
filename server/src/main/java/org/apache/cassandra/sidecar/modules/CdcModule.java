@@ -414,8 +414,8 @@ public class CdcModule extends AbstractModule
     @KeyClassMapKey(PeriodicTaskMapKeys.CdcConfigRefresherNotifierKey.class)
     PeriodicTask cdcConfigRefresherNotifier(Vertx vertx,
                                             SidecarConfiguration sidecarConfiguration,
-                                    KafkaConfigAccessor kafkaConfigAccessor,
-                                    CdcConfigAccessor cdcConfigAccessor)
+                                            KafkaConfigAccessor kafkaConfigAccessor,
+                                            CdcConfigAccessor cdcConfigAccessor)
     {
         return new CdcConfigRefresherNotifierTask(vertx,
                                                   sidecarConfiguration,
