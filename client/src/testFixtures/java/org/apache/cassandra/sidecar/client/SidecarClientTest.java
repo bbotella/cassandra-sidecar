@@ -1469,6 +1469,31 @@ abstract class SidecarClientTest
     }
 
     @Test
+    public void testNodeMove() throws Exception
+    {
+        UUID jobId = UUID.randomUUID();
+        String newToken = "123456789";
+        String nodeMoveString = "{\"jobId\":\"" + jobId + "\",\"jobStatus\":\"SUCCEEDED\"}";
+
+        MockResponse response = new MockResponse()
+                                .setResponseCode(OK.code())
+                                .setHeader("content-type", "application/json")
+                                .setBody(nodeMoveString);
+        enqueue(response);
+
+        SidecarInstanceImpl sidecarInstance = RequestExecutorTest.newSidecarInstance(servers.get(0));
+        OperationalJobResponse result = client.nodeMove(sidecarInstance, newToken).get(30, TimeUnit.SECONDS);
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo(OperationalJobStatus.SUCCEEDED);
+        validateResponseServed(ApiEndpointsV1.NODE_MOVE_ROUTE, request -> {
+            // Verify that the request body contains the expected JSON payload
+            String requestBody = request.getBody().readUtf8();
+            assertThat(requestBody).contains("\"newToken\":\"" + newToken + "\"");
+            assertThat(request.getHeader("Content-Type")).isEqualTo("application/json");
+        });
+    }
+
+    @Test
     void testFailsWithOneAttemptPerServer()
     {
         for (MockWebServer server : servers)

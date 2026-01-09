@@ -225,4 +225,10 @@ public class GossipDependentStorageJmxOperations implements StorageJmxOperations
     {
         return delegate.getCompactionThroughputMbPerSec();
     }
+
+    @Override
+    public void move(String newToken) throws IOException
+    {
+        delegate.move(newToken);
+    }
 }
