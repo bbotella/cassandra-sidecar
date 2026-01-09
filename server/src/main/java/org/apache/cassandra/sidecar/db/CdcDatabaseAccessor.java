@@ -20,7 +20,6 @@
 package org.apache.cassandra.sidecar.db;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -39,11 +38,13 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
 import com.google.inject.Singleton;
+
 import org.apache.cassandra.bridge.TokenRange;
 import org.apache.cassandra.sidecar.common.server.CQLSessionProvider;
 import org.apache.cassandra.sidecar.db.schema.CdcStatesSchema;
-import org.apache.cassandra.sidecar.db.schema.TableHistorySchema;
+import org.apache.cassandra.sidecar.db.schema.SidecarSchema;
 import org.apache.cassandra.sidecar.utils.ByteBufUtils;
+import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.cassandra.sidecar.utils.TokenSplitUtil;
 import org.apache.cassandra.spark.data.partitioner.Partitioner;
 import org.apache.cassandra.spark.utils.TableIdentifier;
@@ -61,19 +62,19 @@ import org.jetbrains.annotations.NotNull;
 public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CdcDatabaseAccessor.class);
-    private final TableHistorySchema tableHistorySchema;
     private final Provider<TokenSplitUtil> tokenSplitUtilProvider;
     private volatile TokenSplitUtil tokenSplitUtil = null;
+    private final InstanceMetadataFetcher instanceMetadataFetcher;
 
     @Inject
-    public CdcDatabaseAccessor(CdcStatesSchema cdcStatesSchema,
-                               TableHistorySchema tableHistorySchema,
+    public CdcDatabaseAccessor(SidecarSchema sidecarSchema,
                                CQLSessionProvider sessionProvider,
-                               Provider<TokenSplitUtil> tokenSplitUtilProvider)
+                               Provider<TokenSplitUtil> tokenSplitUtilProvider,
+                               InstanceMetadataFetcher instanceMetadataFetcher)
     {
-        super(cdcStatesSchema, sessionProvider);
-        this.tableHistorySchema = tableHistorySchema;
+        super(sidecarSchema.tableSchema(CdcStatesSchema.class), sessionProvider);
         this.tokenSplitUtilProvider = tokenSplitUtilProvider;
+        this.instanceMetadataFetcher = instanceMetadataFetcher;
     }
 
     protected TokenSplitUtil tokenSplitUtil()
@@ -115,7 +116,7 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
         // write state into all overlapping splits
         int[] splits = tokenSplitUtil().findOverlappingSplitIds(partitioner(), range);
         LOGGER.debug("Inserting CDC state into splits lower={} upper={} splits='{}'", 
-                     range.lowerEndpoint(), range.upperEndpoint(), 
+                     range.lowerEndpoint(), range.upperEndpoint(),
                      Arrays.stream(splits).mapToObj(Integer::toString).collect(Collectors.joining(",")));
         return Arrays.stream(splits)
                      .mapToObj(split -> session().executeAsync(tableSchema.insertState().bind(
@@ -141,7 +142,7 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
         // read state from multiple shards that could overlap with range
         int[] splits = tokenSplitUtil().findOverlappingSplitIds(partitioner(), range);
         LOGGER.info("Reading CDC state from splits lower={} upper={} splits='{}'", 
-                    range.lowerEndpoint(), range.upperEndpoint(), 
+                    range.lowerEndpoint(), range.upperEndpoint(),
                     Arrays.stream(splits).mapToObj(Integer::toString).collect(Collectors.joining(",")));
         Stream<ResultSetFuture> futures = Arrays.stream(splits)
                                                 .mapToObj(split -> selectCdcRange(jobId, split));
@@ -180,32 +181,5 @@ public class CdcDatabaseAccessor extends DatabaseAccessor<CdcStatesSchema>
     ResultSetFuture selectCdcRange(String jobId, int split)
     {
         return session().executeAsync(tableSchema.select().bind(jobId, (short) split));
-    }
-
-    public ResultSetFuture insertTableSchemaHistory(String keyspace, String tableName, String schema)
-    {
-        UUID schemaUuid = UUID.nameUUIDFromBytes(schema.getBytes(StandardCharsets.UTF_8));
-        return session().executeAsync(tableHistorySchema
-                                      .insertTableSchema()
-                                      .bind(keyspace, tableName, schemaUuid, schema));
-    }
-
-    public String tableSchemaFromVersion(String keyspace, String tableName, String version)
-    {
-        UUID schemaUuid = UUID.fromString(version);
-        try
-        {
-            Row row = session()
-                      .executeAsync(tableHistorySchema
-                                    .selectVersionTableSchema()
-                                    .bind(keyspace, tableName, schemaUuid))
-                      .get()
-                      .one();
-            return row == null ? null : row.getString("table_schema");
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 }

@@ -129,6 +129,11 @@ public class CassandraClusterSchemaMonitor implements PeriodicTask
         }
     }
 
+    public Set<CqlTable> getCdcTables()
+    {
+        return cdcTables.get();
+    }
+
     private Partitioner getPartitioner(NodeSettings nodeSettings)
     {
         if (nodeSettings.partitioner().contains("."))
@@ -219,8 +224,8 @@ public class CassandraClusterSchemaMonitor implements PeriodicTask
                                    TableIdentifier id = e.getKey();
                                    ReplicationFactor rf = CqlUtils.extractReplicationFactor(fullSchema, id.keyspace());
 
-                                   return cassandraBridge.buildSchema(e.getValue(), id.keyspace(), rf, 
-                                                                      partitioner, udtsPerKeyspace.get(id.keyspace()), 
+                                   return cassandraBridge.buildSchema(e.getValue(), id.keyspace(), rf,
+                                                                      partitioner, udtsPerKeyspace.get(id.keyspace()),
                                                                       tableIds.get(id), 0, true);
                                })
                           .collect(Collectors.toSet());

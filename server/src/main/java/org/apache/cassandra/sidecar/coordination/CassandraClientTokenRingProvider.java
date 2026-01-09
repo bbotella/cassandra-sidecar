@@ -37,7 +37,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +67,7 @@ public class CassandraClientTokenRingProvider extends TokenRingProvider implemen
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraClientTokenRingProvider.class);
     @GuardedBy("this")
-    private volatile Map<String, Map<String, List<Range<BigInteger>>>> assignedRangesOfAllInstancesByDcCache = null;
+    private volatile Map<String, Map<String, List<TokenRange>>> assignedRangesOfAllInstancesByDcCache = null;
     @GuardedBy("this")
     private volatile Map<Host, Integer> localHostsCache = null;
     @GuardedBy("this")
@@ -110,7 +109,7 @@ public class CassandraClientTokenRingProvider extends TokenRingProvider implemen
     }
 
     @Override
-    protected Map<String, List<Range<BigInteger>>> getAllTokenRanges(Partitioner partitioner,
+    protected Map<String, List<TokenRange>> getAllTokenRanges(Partitioner partitioner,
                                                                      String dc)
     {
         checkAndReloadReloadCaches();
@@ -122,8 +121,8 @@ public class CassandraClientTokenRingProvider extends TokenRingProvider implemen
     }
 
     @Override
-    public Map<String, List<Range<BigInteger>>> getPrimaryRanges(SidecarInstance instance,
-                                                                 String dc)
+    public Map<String, List<TokenRange>> getPrimaryRanges(SidecarInstance instance,
+                                                                                   String dc)
     {
         checkAndReloadReloadCaches();
         return assignedRangesOfAllInstancesByDcCache.entrySet()
@@ -180,13 +179,13 @@ public class CassandraClientTokenRingProvider extends TokenRingProvider implemen
         return getIp(sidecarInstance.hostname()).equals(hostIp);
     }
 
-    public Map<String, Map<String, List<Range<BigInteger>>>> assignedRangesOfAllInstancesByDc(Metadata metadata)
+    public Map<String, Map<String, List<TokenRange>>> assignedRangesOfAllInstancesByDc(Metadata metadata)
     {
         return assignedRangesOfAllInstancesByDc(dnsResolver, metadata);
     }
 
     @VisibleForTesting
-    public static Map<String, Map<String, List<Range<BigInteger>>>> assignedRangesOfAllInstancesByDc(DnsResolver dnsResolver, Metadata metadata)
+    public static Map<String, Map<String, List<TokenRange>>> assignedRangesOfAllInstancesByDc(DnsResolver dnsResolver, Metadata metadata)
     {
         Partitioner partitioner = extractPartitioner(metadata);
         Map<String, List<CassandraInstance>> perDcHosts = new HashMap<>(4);
@@ -215,7 +214,7 @@ public class CassandraClientTokenRingProvider extends TokenRingProvider implemen
         throw new UnsupportedOperationException("Unsupported token type: " + token.getType());
     }
 
-    protected static Map<String, List<Range<BigInteger>>> calculateTokenRanges(Partitioner partitioner, List<CassandraInstance> sortedPerDcHosts)
+    protected static Map<String, List<TokenRange>> calculateTokenRanges(Partitioner partitioner, List<CassandraInstance> sortedPerDcHosts)
     {
         // RingTopologyRefresher.calculate...
         return calculateTokenRanges(sortedPerDcHosts, 1, partitioner)
@@ -266,7 +265,7 @@ public class CassandraClientTokenRingProvider extends TokenRingProvider implemen
         return perKeyspaceTokenRanges;
     }
 
-    static Multimap<CassandraInstance, Range<BigInteger>> calculateTokenRanges(List<CassandraInstance> instances,
+    static Multimap<CassandraInstance, TokenRange> calculateTokenRanges(List<CassandraInstance> instances,
                                                                                int replicationFactor,
                                                                                Partitioner partitioner)
     {
@@ -275,7 +274,7 @@ public class CassandraClientTokenRingProvider extends TokenRingProvider implemen
                                     "Calculation token ranges wouldn't work when RF ("
                                     + replicationFactor + ") is greater than number of Cassandra instances "
                                     + instances.size());
-        Multimap<CassandraInstance, Range<BigInteger>> tokenRanges = ArrayListMultimap.create();
+        Multimap<CassandraInstance, TokenRange> tokenRanges = ArrayListMultimap.create();
 
         for (int index = 0; index < instances.size(); ++index)
         {
@@ -285,13 +284,13 @@ public class CassandraClientTokenRingProvider extends TokenRingProvider implemen
             BigInteger rangeEnd = new BigInteger(instance.token);
             if (rangeStart.compareTo(rangeEnd) >= 0)
             {
-                tokenRanges.put(instance, Range.openClosed(rangeStart, partitioner.maximumToken().toBigInteger()));
+                tokenRanges.put(instance, new TokenRange(rangeStart, partitioner.maximumToken().toBigInteger()));
                 if (!rangeEnd.equals(partitioner.minimumToken().toBigInteger()))
-                    tokenRanges.put(instance, Range.openClosed(partitioner.minimumToken().toBigInteger(), rangeEnd));
+                    tokenRanges.put(instance, new TokenRange(partitioner.minimumToken().toBigInteger(), rangeEnd));
             }
             else
             {
-                tokenRanges.put(instance, Range.openClosed(rangeStart, rangeEnd));
+                tokenRanges.put(instance, new TokenRange(rangeStart, rangeEnd));
             }
         }
         return tokenRanges;

@@ -34,5 +34,7 @@ public interface PeriodicTaskMapKeys
     interface SidecarPeerHealthMonitorTaskKey extends ClassKey {}
     interface SidecarSchemaInitializerTaskKey extends ClassKey {}
     interface CdcRawDirectorySpaceCleanerTaskKey extends ClassKey {}
+    interface CdcPublisherTaskKey extends ClassKey {}
+    interface CdcConfigRefresherNotifierKey extends ClassKey {}
     interface CassandraClusterSchemaTaskKey extends ClassKey {}
 }

@@ -19,6 +19,7 @@
 
 package org.apache.cassandra.sidecar.cluster;
 
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -41,10 +42,11 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Metadata;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Token;
-import com.datastax.driver.core.TokenRange;
+
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
 import org.apache.cassandra.sidecar.common.response.NodeSettings;
 import org.apache.cassandra.sidecar.common.server.cluster.locator.Partitioners;
+import org.apache.cassandra.sidecar.common.server.cluster.locator.TokenRange;
 import org.apache.cassandra.sidecar.common.server.dns.DnsResolver;
 
 import org.apache.cassandra.sidecar.coordination.CassandraClientTokenRingProvider;
@@ -143,46 +145,65 @@ public class CassandraClientTokenRingProviderTest
                                          .collect(Collectors.toList());
             for (int i = 0; i < tokens.size(); i++)
             {
-                TokenRange tokenRange = mock(TokenRange.class, RETURNS_DEEP_STUBS);
                 Token end = tokens.get(i);
-                Token start = dc.equals("DC1") ? tokens.get((i - 1 + tokens.size()) % tokens.size()) : ((MockToken) end).prev();
-                when(tokenRange.getStart()).thenAnswer(invocation -> start);
-                when(tokenRange.getEnd()).thenAnswer(invocation -> end);
-                when(tokenRange.isWrappedAround()).thenReturn(start.compareTo(end) < 0);
+                Token start;
+                if (dc.equals("DC1"))
+                {
+                    start = tokens.get((i - 1 + tokens.size()) % tokens.size());
+                }
+                else
+                {
+                    // Handle the special case where prev() would fail for MIN_VALUE
+                    MockToken mockEnd = (MockToken) end;
+                    if (mockEnd.token == Long.MIN_VALUE)
+                    {
+                        // For MIN_VALUE, wrap around to MAX_VALUE
+                        start = new MockToken(Long.MAX_VALUE);
+                    }
+                    else
+                    {
+                        start = mockEnd.prev();
+                    }
+                }
+
+                // Create TokenRange with reflection-based mocking to handle final field
+                TokenRange tokenRange = createMockTokenRange(start, end);
                 result.add(tokenRange);
             }
         }
         when(metadata.getTokenRanges()).thenAnswer(invocation -> result);
 
-        Map<String, Map<String, List<Range<BigInteger>>>> tokens = CassandraClientTokenRingProvider.assignedRangesOfAllInstancesByDc(dnsResolver, metadata);
+        Map<String, Map<String, List<TokenRange>>> tokens = CassandraClientTokenRingProvider.assignedRangesOfAllInstancesByDc(dnsResolver, metadata);
         assertFalse(tokens.isEmpty());
         assertTrue(tokens.containsKey("DC1"));
         assertTrue(tokens.containsKey("DC2"));
 
         // DC1 should have zero '1-range' token ranges.
-        List<Range<BigInteger>> dc1Ranges = tokens.get("DC1").values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        List<TokenRange> dc1Ranges = tokens.get("DC1").values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         assertTrue(dc1Ranges.stream().allMatch(range -> {
-            if (range.lowerEndpoint().compareTo(BigInteger.valueOf(Long.parseLong("-9223372036854775808"))) == 0 &&
-                range.lowerEndpoint().compareTo(range.upperEndpoint()) == 0)
+            if (range.range.lowerEndpoint().toBigInteger().compareTo(BigInteger.valueOf(Long.parseLong("-9223372036854775808"))) == 0 &&
+                range.range.lowerEndpoint().compareTo(range.range.upperEndpoint()) == 0)
             {
                 return true;
             }
-            return range.upperEndpoint().subtract(range.lowerEndpoint()).abs().compareTo(BigInteger.ONE) > 0;
+            return range.range.upperEndpoint().toBigInteger().subtract(range.range.lowerEndpoint().toBigInteger()).abs().compareTo(BigInteger.ONE) > 0;
         }));
 
         // DC2 is offset by 1 token so there will be 1 '1-range' token range at minToken
-        List<Range<BigInteger>> dc2Ranges = tokens.get("DC2").values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        List<Range<BigInteger>> oneTokenRanges = dc2Ranges.stream().filter(range ->
-                                                                           range.upperEndpoint()
-                                                                                .subtract(range.lowerEndpoint())
+        List<TokenRange> dc2Ranges = tokens.get("DC2").values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        List<TokenRange> oneTokenRanges = dc2Ranges.stream().filter(range ->
+                                                                           range.range.upperEndpoint().toBigInteger()
+                                                                                .subtract(range.range.lowerEndpoint().toBigInteger())
                                                                                 .abs()
                                                                                 .compareTo(BigInteger.ONE) <= 0)
                                                           .collect(Collectors.toList());
         assertEquals(1, oneTokenRanges.size());
-        assertEquals(Range.openClosed(BigInteger.valueOf(Long.MIN_VALUE), BigInteger.valueOf(Long.MIN_VALUE + 1)), oneTokenRanges.get(0));
+        TokenRange oneTokenRange = oneTokenRanges.get(0);
+        assertEquals(BigInteger.valueOf(Long.MIN_VALUE), oneTokenRange.range.lowerEndpoint().toBigInteger());
+        assertEquals(BigInteger.valueOf(Long.MIN_VALUE + 1), oneTokenRange.range.upperEndpoint().toBigInteger());
         assertTrue(dc2Ranges.stream().filter(f -> f != oneTokenRanges.get(0))
-                            .allMatch(range -> range.upperEndpoint()
-                                                    .subtract(range.lowerEndpoint())
+                            .allMatch(range -> range.range.upperEndpoint().toBigInteger()
+                                                    .subtract(range.range.lowerEndpoint().toBigInteger())
                                                     .abs()
                                                     .compareTo(BigInteger.ONE) > 0));
     }
@@ -204,6 +225,61 @@ public class CassandraClientTokenRingProviderTest
     {
         Set<Host> localInstances = tokenRingProvider.localInstances();
         assertEquals(3, localInstances.size());
+    }
+
+    /**
+     * Creates a properly mocked TokenRange using reflection to set the final range field.
+     * This is necessary because TokenRange.range is a final field that can't be mocked normally.
+     */
+    private static TokenRange createMockTokenRange(Token start, Token end)
+    {
+        try
+        {
+            // Convert Datastax tokens to sidecar tokens
+            org.apache.cassandra.sidecar.common.server.cluster.locator.Token sidecarStart =
+                org.apache.cassandra.sidecar.common.server.cluster.locator.Token.from(((MockToken) start).token);
+            org.apache.cassandra.sidecar.common.server.cluster.locator.Token sidecarEnd =
+                org.apache.cassandra.sidecar.common.server.cluster.locator.Token.from(((MockToken) end).token);
+
+            // Create mock sidecar tokens with proper behavior
+            org.apache.cassandra.sidecar.common.server.cluster.locator.Token mockSidecarStart =
+                mock(org.apache.cassandra.sidecar.common.server.cluster.locator.Token.class);
+            org.apache.cassandra.sidecar.common.server.cluster.locator.Token mockSidecarEnd =
+                mock(org.apache.cassandra.sidecar.common.server.cluster.locator.Token.class);
+
+            // Configure mock token behavior for test assertions
+            when(mockSidecarStart.toBigInteger()).thenReturn(sidecarStart.toBigInteger());
+            when(mockSidecarEnd.toBigInteger()).thenReturn(sidecarEnd.toBigInteger());
+            when(mockSidecarStart.compareTo(mockSidecarEnd)).thenReturn(sidecarStart.compareTo(sidecarEnd));
+            when(mockSidecarStart.compareTo(any())).thenAnswer(invocation -> {
+                org.apache.cassandra.sidecar.common.server.cluster.locator.Token other = invocation.getArgument(0);
+                return sidecarStart.toBigInteger().compareTo(other.toBigInteger());
+            });
+            when(mockSidecarEnd.compareTo(any())).thenAnswer(invocation -> {
+                org.apache.cassandra.sidecar.common.server.cluster.locator.Token other = invocation.getArgument(0);
+                return sidecarEnd.toBigInteger().compareTo(other.toBigInteger());
+            });
+
+            // Create mock Range with proper endpoints
+            @SuppressWarnings("unchecked")
+            Range<org.apache.cassandra.sidecar.common.server.cluster.locator.Token> mockRange =
+                (Range<org.apache.cassandra.sidecar.common.server.cluster.locator.Token>) mock(Range.class);
+
+            when(mockRange.lowerEndpoint()).thenReturn(mockSidecarStart);
+            when(mockRange.upperEndpoint()).thenReturn(mockSidecarEnd);
+
+            // Create TokenRange instance and use reflection to set the final range field
+            TokenRange tokenRange = mock(TokenRange.class);
+            Field rangeField = TokenRange.class.getDeclaredField("range");
+            rangeField.setAccessible(true);
+            rangeField.set(tokenRange, mockRange);
+
+            return tokenRange;
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Failed to create mock TokenRange with reflection", e);
+        }
     }
 
     protected DnsResolver mockDnsResolver()
