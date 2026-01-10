@@ -139,6 +139,7 @@ public final class ApiEndpointsV1
     public static final String CONNECTED_CLIENT_STATS_ROUTE = API_V1 + CASSANDRA + "/stats/connected-clients";
     public static final String COMPACTION_STATS_ROUTE = API_V1 + CASSANDRA + "/stats/compaction";
 
+    private static final String OPERATION_ROUTE = "/operations";
     private static final String OPERATIONAL_JOBS = "/operational-jobs";
     private static final String PER_OPERATIONAL_JOB = OPERATIONAL_JOBS + '/' + OPERATIONAL_JOB_ID_PATH_PARAM;
     public static final String LIST_OPERATIONAL_JOBS_ROUTE = API_V1 + CASSANDRA + OPERATIONAL_JOBS;
@@ -148,7 +149,7 @@ public final class ApiEndpointsV1
     public static final String NODE_DRAIN_ROUTE = API_V1 + CASSANDRA + "/operations/drain";
     public static final String STREAM_STATS_ROUTE = API_V1 + CASSANDRA + "/stats/streams";
     public static final String TABLE_STATS_ROUTE = API_V1 + CASSANDRA + PER_KEYSPACE + PER_TABLE + "/stats";
-
+    public static final String COMPACTION_STOP_ROUTE = API_V1 + CASSANDRA + OPERATION_ROUTE + "/compaction/stop";
 
     // Live Migration APIs
     public static final String LIVE_MIGRATION_API_PREFIX = API_V1 + "/live-migration";

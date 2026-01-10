@@ -34,6 +34,7 @@ import org.apache.cassandra.sidecar.common.request.CassandraNativeHealthRequest;
 import org.apache.cassandra.sidecar.common.request.CleanSSTableUploadSessionRequest;
 import org.apache.cassandra.sidecar.common.request.ClearSnapshotRequest;
 import org.apache.cassandra.sidecar.common.request.CompactionStatsRequest;
+import org.apache.cassandra.sidecar.common.request.CompactionStopRequest;
 import org.apache.cassandra.sidecar.common.request.ConnectedClientStatsRequest;
 import org.apache.cassandra.sidecar.common.request.CreateSnapshotRequest;
 import org.apache.cassandra.sidecar.common.request.GossipHealthRequest;
@@ -62,6 +63,7 @@ import org.apache.cassandra.sidecar.common.request.TableStatsRequest;
 import org.apache.cassandra.sidecar.common.request.TimeSkewRequest;
 import org.apache.cassandra.sidecar.common.request.TokenRangeReplicasRequest;
 import org.apache.cassandra.sidecar.common.request.UploadSSTableRequest;
+import org.apache.cassandra.sidecar.common.request.data.CompactionStopRequestPayload;
 import org.apache.cassandra.sidecar.common.request.data.Digest;
 import org.apache.cassandra.sidecar.common.request.data.NodeCommandRequestPayload;
 import org.apache.cassandra.sidecar.common.response.ListSnapshotFilesResponse;
@@ -554,6 +556,18 @@ public class RequestContext
         public Builder compactionStatsRequest()
         {
             return request(new CompactionStatsRequest());
+        }
+
+        /**
+         * Sets the {@code request} to be a {@link CompactionStopRequest} and returns a reference to this Builder
+         * enabling method chaining.
+         *
+         * @param payload the payload containing compaction type or ID to stop
+         * @return a reference to this Builder
+         */
+        public Builder compactionStopRequest(CompactionStopRequestPayload payload)
+        {
+            return request(new CompactionStopRequest(payload));
         }
 
         /**

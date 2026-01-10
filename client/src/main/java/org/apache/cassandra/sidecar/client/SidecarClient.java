@@ -55,6 +55,7 @@ import org.apache.cassandra.sidecar.common.request.UpdateRestoreJobRequest;
 import org.apache.cassandra.sidecar.common.request.UpdateServiceConfigRequest;
 import org.apache.cassandra.sidecar.common.request.data.AbortRestoreJobRequestPayload;
 import org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload;
+import org.apache.cassandra.sidecar.common.request.data.CompactionStopRequestPayload;
 import org.apache.cassandra.sidecar.common.request.data.CreateRestoreJobRequestPayload;
 import org.apache.cassandra.sidecar.common.request.data.CreateSliceRequestPayload;
 import org.apache.cassandra.sidecar.common.request.data.Digest;
@@ -63,6 +64,7 @@ import org.apache.cassandra.sidecar.common.request.data.RestoreJobProgressReques
 import org.apache.cassandra.sidecar.common.request.data.UpdateCdcServiceConfigPayload;
 import org.apache.cassandra.sidecar.common.request.data.UpdateRestoreJobRequestPayload;
 import org.apache.cassandra.sidecar.common.response.CompactionStatsResponse;
+import org.apache.cassandra.sidecar.common.response.CompactionStopResponse;
 import org.apache.cassandra.sidecar.common.response.ConnectedClientStatsResponse;
 import org.apache.cassandra.sidecar.common.response.GossipInfoResponse;
 import org.apache.cassandra.sidecar.common.response.HealthResponse;
@@ -765,6 +767,22 @@ public class SidecarClient implements AutoCloseable, SidecarClientBlobRestoreExt
         return executor.executeRequestAsync(requestBuilder()
                                             .singleInstanceSelectionPolicy(instance)
                                             .compactionStatsRequest()
+                                            .build());
+    }
+
+    /**
+     * Executes the compaction stop request using the default retry policy and provided {@code instance}.
+     *
+     * @param instance the instance where the request will be executed
+     * @param payload the payload containing compaction type or ID to stop
+     * @return a completable future of the compaction stop response
+     */
+    public CompletableFuture<CompactionStopResponse> compactionStop(SidecarInstance instance,
+                                                                    CompactionStopRequestPayload payload)
+    {
+        return executor.executeRequestAsync(requestBuilder()
+                                            .singleInstanceSelectionPolicy(instance)
+                                            .compactionStopRequest(payload)
                                             .build());
     }
 

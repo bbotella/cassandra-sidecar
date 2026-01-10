@@ -32,4 +32,24 @@ public interface CompactionManagerOperations
      * @return list of compaction info maps
      */
     List<Map<String, String>> getCompactions();
+
+    /**
+     * Stops compaction based on compaction ID.
+     * This method takes precedence over stopCompaction if both type and ID are provided.
+     *
+     * @param compactionId   the compaction ID to stop (nullable)
+     * @throws IllegalArgumentException if both parameters are null or empty
+     */
+    void stopCompactionById(String compactionId);
+
+    /**
+     * Stops compaction based on type if no compaction ID is provided.
+     * Checks for unupported compaction type across Cassandra versions, as set of compactions type varies slightly
+     * between Cassandra.4x and Cassandra.5x
+     * @param compactionType   the compaction ID to stop (nullable)
+     * @throws IllegalArgumentException if both parameters are null or empty, or of the provided compactionType is unsupported
+     */
+    void stopCompaction(String compactionType);
+
+    List<String> supportedCompactionTypes();
 }

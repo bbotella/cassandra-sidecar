@@ -15,35 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.cassandra.sidecar.adapters.base.jmx;
-
-import java.util.List;
-import java.util.Map;
+package org.apache.cassandra.sidecar.common.data;
 
 /**
- * An interface that pulls methods from the Cassandra CompactionManager JMX proxy
+ * Status values for compaction stop operations
  */
-public interface CompactionManagerJmxOperations
+public enum CompactionStopStatus
 {
-    String COMPACTION_MANAGER_OBJ_NAME = "org.apache.cassandra.db:type=CompactionManager";
+    /**
+     * Compaction stop request submitted to Cassandra - ongoing compactions now stopping
+     */
+    SUBMITTED,
 
     /**
-     * Returns active compactions as a list of compaction info maps
-     *
-     * @return list of compaction info maps
+     * Compaction stop request failed
      */
-    List<Map<String, String>> getCompactions();
-
-    /**
-     * Stop compaction by type
-     * @throws IllegalArgumentException when compaction type is null
-     */
-    void stopCompaction(String type);
-
-    /**
-     * Stop compaction by ID
-     * @throws IllegalArgumentException when compaction ID is null
-     */
-    void stopCompactionById(String compactionId);
+    FAILED;
 }
