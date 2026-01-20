@@ -21,6 +21,7 @@ package org.apache.cassandra.sidecar.acl.authentication;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.vertx.core.Future;
 import io.vertx.ext.auth.authentication.CertificateCredentials;
 import io.vertx.ext.auth.authentication.CredentialValidationException;
 import io.vertx.ext.auth.mtls.impl.SpiffeIdentityExtractor;
@@ -44,22 +45,38 @@ public class CassandraIdentityExtractor extends SpiffeIdentityExtractor
     }
 
     @Override
-    public List<String> validIdentities(CertificateCredentials certificateCredentials) throws CredentialValidationException
+    public Future<List<String>> validIdentities(CertificateCredentials certificateCredentials)
     {
-        List<String> identities = super.validIdentities(certificateCredentials);
-        List<String> allowedIdentities = new ArrayList<>();
-        for (String identity : identities)
-        {
-            // Sidecar recognizes identities in identity_to_role table as authenticated
-            if (adminIdentityResolver.isAdmin(identity) || identityToRoleCache.containsKey(identity))
-            {
-                allowedIdentities.add(identity);
-            }
-        }
-        if (allowedIdentities.isEmpty())
-        {
-            throw new CredentialValidationException("Could not extract valid identities from certificate");
-        }
-        return allowedIdentities;
+        return super.validIdentities(certificateCredentials)
+                    .compose(identities -> {
+                        List<Future<Boolean>> validityCheckFutures = new ArrayList<>();
+                        for (String identity : identities)
+                        {
+                            // Sidecar recognizes admin identities or identities in identity_to_role table as authenticated
+                            Future<Boolean> isValidFuture
+                            = adminIdentityResolver.isAdmin(identity)
+                                                   .compose(isAdmin -> isAdmin ? Future.succeededFuture(true)
+                                                                               : identityToRoleCache.containsKey(identity))
+                                                   .otherwise(false);
+                            validityCheckFutures.add(isValidFuture);
+                        }
+                        return Future.all(validityCheckFutures)
+                                     .map(compositeFuture -> {
+                                         List<String> allowedIdentities = new ArrayList<>(identities.size());
+                                         for (int i = 0; i < identities.size(); i++)
+                                         {
+                                             if (compositeFuture.<Boolean>resultAt(i))
+                                             {
+                                                 allowedIdentities.add(identities.get(i));
+                                             }
+                                         }
+                                         if (allowedIdentities.isEmpty())
+                                         {
+                                             throw new CredentialValidationException("Could not extract valid" +
+                                                                                     " identities from certificate");
+                                         }
+                                         return allowedIdentities;
+                                     });
+                    });
     }
 }

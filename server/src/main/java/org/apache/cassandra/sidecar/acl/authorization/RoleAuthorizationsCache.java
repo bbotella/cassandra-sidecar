@@ -24,6 +24,7 @@ import java.util.Set;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.auth.authorization.Authorization;
 import org.apache.cassandra.sidecar.acl.AuthCache;
@@ -79,10 +80,10 @@ public class RoleAuthorizationsCache extends AuthCache<String, Map<String, Set<A
      *
      * @param ignored key for retrieval. Cache always contains one entry stored against unique_cache_entry_key,
      *                hence key is ignored
-     * @return Cache entry stored against unique_cache_entry_key
+     * @return A {@link Future} containing the cache entry stored against unique_cache_entry_key
      */
     @Override
-    public Map<String, Set<Authorization>> get(String ignored)
+    public Future<Map<String, Set<Authorization>>> get(String ignored)
     {
         // RoleAuthorizationsCache stores all entries of role to authorizations mappings against a single key,
         // which is unique_cache_entry_key. This is to refresh and pick up all entries and their changes from
@@ -95,12 +96,16 @@ public class RoleAuthorizationsCache extends AuthCache<String, Map<String, Set<A
      * Provides authorizations given user's role.
      *
      * @param role a role a user holds
-     * @return a {@code Set} of {@link Authorization} a role holds.
+     * @return a {@link Future} containing a {@code Set} of {@link Authorization} a role holds. When role is not present
+     * in cache, a {@link Future} completed with empty set is returned.
      */
-    public Set<Authorization> getAuthorizations(String role)
+    public Future<Set<Authorization>> getAuthorizations(String role)
     {
-        Map<String, Set<Authorization>> roleAuthorizations = get(UNIQUE_CACHE_ENTRY);
-        return roleAuthorizations != null ? roleAuthorizations.get(role) : Collections.emptySet();
+        return get(UNIQUE_CACHE_ENTRY)
+               .map(roleAuthorizations -> {
+                   boolean rolePresent = roleAuthorizations != null && roleAuthorizations.containsKey(role);
+                   return rolePresent ? roleAuthorizations.get(role) : Collections.emptySet();
+               });
     }
 
     private static Map<String, Set<Authorization>> loadAuthorizations(SystemAuthDatabaseAccessor systemAuthDatabaseAccessor,

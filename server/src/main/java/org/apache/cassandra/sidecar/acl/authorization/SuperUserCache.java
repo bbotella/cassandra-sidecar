@@ -20,6 +20,7 @@ package org.apache.cassandra.sidecar.acl.authorization;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.cassandra.sidecar.acl.AuthCache;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
@@ -53,9 +54,8 @@ public class SuperUserCache extends AuthCache<String, Boolean>
               sidecarMetrics.server().cache().superUserCacheMetrics);
     }
 
-    public boolean isSuperUser(String role)
+    public Future<Boolean> isSuperUser(String role)
     {
-        Boolean superUserStatus = get(role);
-        return superUserStatus != null && superUserStatus;
+        return get(role).map(status -> status != null && status);
     }
 }
