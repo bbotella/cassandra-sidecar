@@ -33,9 +33,15 @@ import org.jetbrains.annotations.Nullable;
  */
 public class InstanceConfigurationImpl implements InstanceConfiguration
 {
+    /**
+     * Default storage port for Cassandra inter-node communication.
+     */
+    public static final int DEFAULT_STORAGE_PORT = 7000;
+
     protected final int id;
     protected final String host;
     protected final int port;
+    protected final int storagePort;
     protected final String storageDir;
     protected final List<String> dataDirs;
     protected final String stagingDir;
@@ -55,6 +61,7 @@ public class InstanceConfigurationImpl implements InstanceConfiguration
     public InstanceConfigurationImpl(@JsonProperty("id") int id,
                                      @NotNull @JsonProperty("host") String host,
                                      @JsonProperty("port") int port,
+                                     @Nullable @JsonProperty("storage_port") Integer storagePort,
                                      @Nullable @JsonProperty("storage_dir") String storageDir,
                                      @Nullable @JsonProperty("data_dirs") List<String> dataDirs,
                                      @NotNull @JsonProperty("staging_dir") String stagingDir,
@@ -73,6 +80,7 @@ public class InstanceConfigurationImpl implements InstanceConfiguration
         this.id = id;
         this.host = host;
         this.port = port;
+        this.storagePort = storagePort != null ? storagePort : DEFAULT_STORAGE_PORT;
         this.storageDir = storageDir;
         this.dataDirs = dataDirs != null ? Collections.unmodifiableList(dataDirs) : null;
         this.stagingDir = stagingDir;
@@ -117,6 +125,16 @@ public class InstanceConfigurationImpl implements InstanceConfiguration
     public int port()
     {
         return port;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @JsonProperty("storage_port")
+    public int storagePort()
+    {
+        return storagePort;
     }
 
     @Override

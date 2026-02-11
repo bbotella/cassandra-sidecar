@@ -42,6 +42,11 @@ public interface InstanceConfiguration
     int port();
 
     /**
+     * @return the storage port number used for inter-node communication of the Cassandra instance
+     */
+    int storagePort();
+
+    /**
      * @return storage directory of Cassandra instance
      */
     String storageDir();

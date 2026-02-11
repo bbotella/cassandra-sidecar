@@ -244,6 +244,7 @@ public class ConfigurationModule extends AbstractModule
                                    .id(cassandraInstance.id())
                                    .host(host, dnsResolver)
                                    .port(port)
+                                   .storagePort(cassandraInstance.storagePort())
                                    .storageDir(cassandraInstance.storageDir())
                                    .dataDirs(cassandraInstance.dataDirs())
                                    .stagingDir(cassandraInstance.stagingDir())
