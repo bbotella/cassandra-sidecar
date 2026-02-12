@@ -18,9 +18,9 @@
 
 package org.apache.cassandra.sidecar.cdc;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,19 +76,6 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
     private static final Logger LOGGER = LoggerFactory.getLogger(CdcPublisher.class);
     private static final long INITIALIZATION_LOOP_DELAY_MILLIS = 1000;
 
-    // SSL Configuration Keys
-    private static final String SSL_ENABLED_KEY = "enabled";
-    private static final String SSL_PREFER_OPENSSL_KEY = "preferOpenSSL";
-    private static final String SSL_CLIENT_AUTH_KEY = "clientAuth";
-    private static final String SSL_CIPHER_SUITES_KEY = "cipherSuites";
-    private static final String SSL_SECURE_TRANSPORT_PROTOCOLS_KEY = "secureTransportProtocols";
-    private static final String SSL_HANDSHAKE_TIMEOUT_KEY = "handshakeTimeout";
-    private static final String SSL_KEYSTORE_PATH_KEY = "keystorePath";
-    private static final String SSL_KEYSTORE_PASSWORD_KEY = "keystorePassword";
-    private static final String SSL_KEYSTORE_TYPE_KEY = "keystoreType";
-    private static final String SSL_TRUSTSTORE_PATH_KEY = "truststorePath";
-    private static final String SSL_TRUSTSTORE_PASSWORD_KEY = "truststorePassword";
-    private static final String SSL_TRUSTSTORE_TYPE_KEY = "truststoreType";
     private final TaskExecutorPool executorPools;
     private final CdcConfig conf;
     private volatile boolean isRunning = false;
@@ -163,29 +150,22 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
             return null;
         }
 
-        Map<String, String> sslConfigMap = new HashMap<>();
-
-        sslConfigMap.put(SSL_ENABLED_KEY, sslConfiguration.enabled() + "");
-        sslConfigMap.put(SSL_PREFER_OPENSSL_KEY, sslConfiguration.preferOpenSSL() + "");
-        sslConfigMap.put(SSL_CLIENT_AUTH_KEY, sslConfiguration.clientAuth());
-        sslConfigMap.put(SSL_CIPHER_SUITES_KEY, String.join(",", sslConfiguration.cipherSuites()));
-        sslConfigMap.put(SSL_SECURE_TRANSPORT_PROTOCOLS_KEY, String.join(",", sslConfiguration.secureTransportProtocols()));
-        sslConfigMap.put(SSL_HANDSHAKE_TIMEOUT_KEY, sslConfiguration.handshakeTimeout().toString());
+        Map<String, String> sslConfigMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         if (sslConfiguration.isKeystoreConfigured())
         {
             KeyStoreConfiguration keystore = sslConfiguration.keystore();
-            sslConfigMap.put(SSL_KEYSTORE_PATH_KEY, keystore.path());
-            sslConfigMap.put(SSL_KEYSTORE_PASSWORD_KEY, keystore.password());
-            sslConfigMap.put(SSL_KEYSTORE_TYPE_KEY, keystore.type());
+            sslConfigMap.put(SslConfig.KEYSTORE_PATH, keystore.path());
+            sslConfigMap.put(SslConfig.KEYSTORE_PASSWORD, keystore.password());
+            sslConfigMap.put(SslConfig.KEYSTORE_TYPE, keystore.type());
         }
 
         if (sslConfiguration.isTrustStoreConfigured())
         {
             KeyStoreConfiguration truststore = sslConfiguration.truststore();
-            sslConfigMap.put(SSL_TRUSTSTORE_PATH_KEY, truststore.path());
-            sslConfigMap.put(SSL_TRUSTSTORE_PASSWORD_KEY, truststore.password());
-            sslConfigMap.put(SSL_TRUSTSTORE_TYPE_KEY, truststore.type());
+            sslConfigMap.put(SslConfig.TRUSTSTORE_PATH, truststore.path());
+            sslConfigMap.put(SslConfig.TRUSTSTORE_PASSWORD, truststore.password());
+            sslConfigMap.put(SslConfig.TRUSTSTORE_TYPE, truststore.type());
         }
 
         SslConfig sslConfig = SslConfig.create(sslConfigMap);
@@ -234,7 +214,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
         {
             return;
         }
-        databaseAccessor.session(); // throws IllegalStateException if session unavailable
+        databaseAccessor.session();
 
         cdcManager = new CdcManager(eventConsumer(conf, avroSerializer),
                                     schemaSupplier,
