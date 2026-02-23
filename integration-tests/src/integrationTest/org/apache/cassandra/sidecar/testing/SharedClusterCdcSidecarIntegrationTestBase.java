@@ -45,6 +45,7 @@ import org.apache.cassandra.sidecar.config.SidecarConfiguration;
 import org.apache.cassandra.sidecar.config.yaml.ServiceConfigurationImpl;
 import org.apache.cassandra.sidecar.config.yaml.SidecarConfigurationImpl;
 import org.apache.cassandra.sidecar.coordination.ContentionFreeRangeManager;
+import org.apache.cassandra.sidecar.coordination.RangeManager;
 import org.apache.cassandra.sidecar.coordination.TokenRingProvider;
 import org.apache.cassandra.sidecar.db.CdcDatabaseAccessor;
 import org.apache.cassandra.sidecar.db.VirtualTablesDatabaseAccessor;
@@ -168,6 +169,7 @@ public abstract class SharedClusterCdcSidecarIntegrationTestBase extends SharedC
                                   Serializer<CdcEvent> avroSerializer,
                                   TokenRingProvider tokenRingProvider)
         {
+            RangeManager rangeManager = new ContentionFreeRangeManager(vertx, tokenRingProvider);
             return new TestCdcPublisher(vertx,
                                        sidecarConfiguration,
                                        executorPools,
@@ -182,7 +184,7 @@ public abstract class SharedClusterCdcSidecarIntegrationTestBase extends SharedC
                                        virtualTables,
                                        sidecarCdcStats,
                                        avroSerializer,
-                                       () -> new ContentionFreeRangeManager(vertx, tokenRingProvider));
+                                       () -> rangeManager);
         }
 
         @Provides

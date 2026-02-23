@@ -53,6 +53,7 @@ import org.apache.cassandra.sidecar.cluster.InstancesMetadata;
 import org.apache.cassandra.sidecar.common.ApiEndpointsV1;
 import org.apache.cassandra.sidecar.common.request.data.AllServicesConfigPayload;
 import org.apache.cassandra.sidecar.common.response.ListCdcSegmentsResponse;
+import org.apache.cassandra.sidecar.common.server.dns.DnsResolver;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
 import org.apache.cassandra.sidecar.config.SidecarClientConfiguration;
@@ -61,6 +62,7 @@ import org.apache.cassandra.sidecar.coordination.CassandraClientTokenRingProvide
 import org.apache.cassandra.sidecar.coordination.ContentionFreeRangeManager;
 import org.apache.cassandra.sidecar.coordination.DynamicSidecarInstancesProvider;
 import org.apache.cassandra.sidecar.coordination.InnerDcTokenAdjacentPeerProvider;
+import org.apache.cassandra.sidecar.coordination.RangeManager;
 import org.apache.cassandra.sidecar.coordination.SidecarHttpHealthProvider;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthMonitorTask;
 import org.apache.cassandra.sidecar.coordination.SidecarPeerHealthProvider;
@@ -360,9 +362,9 @@ public class CdcModule extends AbstractModule
 
     @Provides
     @Singleton
-    public TokenRingProvider tokenRingProvider(InstancesMetadata instancesMetadata, InstanceMetadataFetcher instanceMetadataFetcher, ServiceConfiguration configuration)
+    public TokenRingProvider tokenRingProvider(InstancesMetadata instancesMetadata, InstanceMetadataFetcher instanceMetadataFetcher, DnsResolver dnsResolver)
     {
-        return new CassandraClientTokenRingProvider(instancesMetadata, instanceMetadataFetcher, configuration.dnsResolver());
+        return new CassandraClientTokenRingProvider(instancesMetadata, instanceMetadataFetcher, dnsResolver);
     }
 
     @Provides
@@ -377,6 +379,13 @@ public class CdcModule extends AbstractModule
 
     @Provides
     @Singleton
+    RangeManager rangeManager(Vertx vertx, TokenRingProvider tokenRingProvider)
+    {
+        return new ContentionFreeRangeManager(vertx, tokenRingProvider);
+    }
+
+    @Provides
+    @Singleton
     CdcPublisher cdcPublisher(Vertx vertx,
                               SidecarConfiguration sidecarConfiguration,
                               ExecutorPools executorPools,
@@ -387,11 +396,11 @@ public class CdcModule extends AbstractModule
                               InstanceMetadataFetcher instanceMetadataFetcher,
                               CdcConfig conf,
                               CdcDatabaseAccessor databaseAccessor,
-                              TokenRingProvider tokenRingProvider,
                               ICdcStats cdcStats,
                               VirtualTablesDatabaseAccessor virtualTables,
                               SidecarCdcStats sidecarCdcStats,
-                              Serializer<CdcEvent> avroSerializer)
+                              Serializer<CdcEvent> avroSerializer,
+                              RangeManager rangeManager)
     {
         return new CdcPublisher(vertx,
                                 sidecarConfiguration,
@@ -407,7 +416,7 @@ public class CdcModule extends AbstractModule
                                 virtualTables,
                                 sidecarCdcStats,
                                 avroSerializer,
-                                () -> new ContentionFreeRangeManager(vertx, tokenRingProvider));
+                                () -> rangeManager);
     }
 
     @Provides
