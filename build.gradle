@@ -450,11 +450,11 @@ tasks.register('generateDistributionChecksums') {
     description = 'Generates SHA-256 and SHA-512 checksums for distribution artifacts'
     group = 'distribution'
 
-    dependsOn distTar, distZip, sourcesDistTar, sourcesDistZip
+    dependsOn distTar, distZip, sourcesDistTar, sourcesDistZip, buildDeb, buildRpm
 
     doLast {
         println "Generating checksums for distribution archives..."
-        [distTar, distZip, sourcesDistTar, sourcesDistZip].each { task ->
+        [distTar, distZip, sourcesDistTar, sourcesDistZip, buildDeb, buildRpm].each { task ->
             def archive = task.archiveFile.get().asFile
 
             if (archive.exists()) {
@@ -494,3 +494,5 @@ sourcesDistTar.finalizedBy generateDistributionChecksums
 sourcesDistZip.finalizedBy generateDistributionChecksums
 assembleDist.finalizedBy generateDistributionChecksums
 assembleSourcesDist.finalizedBy generateDistributionChecksums
+buildDeb.finalizedBy generateDistributionChecksums
+buildRpm.finalizedBy generateDistributionChecksums
