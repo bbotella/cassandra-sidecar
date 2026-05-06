@@ -136,7 +136,7 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
                 instance.delegate().nodeSettings()).releaseVersion()
         ).getVersion();
         this.kafkaPublisher = KafkaPublisher.create(version,
-                                                    TopicSupplier.staticTopicSupplier(conf.kafkaTopic()),
+                                                    buildTopicSupplier(conf),
                                                     conf.kafkaConfigs(),
                                                     kafkaProducerFactory,
                                                     schemaStore,
@@ -147,6 +147,37 @@ public class CdcPublisher implements Handler<Message<Object>>, PeriodicTask
                                                     conf.failOnKafkaError(),
                                                     CdcLogMode.FULL);
         return new CdcEventConsumer(kafkaPublisher);
+    }
+
+    /**
+     * Build the {@link TopicSupplier} that determines which Kafka topic each CDC event is
+     * published to, honoring {@link CdcConfig#topicFormat()}. The interpretation of
+     * {@link CdcConfig#kafkaTopic()} depends on the format:
+     * <ul>
+     *   <li>{@code STATIC}        - literal topic name (single topic for all tables)</li>
+     *   <li>{@code KEYSPACE}      - {@link String#format} template with one {@code %s} for keyspace, e.g. {@code "cdc-%s"}</li>
+     *   <li>{@code KEYSPACETABLE} - template with two {@code %s} for keyspace + table, e.g. {@code "cdc-%s-%s"}</li>
+     *   <li>{@code TABLE}         - template with one {@code %s} for table name, e.g. {@code "cdc-%s"}</li>
+     *   <li>{@code MAP}           - JSON object string mapping {@code "keyspace.table"} to topic name</li>
+     * </ul>
+     */
+    private static TopicSupplier buildTopicSupplier(CdcConfig conf)
+    {
+        switch (conf.topicFormat())
+        {
+            case STATIC:
+                return TopicSupplier.staticTopicSupplier(conf.kafkaTopic());
+            case KEYSPACE:
+                return TopicSupplier.keyspaceSupplier(conf.kafkaTopic());
+            case KEYSPACETABLE:
+                return TopicSupplier.keyspaceTableSupplier(conf.kafkaTopic());
+            case TABLE:
+                return TopicSupplier.tableSupplier(conf.kafkaTopic());
+            case MAP:
+                return TopicSupplier.mapSupplier(conf.kafkaTopic());
+            default:
+                throw new IllegalStateException("Unsupported topic format: " + conf.topicFormat());
+        }
     }
 
     private class ConfigChangedHandler implements Handler<Message<Object>>

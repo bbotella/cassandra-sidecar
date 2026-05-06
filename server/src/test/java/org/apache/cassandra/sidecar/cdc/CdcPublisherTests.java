@@ -18,12 +18,15 @@
 
 package org.apache.cassandra.sidecar.cdc;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import com.google.inject.Provider;
 import io.vertx.core.Vertx;
@@ -33,6 +36,7 @@ import org.apache.cassandra.cdc.api.CdcOptions;
 import org.apache.cassandra.cdc.api.EventConsumer;
 import org.apache.cassandra.cdc.api.SchemaSupplier;
 import org.apache.cassandra.cdc.kafka.KafkaProducerFactory;
+import org.apache.cassandra.cdc.kafka.TopicSupplier;
 import org.apache.cassandra.cdc.sidecar.ClusterConfigProvider;
 import org.apache.cassandra.cdc.sidecar.SidecarCdcClient;
 import org.apache.cassandra.cdc.stats.ICdcStats;
@@ -46,6 +50,8 @@ import org.apache.cassandra.sidecar.db.CdcSystemViewsDatabaseAccessor;
 import org.apache.cassandra.sidecar.utils.InstanceMetadataFetcher;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +60,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
@@ -133,14 +140,54 @@ public class CdcPublisherTests
     @Test
     void testEventConsumerCreatesValidConsumer()
     {
+        setupMocks("test-cdc-topic");
+
+        EventConsumer result = cdcPublisher.eventConsumer(cdcConfig);
+
+        assertThat(result).isNotNull();
+        assertThat(result).isInstanceOf(CdcEventConsumer.class);
+    }
+
+    /**
+     * Verifies that {@link CdcPublisher#eventConsumer(CdcConfig)} routes to the correct
+     * {@link TopicSupplier} factory for every {@link CdcConfig.TopicFormatType} value.
+     */
+    @ParameterizedTest
+    @EnumSource(CdcConfig.TopicFormatType.class)
+    void testTopicSupplierRoutingPerTopicFormat(CdcConfig.TopicFormatType format)
+    {
+        String topicConfig = "cdc-%s-%s";
+        setupMocks(topicConfig);
+        when(cdcConfig.topicFormat()).thenReturn(format);
+
+        Map<CdcConfig.TopicFormatType, MockedStatic.Verification> factories = new EnumMap<>(CdcConfig.TopicFormatType.class);
+        factories.put(CdcConfig.TopicFormatType.STATIC,        () -> TopicSupplier.staticTopicSupplier(topicConfig));
+        factories.put(CdcConfig.TopicFormatType.KEYSPACE,      () -> TopicSupplier.keyspaceSupplier(topicConfig));
+        factories.put(CdcConfig.TopicFormatType.KEYSPACETABLE, () -> TopicSupplier.keyspaceTableSupplier(topicConfig));
+        factories.put(CdcConfig.TopicFormatType.TABLE,         () -> TopicSupplier.tableSupplier(topicConfig));
+        factories.put(CdcConfig.TopicFormatType.MAP,           () -> TopicSupplier.mapSupplier(topicConfig));
+
+        try (MockedStatic<TopicSupplier> topicSupplier = Mockito.mockStatic(TopicSupplier.class, Mockito.RETURNS_MOCKS))
+        {
+            cdcPublisher.eventConsumer(cdcConfig);
+            for (Map.Entry<CdcConfig.TopicFormatType, MockedStatic.Verification> entry : factories.entrySet())
+            {
+                topicSupplier.verify(entry.getValue(),
+                                     entry.getKey() == format ? Mockito.times(1) : never());
+            }
+        }
+    }
+
+    private void setupMocks(String topicConfig)
+    {
         Map<String, Object> kafkaConfigs = new HashMap<>();
         kafkaConfigs.put("bootstrap.servers", "localhost:9092");
         kafkaConfigs.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         kafkaConfigs.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
         when(cdcConfig.kafkaConfigs()).thenReturn(kafkaConfigs);
-        when(cdcConfig.kafkaTopic()).thenReturn("test-cdc-topic");
-        when(cdcConfig.maxRecordSizeBytes()).thenReturn(1048576); // 1MB
+        when(cdcConfig.kafkaTopic()).thenReturn(topicConfig);
+        when(cdcConfig.maxRecordSizeBytes()).thenReturn(1048576);
         when(cdcConfig.failOnRecordTooLargeError()).thenReturn(false);
         when(cdcConfig.failOnKafkaError()).thenReturn(true);
 
@@ -150,14 +197,10 @@ public class CdcPublisherTests
             Function<InstanceMetadata, Object> fn = invocation.getArgument(0);
             return fn.apply(mockInstance);
         }).when(instanceMetadataFetcher).callOnFirstAvailableInstance(any());
+
         CassandraBridge mockBridge = mock(CassandraBridge.class);
         when(mockBridge.getVersion()).thenReturn(CassandraVersion.FOURONE);
         when(cassandraBridgeFactory.get(anyString())).thenReturn(mockBridge);
         when(kafkaProducerFactory.create(any())).thenReturn(mock(KafkaProducer.class));
-
-        EventConsumer result = cdcPublisher.eventConsumer(cdcConfig);
-
-        assertThat(result).isNotNull();
-        assertThat(result).isInstanceOf(CdcEventConsumer.class);
     }
 }
