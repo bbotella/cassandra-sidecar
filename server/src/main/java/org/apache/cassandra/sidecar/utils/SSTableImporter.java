@@ -39,6 +39,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.handler.HttpException;
 import org.apache.cassandra.sidecar.cluster.instance.InstanceMetadata;
+import org.apache.cassandra.sidecar.common.data.SSTableImportOptions;
 import org.apache.cassandra.sidecar.common.server.TableOperations;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.ServiceConfiguration;
@@ -64,6 +65,8 @@ public class SSTableImporter
     public static final boolean DEFAULT_INVALIDATE_CACHES = true;
     public static final boolean DEFAULT_EXTENDED_VERIFY = true;
     public static final boolean DEFAULT_COPY_DATA = false;
+    public static final boolean DEFAULT_FAIL_ON_MISSING_INDEX = SSTableImportOptions.DEFAULT_FAIL_ON_MISSING_INDEX;
+    public static final boolean DEFAULT_VALIDATE_INDEX_CHECKSUM = SSTableImportOptions.DEFAULT_VALIDATE_INDEX_CHECKSUM;
     private final Vertx vertx;
     private final ExecutorPools executorPools;
     private final InstanceMetadataFetcher metadataFetcher;
@@ -231,7 +234,9 @@ public class SSTableImporter
                                                   options.verifyTokens,
                                                   options.invalidateCaches,
                                                   options.extendedVerify,
-                                                  options.copyData);
+                                                  options.copyData,
+                                                  options.failOnMissingIndex,
+                                                  options.validateIndexChecksum);
                 long serviceTimeNanos = System.nanoTime() - startTime;
                 if (!failedDirectories.isEmpty())
                 {
@@ -361,6 +366,8 @@ public class SSTableImporter
         final boolean invalidateCaches;
         final boolean extendedVerify;
         final boolean copyData;
+        final boolean failOnMissingIndex;
+        final boolean validateIndexChecksum;
 
         private ImportOptions(Builder builder)
         {
@@ -376,6 +383,8 @@ public class SSTableImporter
             invalidateCaches = builder.invalidateCaches;
             extendedVerify = builder.extendedVerify;
             copyData = builder.copyData;
+            failOnMissingIndex = builder.failOnMissingIndex;
+            validateIndexChecksum = builder.validateIndexChecksum;
         }
 
         /**
@@ -417,6 +426,8 @@ public class SSTableImporter
                    && invalidateCaches == options.invalidateCaches
                    && extendedVerify == options.extendedVerify
                    && copyData == options.copyData
+                   && failOnMissingIndex == options.failOnMissingIndex
+                   && validateIndexChecksum == options.validateIndexChecksum
                    && host.equals(options.host)
                    && keyspace.equals(options.keyspace)
                    && tableName.equals(options.tableName)
@@ -430,7 +441,8 @@ public class SSTableImporter
         public int hashCode()
         {
             return Objects.hash(host, keyspace, tableName, directory, uploadId, resetLevel, clearRepaired,
-                                verifySSTables, verifyTokens, invalidateCaches, extendedVerify, copyData);
+                                verifySSTables, verifyTokens, invalidateCaches, extendedVerify, copyData,
+                                failOnMissingIndex, validateIndexChecksum);
         }
 
         /**
@@ -451,6 +463,8 @@ public class SSTableImporter
                    ", invalidateCaches=" + invalidateCaches +
                    ", extendedVerify=" + extendedVerify +
                    ", copyData=" + copyData +
+                   ", failOnMissingIndex=" + failOnMissingIndex +
+                   ", validateIndexChecksum=" + validateIndexChecksum +
                    '}';
         }
 
@@ -471,6 +485,8 @@ public class SSTableImporter
             private boolean invalidateCaches = DEFAULT_INVALIDATE_CACHES;
             private boolean extendedVerify = DEFAULT_EXTENDED_VERIFY;
             private boolean copyData = DEFAULT_COPY_DATA;
+            private boolean failOnMissingIndex = DEFAULT_FAIL_ON_MISSING_INDEX;
+            private boolean validateIndexChecksum = DEFAULT_VALIDATE_INDEX_CHECKSUM;
 
             /**
              * Sets the {@code host} and returns a reference to this Builder enabling method chaining.
@@ -613,6 +629,30 @@ public class SSTableImporter
             public Builder copyData(boolean copyData)
             {
                 this.copyData = copyData;
+                return this;
+            }
+
+            /**
+             * Sets the {@code failOnMissingIndex} and returns a reference to this Builder enabling method chaining.
+             *
+             * @param failOnMissingIndex the {@code failOnMissingIndex} to set
+             * @return a reference to this Builder
+             */
+            public Builder failOnMissingIndex(boolean failOnMissingIndex)
+            {
+                this.failOnMissingIndex = failOnMissingIndex;
+                return this;
+            }
+
+            /**
+             * Sets the {@code validateIndexChecksum} and returns a reference to this Builder enabling method chaining.
+             *
+             * @param validateIndexChecksum the {@code validateIndexChecksum} to set
+             * @return a reference to this Builder
+             */
+            public Builder validateIndexChecksum(boolean validateIndexChecksum)
+            {
+                this.validateIndexChecksum = validateIndexChecksum;
                 return this;
             }
 
