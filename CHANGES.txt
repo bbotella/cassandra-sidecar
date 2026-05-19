@@ -1,5 +1,6 @@
 0.4.0
 -----
+ * Support IAM instance profile credentials for S3 restore jobs (CASSSIDECAR-415)
  * Adding endpoint for verifying files post data copy during live migration (CASSSIDECAR-226)
  * SAI support in Sidecar (CASSSIDECAR-422)
  * Update OperationalJob to support cluster-wide operations (CASSSIDECAR-376)
