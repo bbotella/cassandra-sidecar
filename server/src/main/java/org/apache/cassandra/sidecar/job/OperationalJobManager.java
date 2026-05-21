@@ -61,11 +61,11 @@ public class OperationalJobManager
      *
      * @return instances of the jobs that are in pending or running states
      */
-    public List<OperationalJob> allInflightJobs()
+    public List<OperationalJobInfo> allInflightJobs()
     {
         return jobTracker.jobsView().values()
                          .stream()
-                         .filter(j -> !j.asyncResult().isComplete())
+                         .filter(j -> !j.status().isCompleted())
                          .collect(Collectors.toList());
     }
 
@@ -73,9 +73,9 @@ public class OperationalJobManager
      * Fetch the job using its UUID
      *
      * @param jobId identifier of the job
-     * @return instance of the job or null
+     * @return instance of the job info or null
      */
-    public OperationalJob getJobIfExists(UUID jobId)
+    public OperationalJobInfo getJobIfExists(UUID jobId)
     {
         return jobTracker.get(jobId);
     }
