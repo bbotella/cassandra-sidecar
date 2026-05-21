@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.cassandra.bridge;
+package org.apache.cassandra.sidecar.bridge;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -28,6 +28,10 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jakarta.inject.Singleton;
+import org.apache.cassandra.bridge.BaseCassandraBridgeFactory;
+import org.apache.cassandra.bridge.CassandraBridge;
+import org.apache.cassandra.bridge.CassandraVersion;
+import org.apache.cassandra.bridge.CassandraVersionFeatures;
 import org.jetbrains.annotations.NotNull;
 
 import static org.apache.cassandra.bridge.BaseCassandraBridgeFactory.getCassandraVersion;
@@ -44,7 +48,7 @@ public class CassandraBridgeFactory
 {
     // maps Cassandra version-specific jar name (e.g. 'four-zero') to matching CassandraBridge
     private final Map<String, CassandraBridge> cassandraBridges;
-    
+
     public CassandraBridgeFactory()
     {
         cassandraBridges = new ConcurrentHashMap<>(CassandraVersion.values().length);
