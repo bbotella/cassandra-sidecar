@@ -89,6 +89,8 @@ jobs:
         run: |
           ./gradlew :server:jib \
             -Djib.to.image=ghcr.io/apache/cassandra-sidecar:latest \
+            -Djib.to.auth.username=${{ github.actor }} \
+            -Djib.to.auth.password=${{ secrets.GITHUB_TOKEN }} \
             "-Doci.image.revision=${{ github.sha }}" \
             "-Doci.image.source=${{ github.server_url }}/${{ github.repository }}" \
             "-Doci.image.created=${{ steps.version.outputs.image_created }}" \
