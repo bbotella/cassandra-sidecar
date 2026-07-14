@@ -32,15 +32,24 @@ import com.datastax.driver.core.utils.UUIDs;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.cassandra.sidecar.TestResourceReaper;
+import org.apache.cassandra.sidecar.common.data.OperationType;
 import org.apache.cassandra.sidecar.common.server.exceptions.OperationalJobException;
+import org.apache.cassandra.sidecar.common.server.utils.MillisecondBoundConfiguration;
 import org.apache.cassandra.sidecar.common.server.utils.SecondBoundConfiguration;
 import org.apache.cassandra.sidecar.concurrent.ExecutorPools;
 import org.apache.cassandra.sidecar.config.yaml.ServiceConfigurationImpl;
 import org.apache.cassandra.sidecar.exceptions.OperationalJobConflictException;
+import org.apache.cassandra.sidecar.job.storage.StorageProvider;
+import org.apache.cassandra.sidecar.job.storage.StorageProviderException;
 
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.RUNNING;
 import static org.apache.cassandra.sidecar.common.data.OperationalJobStatus.SUCCEEDED;
+import static org.apache.cassandra.testing.utils.AssertionUtils.loopAssert;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests to validate the Job submission behavior for scenarios which are a combination of values for
@@ -149,6 +158,12 @@ class OperationalJobManagerTest
             }
 
             @Override
+            public OperationType operationType()
+            {
+                return OperationType.DRAIN;
+            }
+
+            @Override
             protected Future<Void> executeInternal() throws OperationalJobException
             {
                 throw new OperationalJobException(msg);
@@ -165,5 +180,31 @@ class OperationalJobManagerTest
         manager.trySubmitJob(failingJob, onComplete, executorPool.service(), SecondBoundConfiguration.parse("5s"));
         assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
         assertThat(tracker.get(jobId)).isNotNull();
+    }
+
+    @Test
+    void testJobRemovedFromTrackerWhenPersistenceFails()
+    {
+        StorageProvider storageProvider = mock(StorageProvider.class);
+        when(storageProvider.isAvailable()).thenReturn(true);
+        doThrow(new StorageProviderException("Storage unavailable"))
+            .when(storageProvider).persistJob(any());
+
+        DurableOperationalJobTracker durableTracker = new DurableOperationalJobTracker(new ServiceConfigurationImpl(),
+                                                                                       storageProvider,
+                                                                                       executorPool.service());
+        OperationalJobManager manager = new OperationalJobManager(durableTracker, executorPool);
+
+        UUID jobId = UUIDs.timeBased();
+        OperationalJob job = OperationalJobTest.createOperationalJob(jobId, MillisecondBoundConfiguration.parse("50ms"));
+
+        manager.trySubmitJob(job,
+                             (j, ex) -> {},
+                             executorPool.service(),
+                             SecondBoundConfiguration.parse("5s"));
+
+        loopAssert(2, () -> {
+            assertThat(durableTracker.jobsView()).doesNotContainKey(jobId);
+        });
     }
 }
